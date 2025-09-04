@@ -52,39 +52,22 @@ jobs:
         path: ~/.cache/pre-commit
         key: pre-commit-${{ env.PYTHON_VERSION }}-${{ hashFiles('.pre-commit-config.yaml') }}
     
-    - name: Run pre-commit (allow formatting fixes)
+    - name: Run pre-commit (first pass)
+      run: pre-commit run --all-files
+      continue-on-error: true
+      
+    - name: Commit formatting changes
       run: |
-        # Run pre-commit hooks - allow them to make formatting changes
-        pre-commit run --all-files || {
-          # Check if files were modified by formatting hooks
-          if git diff --exit-code; then
-            # No changes made, so there are actual errors
-            echo "Pre-commit found issues that need manual fixes"
-            exit 1
-          else
-            # Files were modified by formatting hooks
-            echo "Pre-commit made formatting changes"
-            # Configure git for the action
-            git config --global user.name "github-actions[bot]"
-            git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            # Stage all changes made by pre-commit
-            git add -A
-            # Check if there are staged changes to commit
-            if ! git diff --cached --exit-code; then
-              git commit -m "Auto-fix: Apply pre-commit formatting changes
-
-Co-Authored-By: Claude <noreply@anthropic.com>"
-              echo "Committed formatting changes"
-            fi
-            # Run pre-commit again to verify everything passes
-            if pre-commit run --all-files; then
-              echo "Pre-commit passes after formatting fixes"
-            else
-              echo "Pre-commit still has issues after formatting fixes"
-              exit 1
-            fi
-          fi
-        }
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git add -A
+        if ! git diff --cached --exit-code; then
+          git commit -m "Auto-fix: Apply pre-commit formatting changes" -m "Co-Authored-By: Claude <noreply@anthropic.com>"
+          echo "Committed formatting changes"
+        fi
+        
+    - name: Run pre-commit (final check)
+      run: pre-commit run --all-files
 
   test:
     name: Test Suite
