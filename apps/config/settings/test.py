@@ -3,32 +3,38 @@ from pathlib import Path
 
 from .base import *
 
-# Use in-memory SQLite for faster tests
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": ":memory:",
+# Database configuration - use DATABASE_URL if provided (for CI), otherwise SQLite
+if env("DATABASE_URL", default=""):
+    # CI environment - use the configured database and run migrations
+    DATABASES = {"default": env.db("DATABASE_URL")}
+else:
+    # Local test environment - use fast SQLite in-memory
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": ":memory:",
+        }
     }
-}
+    
+    # Disable migrations for local tests only
+    class DisableMigrations:
+        def __contains__(self, item):
+            return True
 
-# Use dummy cache backend for tests
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.dummy.DummyCache",
+        def __getitem__(self, item):
+            return None
+
+    MIGRATION_MODULES = DisableMigrations()
+
+# Use dummy cache backend for tests unless Redis is configured
+if env("REDIS_URL", default=""):
+    CACHES = {"default": env.cache("REDIS_URL")}
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.dummy.DummyCache",
+        }
     }
-}
-
-
-# Disable migrations for tests
-class DisableMigrations:
-    def __contains__(self, item):
-        return True
-
-    def __getitem__(self, item):
-        return None
-
-
-MIGRATION_MODULES = DisableMigrations()
 
 # Password hashers for faster tests
 PASSWORD_HASHERS = [
