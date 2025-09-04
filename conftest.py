@@ -13,7 +13,7 @@ def user():
     """Create a test user"""
     return User.objects.create_user(
         email="test@example.com",
-        password="testpass123",
+        password="testpass123",  # nosec B106
         name="Test User"
     )
 
@@ -23,7 +23,7 @@ def admin_user():
     """Create an admin user"""
     user = User.objects.create_user(
         email="admin@example.com",
-        password="adminpass123",
+        password="adminpass123",  # nosec B106
         name="Admin User",
         is_staff=True,
         is_superuser=True
@@ -41,7 +41,7 @@ def manager_user():
     """Create a manager user"""
     user = User.objects.create_user(
         email="manager@example.com",
-        password="managerpass123",
+        password="managerpass123",  # nosec B106
         name="Manager User"
     )
 
@@ -57,7 +57,7 @@ def member_user():
     """Create a member user"""
     user = User.objects.create_user(
         email="member@example.com",
-        password="memberpass123",
+        password="memberpass123",  # nosec B106
         name="Member User"
     )
 
