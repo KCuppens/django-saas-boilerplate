@@ -73,7 +73,6 @@ jobs:
             if ! git diff --cached --exit-code; then
               git commit -m "Auto-fix: Apply pre-commit formatting changes
 
-🤖 Generated with Claude Code
 Co-Authored-By: Claude <noreply@anthropic.com>"
               echo "✅ Committed formatting changes"
             fi
