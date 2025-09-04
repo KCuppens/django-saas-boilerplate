@@ -97,8 +97,8 @@ class FileService:
         if file_upload.is_public and hasattr(default_storage, 'url'):
             try:
                 return default_storage.url(file_upload.storage_path)
-            except:
-                pass
+            except Exception as e:
+                logger.warning(f"Failed to generate direct URL for file {file_upload.id}: {e}")
         
         # For private files or S3, generate signed URL
         if hasattr(default_storage, 'generate_presigned_url'):

@@ -2,6 +2,9 @@ from django.http import JsonResponse
 from django.utils import timezone
 from django.conf import settings
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def health_check(request):
@@ -76,14 +79,18 @@ def version_info(request):
     
     # Add git info if available
     try:
-        import subprocess
-        git_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip()
-        git_branch = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).decode('ascii').strip()
+        import subprocess  # nosec B404
+        git_hash = subprocess.check_output(  # nosec B603,B607
+            ['/usr/bin/git', 'rev-parse', 'HEAD'], timeout=10
+        ).decode('ascii').strip()
+        git_branch = subprocess.check_output(  # nosec B603,B607
+            ['/usr/bin/git', 'rev-parse', '--abbrev-ref', 'HEAD'], timeout=10
+        ).decode('ascii').strip()
         version_data.update({
             'git_hash': git_hash,
             'git_branch': git_branch,
         })
-    except:
-        pass
+    except Exception as e:
+        logger.warning(f"Failed to get git info: {e}")
     
     return JsonResponse(version_data)

@@ -1,5 +1,5 @@
 from celery import shared_task
-import subprocess
+import subprocess  # nosec B404
 import os
 import datetime
 from django.conf import settings
@@ -39,7 +39,7 @@ def backup_database():
             env = os.environ.copy()
             env['PGPASSWORD'] = db_config['PASSWORD']
             
-            result = subprocess.run(cmd, env=env, capture_output=True, text=True)
+            result = subprocess.run(cmd, env=env, capture_output=True, text=True, timeout=300)  # nosec B603
             
             if result.returncode == 0:
                 logger.info(f"Database backup created successfully: {backup_path}")

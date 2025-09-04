@@ -40,14 +40,15 @@ CELERY_TASK_EAGER_PROPAGATES = True
 # Disable logging during tests
 LOGGING_CONFIG = None
 
-# Media files
-MEDIA_ROOT = "/tmp/test_media"
+# Media files - use temp directory safely
+import tempfile
+MEDIA_ROOT = tempfile.mkdtemp(prefix='test_media_')
 
-# Static files
-STATIC_ROOT = "/tmp/test_static"
+# Static files - use temp directory safely
+STATIC_ROOT = tempfile.mkdtemp(prefix='test_static_')
 
 # Security settings (can be relaxed for tests)
-SECRET_KEY = "test-secret-key-not-for-production"
+SECRET_KEY = env("SECRET_KEY", default="test-secret-key-not-for-production")  # nosec B105
 
 # Disable CSRF for API tests
 REST_FRAMEWORK = {

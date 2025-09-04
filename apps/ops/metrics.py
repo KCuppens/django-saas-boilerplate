@@ -6,6 +6,9 @@ from django.contrib.auth import get_user_model
 from apps.api.models import Note
 from apps.emails.models import EmailMessageLog
 import time
+import logging
+
+logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
@@ -47,8 +50,8 @@ def prometheus_metrics(request):
                 f'django_notes_public {public_notes}',
                 f''
             ])
-        except:
-            pass
+        except Exception as e:
+            logger.warning(f"Failed to collect notes metrics: {e}")
         
         # Email metrics
         try:
@@ -70,8 +73,8 @@ def prometheus_metrics(request):
                 f'django_emails_failed {failed_emails}',
                 f''
             ])
-        except:
-            pass
+        except Exception as e:
+            logger.warning(f"Failed to collect notes metrics: {e}")
         
         # Database connection metrics
         try:
@@ -86,8 +89,8 @@ def prometheus_metrics(request):
                 f'django_db_connection_duration_seconds {db_duration:.6f}',
                 f''
             ])
-        except:
-            pass
+        except Exception as e:
+            logger.warning(f"Failed to collect notes metrics: {e}")
         
         # Cache metrics (if Redis/cache available)
         try:
@@ -109,8 +112,8 @@ def prometheus_metrics(request):
                 f'django_cache_duration_seconds {cache_duration:.6f}',
                 f''
             ])
-        except:
-            pass
+        except Exception as e:
+            logger.warning(f"Failed to collect notes metrics: {e}")
         
         # System uptime (approximate)
         try:
@@ -152,8 +155,8 @@ def prometheus_metrics(request):
         except ImportError:
             # psutil not available
             pass
-        except:
-            pass
+        except Exception as e:
+            logger.warning(f"Failed to collect notes metrics: {e}")
     
     except Exception as e:
         # Fallback metrics if database is unavailable
