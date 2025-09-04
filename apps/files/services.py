@@ -120,8 +120,8 @@ class FileService:
         cls, 
         storage_path: str, 
         expires_in: int = 3600,
-        content_type: str = None,
-        max_size: int = None
+        content_type: Optional[str] = None,
+        max_size: Optional[int] = None
     ) -> Dict[str, Any]:
         """Get signed upload URL and required fields"""
         
@@ -131,7 +131,7 @@ class FileService:
                 if content_type:
                     conditions.append(["eq", "$Content-Type", content_type])
                 if max_size:
-                    conditions.append(["content-length-range", 0, max_size])
+                    conditions.append(["content-length-range", "0", str(max_size)])
                 
                 return default_storage.generate_presigned_post(
                     storage_path,

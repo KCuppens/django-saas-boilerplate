@@ -1,6 +1,7 @@
 from celery import shared_task
 from django.conf import settings
 from .models import EmailMessageLog
+from typing import Optional
 import logging
 
 logger = logging.getLogger(__name__)
@@ -112,7 +113,7 @@ def cleanup_old_email_logs(days_to_keep: int = 30):
 
 
 @shared_task(name='apps.emails.tasks.send_bulk_email_task')
-def send_bulk_email_task(template_key: str, recipient_emails: list, context: dict = None):
+def send_bulk_email_task(template_key: str, recipient_emails: list, context: Optional[dict] = None):
     """
     Celery task to send bulk emails
     
@@ -203,14 +204,14 @@ def retry_failed_emails(max_retries: int = 3):
                 email_log.save(update_fields=['status', 'error_message'])
                 
                 # Retry sending
-                task = send_email_task.delay(email_log.id)
+                task = send_email_task.delay(email_log.id)  # type: ignore
                 email_log.celery_task_id = task.id
                 email_log.save(update_fields=['celery_task_id'])
                 
                 retried_count += 1
                 
             except Exception as e:
-                logger.error(f"Failed to retry email {email_log.id}: {str(e)}")
+                logger.error(f"Failed to retry email {email_log.id}: {str(e)}")  # type: ignore
         
         logger.info(f"Retried {retried_count} failed emails")
         

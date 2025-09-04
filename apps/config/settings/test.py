@@ -42,10 +42,11 @@ LOGGING_CONFIG = None
 
 # Media files - use temp directory safely
 import tempfile
-MEDIA_ROOT = tempfile.mkdtemp(prefix='test_media_')
+from pathlib import Path
+MEDIA_ROOT = Path(tempfile.mkdtemp(prefix='test_media_'))
 
-# Static files - use temp directory safely
-STATIC_ROOT = tempfile.mkdtemp(prefix='test_static_')
+# Static files - use temp directory safely  
+STATIC_ROOT = Path(tempfile.mkdtemp(prefix='test_static_'))
 
 # Security settings (can be relaxed for tests)
 SECRET_KEY = env("SECRET_KEY", default="test-secret-key-not-for-production")  # nosec B105

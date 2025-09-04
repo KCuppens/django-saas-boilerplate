@@ -1,8 +1,12 @@
 from waffle import flag_is_active, switch_is_active, sample_is_active
 from django.contrib.auth import get_user_model
-from typing import Optional, Any
+from django.contrib.auth.models import AbstractUser
+from typing import Optional, Any, TYPE_CHECKING
 
-User = get_user_model()
+if TYPE_CHECKING:
+    from django.contrib.auth.models import AbstractUser as User
+else:
+    User = get_user_model()
 
 
 class FeatureFlags:
