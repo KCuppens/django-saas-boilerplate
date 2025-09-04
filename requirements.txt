@@ -1,0 +1,4 @@
+# Main requirements file - points to production requirements
+# This is commonly expected by deployment platforms
+
+-r requirements/prod.txt

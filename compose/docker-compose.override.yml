@@ -1,0 +1,39 @@
+version: '3.8'
+
+# Development overrides
+services:
+  api:
+    environment:
+      - DEBUG=True
+      - CELERY_TASK_ALWAYS_EAGER=False
+    volumes:
+      - ..:/app:cached
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             python manage.py runserver 0.0.0.0:8000"
+
+  celery:
+    volumes:
+      - ..:/app:cached
+
+  celery-beat:
+    volumes:
+      - ..:/app:cached
+
+  # Optional RabbitMQ service (enable via RABBITMQ_ENABLED=true)
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    profiles:
+      - rabbitmq
+
+volumes:
+  rabbitmq_data:

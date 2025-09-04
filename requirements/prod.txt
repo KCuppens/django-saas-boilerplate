@@ -1,0 +1,21 @@
+# Production requirements
+# Optimized for production deployment
+
+-r base.txt
+
+# Production-specific packages
+
+# Enhanced logging (already in base via python-json-logger)
+
+# Performance monitoring (already in base via sentry-sdk)
+
+# Database connection pooling
+django-db-geventpool>=4.0.1  # Optional: for gevent workers
+
+# Security enhancements (most are in base Django)
+
+# Additional storage backends
+django-storages>=1.14.0  # S3, GCS, Azure storage backends
+
+# Production utilities
+django-health-check>=3.17.0  # Enhanced health checks

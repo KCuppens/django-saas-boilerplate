@@ -1,0 +1,26 @@
+# Testing requirements
+# Minimal requirements for running tests
+
+-r base.txt
+
+# Core Testing
+pytest>=7.4.0
+pytest-django>=4.7.0
+pytest-cov>=4.1.0
+pytest-xdist>=3.3.0  # Parallel test execution
+
+# Test Data & Mocking
+factory-boy>=3.3.0
+freezegun>=1.2.0  # Time/date mocking
+responses>=0.23.0  # HTTP request mocking
+
+# Code Quality (for CI)
+ruff>=0.1.6
+black>=23.11.0
+isort>=5.12.0
+mypy>=1.7.0
+django-stubs[compatible-mypy]>=4.2.0
+djangorestframework-stubs[compatible-mypy]>=3.14.0
+
+# Security Testing
+bandit>=1.7.5
