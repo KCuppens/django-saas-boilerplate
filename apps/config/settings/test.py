@@ -1,3 +1,6 @@
+import tempfile
+from pathlib import Path
+
 from .base import *
 
 # Use in-memory SQLite for faster tests
@@ -41,11 +44,9 @@ CELERY_TASK_EAGER_PROPAGATES = True
 LOGGING_CONFIG = None
 
 # Media files - use temp directory safely
-import tempfile
-from pathlib import Path
 MEDIA_ROOT = Path(tempfile.mkdtemp(prefix='test_media_'))
 
-# Static files - use temp directory safely  
+# Static files - use temp directory safely
 STATIC_ROOT = Path(tempfile.mkdtemp(prefix='test_static_'))
 
 # Security settings (can be relaxed for tests)

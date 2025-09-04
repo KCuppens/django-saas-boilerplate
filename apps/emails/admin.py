@@ -1,22 +1,22 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
-from .models import EmailTemplate, EmailMessageLog
+
+from .models import EmailMessageLog, EmailTemplate
 
 
 @admin.register(EmailTemplate)
 class EmailTemplateAdmin(admin.ModelAdmin):
     """Admin interface for EmailTemplate"""
-    
+
     list_display = [
-        'key', 'name', 'category', 'language', 'is_active', 
+        'key', 'name', 'category', 'language', 'is_active',
         'updated_by', 'updated_at'
     ]
     list_filter = ['category', 'language', 'is_active', 'created_at']
     search_fields = ['key', 'name', 'description', 'subject']
     ordering = ['category', 'name']
-    
+
     fieldsets = (
         (None, {
             'fields': ('key', 'name', 'description', 'category', 'language', 'is_active')
@@ -34,7 +34,7 @@ class EmailTemplateAdmin(admin.ModelAdmin):
         }),
     )
     readonly_fields = ['created_by', 'updated_by', 'created_at', 'updated_at']
-    
+
     def save_model(self, request, obj, form, change):
         """Set user tracking fields"""
         if not change:  # Creating new object
@@ -46,22 +46,22 @@ class EmailTemplateAdmin(admin.ModelAdmin):
 @admin.register(EmailMessageLog)
 class EmailMessageLogAdmin(admin.ModelAdmin):
     """Admin interface for EmailMessageLog"""
-    
+
     list_display = [
-        'to_email', 'subject_truncated', 'template_key', 
+        'to_email', 'subject_truncated', 'template_key',
         'status_colored', 'created_at', 'sent_at'
     ]
     list_filter = ['status', 'template_key', 'created_at', 'sent_at']
     search_fields = ['to_email', 'from_email', 'subject', 'template_key']
     ordering = ['-created_at']
     readonly_fields = [
-        'template', 'template_key', 'to_email', 'from_email', 
+        'template', 'template_key', 'to_email', 'from_email',
         'cc', 'bcc', 'subject', 'html_content', 'text_content',
         'status', 'celery_task_id', 'context_data', 'error_message',
         'sent_at', 'delivered_at', 'opened_at', 'clicked_at',
         'user', 'created_at', 'updated_at'
     ]
-    
+
     fieldsets = (
         (None, {
             'fields': ('template', 'template_key', 'status', 'celery_task_id')
@@ -84,14 +84,14 @@ class EmailMessageLogAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
-    
+
     def subject_truncated(self, obj):
         """Show truncated subject"""
         if len(obj.subject) > 50:
             return f"{obj.subject[:47]}..."
         return obj.subject
     subject_truncated.short_description = "Subject"
-    
+
     def status_colored(self, obj):
         """Show colored status"""
         colors = {
@@ -111,15 +111,15 @@ class EmailMessageLogAdmin(admin.ModelAdmin):
         )
     status_colored.short_description = "Status"
     status_colored.admin_order_field = 'status'
-    
+
     def has_add_permission(self, request):
         """Disable adding email logs through admin"""
         return False
-    
+
     def has_change_permission(self, request, obj=None):
         """Disable editing email logs through admin"""
         return False
-    
+
     def has_delete_permission(self, request, obj=None):
         """Allow deletion for cleanup"""
         return request.user.is_superuser

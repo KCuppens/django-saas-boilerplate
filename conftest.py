@@ -28,11 +28,11 @@ def admin_user():
         is_staff=True,
         is_superuser=True
     )
-    
+
     # Add to Admin group if it exists
     admin_group, _ = Group.objects.get_or_create(name='Admin')
     user.groups.add(admin_group)
-    
+
     return user
 
 
@@ -44,11 +44,11 @@ def manager_user():
         password="managerpass123",
         name="Manager User"
     )
-    
+
     # Add to Manager group if it exists
     manager_group, _ = Group.objects.get_or_create(name='Manager')
     user.groups.add(manager_group)
-    
+
     return user
 
 
@@ -60,11 +60,11 @@ def member_user():
         password="memberpass123",
         name="Member User"
     )
-    
+
     # Add to Member group if it exists
     member_group, _ = Group.objects.get_or_create(name='Member')
     user.groups.add(member_group)
-    
+
     return user
 
 
@@ -110,7 +110,7 @@ def groups():
     manager_group, _ = Group.objects.get_or_create(name='Manager')
     member_group, _ = Group.objects.get_or_create(name='Member')
     readonly_group, _ = Group.objects.get_or_create(name='ReadOnly')
-    
+
     return {
         'admin': admin_group,
         'manager': manager_group,
@@ -123,7 +123,7 @@ def groups():
 def sample_file():
     """Create a sample file for testing"""
     from django.core.files.uploadedfile import SimpleUploadedFile
-    
+
     return SimpleUploadedFile(
         "test.txt",
         b"This is a test file content",
@@ -134,16 +134,17 @@ def sample_file():
 @pytest.fixture
 def sample_image():
     """Create a sample image for testing"""
+    import io
+
     from django.core.files.uploadedfile import SimpleUploadedFile
     from PIL import Image
-    import io
-    
+
     # Create a simple image
     image = Image.new('RGB', (100, 100), color='red')
     image_io = io.BytesIO()
     image.save(image_io, format='PNG')
     image_io.seek(0)
-    
+
     return SimpleUploadedFile(
         "test.png",
         image_io.getvalue(),

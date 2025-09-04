@@ -1,8 +1,8 @@
+import logging
+
+from django.conf import settings
 from django.http import JsonResponse
 from django.utils import timezone
-from django.conf import settings
-import json
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -23,12 +23,12 @@ def readiness_check(request):
         from django.db import connection
         with connection.cursor() as cursor:
             cursor.execute("SELECT 1")
-        
+
         # Check cache
         from django.core.cache import cache
         cache.set('readiness_check', 'ok', 10)
         cache_ok = cache.get('readiness_check') == 'ok'
-        
+
         if cache_ok:
             return JsonResponse({
                 'status': 'ready',
@@ -47,7 +47,7 @@ def readiness_check(request):
                     'cache': False
                 }
             }, status=503)
-    
+
     except Exception as e:
         return JsonResponse({
             'status': 'not_ready',
@@ -76,7 +76,7 @@ def version_info(request):
         'python_version': getattr(settings, 'PYTHON_VERSION', 'unknown'),
         'django_version': getattr(settings, 'DJANGO_VERSION', 'unknown'),
     }
-    
+
     # Add git info if available
     try:
         import subprocess  # nosec B404
@@ -92,5 +92,5 @@ def version_info(request):
         })
     except Exception as e:
         logger.warning(f"Failed to get git info: {e}")
-    
+
     return JsonResponse(version_data)

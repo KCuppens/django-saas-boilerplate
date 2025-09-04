@@ -1,10 +1,10 @@
-from django.utils.deprecation import MiddlewareMixin
 from django.utils import timezone
+from django.utils.deprecation import MiddlewareMixin
 
 
 class LastSeenMiddleware(MiddlewareMixin):
     """Middleware to update user's last_seen timestamp on each request"""
-    
+
     def process_request(self, request):
         """Update last_seen for authenticated users"""
         if request.user.is_authenticated:

@@ -1,8 +1,9 @@
-from .base import *
 import sentry_sdk
-from sentry_sdk.integrations.django import DjangoIntegration
 from sentry_sdk.integrations.celery import CeleryIntegration
+from sentry_sdk.integrations.django import DjangoIntegration
 from sentry_sdk.integrations.redis import RedisIntegration
+
+from .base import *
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
@@ -124,19 +125,19 @@ OTEL_EXPORTER_OTLP_ENDPOINT = env("OTEL_EXPORTER_OTLP_ENDPOINT", default=None)
 if OTEL_EXPORTER_OTLP_ENDPOINT:
     from opentelemetry import trace
     from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
-    from opentelemetry.sdk.trace import TracerProvider
-    from opentelemetry.sdk.trace.export import BatchSpanProcessor
     from opentelemetry.instrumentation.django import DjangoInstrumentor
     from opentelemetry.instrumentation.psycopg2 import Psycopg2Instrumentor
     from opentelemetry.instrumentation.redis import RedisInstrumentor
-    
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import BatchSpanProcessor
+
     trace.set_tracer_provider(TracerProvider())
     tracer = trace.get_tracer(__name__)
-    
+
     otlp_exporter = OTLPSpanExporter(endpoint=OTEL_EXPORTER_OTLP_ENDPOINT)
     span_processor = BatchSpanProcessor(otlp_exporter)
     trace.get_tracer_provider().add_span_processor(span_processor)
-    
+
     DjangoInstrumentor().instrument()
     Psycopg2Instrumentor().instrument()
     RedisInstrumentor().instrument()

@@ -1,4 +1,5 @@
 import re
+
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
@@ -48,7 +49,7 @@ def validate_file_size(value, max_size_mb=5):
 def validate_image_dimensions(value, max_width=1920, max_height=1080):
     """Validate image dimensions"""
     from PIL import Image
-    
+
     try:
         with Image.open(value) as img:
             width, height = img.size
@@ -57,23 +58,23 @@ def validate_image_dimensions(value, max_width=1920, max_height=1080):
                     _('Image dimensions cannot exceed {max_width}x{max_height} pixels.')
                     .format(max_width=max_width, max_height=max_height)
                 )
-    except Exception as e:
+    except Exception:
         raise ValidationError(_('Invalid image file.'))
 
 
 class FileValidator:
     """Flexible file validator class"""
-    
+
     def __init__(self, max_size_mb=None, allowed_extensions=None, allowed_content_types=None):
         self.max_size_mb = max_size_mb
         self.allowed_extensions = allowed_extensions or []
         self.allowed_content_types = allowed_content_types or []
-    
+
     def __call__(self, value):
         # Check file size
         if self.max_size_mb:
             validate_file_size(value, self.max_size_mb)
-        
+
         # Check file extension
         if self.allowed_extensions:
             import os
@@ -83,7 +84,7 @@ class FileValidator:
                     _('File extension not allowed. Allowed extensions: {extensions}')
                     .format(extensions=', '.join(self.allowed_extensions))
                 )
-        
+
         # Check content type
         if self.allowed_content_types:
             if value.content_type not in self.allowed_content_types:

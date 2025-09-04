@@ -1,11 +1,12 @@
-import uuid
 import hashlib
 import secrets
-from typing import Optional, Dict, Any
-from django.core.mail import send_mail
+import uuid
+from typing import Any
+
 from django.conf import settings
-from django.utils.text import slugify
+from django.core.mail import send_mail
 from django.utils import timezone
+from django.utils.text import slugify
 
 
 def generate_uuid():
@@ -37,7 +38,7 @@ def create_slug(text: str, max_length: int = 50) -> str:
     return slug
 
 
-def safe_get_dict_value(dictionary: Dict[str, Any], key: str, default: Any = None) -> Any:
+def safe_get_dict_value(dictionary: dict[str, Any], key: str, default: Any = None) -> Any:
     """Safely get value from dictionary with default"""
     try:
         return dictionary.get(key, default)
@@ -56,14 +57,14 @@ def format_file_size(size_bytes: int) -> str:
     """Format file size in bytes to human readable format"""
     if size_bytes == 0:
         return "0 B"
-    
+
     size_names = ["B", "KB", "MB", "GB", "TB"]
     i = 0
     size_float = float(size_bytes)
     while size_float >= 1024 and i < len(size_names) - 1:
         size_float /= 1024.0
         i += 1
-    
+
     return f"{size_float:.1f} {size_names[i]}"
 
 
@@ -86,7 +87,7 @@ def time_since_creation(created_at) -> str:
     """Get human-readable time since creation"""
     now = timezone.now()
     diff = now - created_at
-    
+
     if diff.days > 0:
         return f"{diff.days} days ago"
     elif diff.seconds > 3600:
@@ -103,7 +104,7 @@ def send_notification_email(
     subject: str,
     message: str,
     recipient_list: list,
-    from_email: Optional[str] = None,
+    from_email: str | None = None,
     fail_silently: bool = False
 ) -> bool:
     """Send notification email"""
@@ -126,21 +127,21 @@ def mask_email(email: str) -> str:
     """Mask email address for privacy"""
     if '@' not in email:
         return email
-    
+
     local, domain = email.split('@', 1)
     if len(local) <= 2:
         masked_local = local[0] + '*' * (len(local) - 1)
     else:
         masked_local = local[0] + '*' * (len(local) - 2) + local[-1]
-    
+
     return f"{masked_local}@{domain}"
 
 
-def validate_json_structure(data: Dict[str, Any], required_fields: list) -> Dict[str, Any]:
+def validate_json_structure(data: dict[str, Any], required_fields: list) -> dict[str, Any]:
     """Validate JSON data has required fields"""
     errors = {}
     for field in required_fields:
         if field not in data:
             errors[field] = f"Field '{field}' is required"
-    
+
     return errors

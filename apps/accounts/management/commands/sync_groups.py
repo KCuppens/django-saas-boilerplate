@@ -1,14 +1,12 @@
-from django.core.management.base import BaseCommand
 from django.contrib.auth.models import Group, Permission
-from django.contrib.contenttypes.models import ContentType
-from django.apps import apps
+from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
     """Management command to sync user groups and their permissions"""
-    
+
     help = "Sync user groups and their permissions"
-    
+
     # Define group permissions mapping
     GROUP_PERMISSIONS = {
         'Admin': {
@@ -23,13 +21,13 @@ class Command(BaseCommand):
                 'accounts.change_userprofile',
                 'accounts.delete_userprofile',
                 'accounts.view_userprofile',
-                
+
                 # Group management
                 'auth.add_group',
                 'auth.change_group',
                 'auth.delete_group',
                 'auth.view_group',
-                
+
                 # Email templates
                 'emails.add_emailtemplate',
                 'emails.change_emailtemplate',
@@ -39,7 +37,7 @@ class Command(BaseCommand):
                 'emails.change_emailmessagelog',
                 'emails.delete_emailmessagelog',
                 'emails.view_emailmessagelog',
-                
+
                 # Feature flags (all waffle permissions)
                 'waffle.add_flag',
                 'waffle.change_flag',
@@ -62,13 +60,13 @@ class Command(BaseCommand):
                 'accounts.change_user',
                 'accounts.view_user',
                 'accounts.view_userprofile',
-                
+
                 # Email templates (manage content)
                 'emails.add_emailtemplate',
                 'emails.change_emailtemplate',
                 'emails.view_emailtemplate',
                 'emails.view_emailmessagelog',
-                
+
                 # View groups
                 'auth.view_group',
             ]
@@ -81,7 +79,7 @@ class Command(BaseCommand):
                 'accounts.view_user',    # Limited to own user via permissions
                 'accounts.change_userprofile',
                 'accounts.view_userprofile',
-                
+
                 # View email templates
                 'emails.view_emailtemplate',
             ]
@@ -97,7 +95,7 @@ class Command(BaseCommand):
             ]
         }
     }
-    
+
     def add_arguments(self, parser):
         parser.add_argument(
             '--dry-run',
@@ -109,22 +107,22 @@ class Command(BaseCommand):
             action='store_true',
             help='Force update existing groups',
         )
-    
+
     def handle(self, *args, **options):
         dry_run = options['dry_run']
         force = options['force']
-        
+
         if dry_run:
             self.stdout.write(
                 self.style.WARNING('DRY RUN MODE - No changes will be made')
             )
-        
+
         created_groups = 0
         updated_groups = 0
-        
+
         for group_name, group_config in self.GROUP_PERMISSIONS.items():
             group, created = Group.objects.get_or_create(name=group_name)
-            
+
             if created:
                 created_groups += 1
                 self.stdout.write(
@@ -142,12 +140,12 @@ class Command(BaseCommand):
                     )
                 )
                 continue
-            
+
             if not dry_run:
                 # Clear existing permissions if updating
                 if not created or force:
                     group.permissions.clear()
-                
+
                 # Add permissions
                 permissions_added = 0
                 for permission_codename in group_config['permissions']:
@@ -171,7 +169,7 @@ class Command(BaseCommand):
                                 f'Invalid permission format: {permission_codename}'
                             )
                         )
-                
+
                 self.stdout.write(
                     f'  Added {permissions_added} permissions to {group_name}'
                 )
@@ -182,7 +180,7 @@ class Command(BaseCommand):
                 )
                 for permission in group_config['permissions']:
                     self.stdout.write(f'    - {permission}')
-        
+
         # Summary
         if not dry_run:
             self.stdout.write(
@@ -198,7 +196,7 @@ class Command(BaseCommand):
                     f'update {updated_groups} groups'
                 )
             )
-        
+
         # Show group summary
         self.stdout.write('\nGroup Summary:')
         for group_name, group_config in self.GROUP_PERMISSIONS.items():

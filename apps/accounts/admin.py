@@ -1,13 +1,14 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.translation import gettext_lazy as _
+
 from .models import User, UserProfile
 
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
     """Admin configuration for User model"""
-    
+
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
         (_('Personal info'), {'fields': ('name', 'avatar', 'last_seen')}),
@@ -40,12 +41,12 @@ class UserProfileInline(admin.StackedInline):
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
     """Admin configuration for UserProfile model"""
-    
+
     list_display = ('user', 'location', 'timezone', 'receive_notifications', 'created_at')
     list_filter = ('timezone', 'language', 'receive_notifications', 'receive_marketing_emails')
     search_fields = ('user__email', 'user__name', 'location')
     readonly_fields = ('created_at', 'updated_at')
-    
+
     fieldsets = (
         (None, {
             'fields': ('user',)

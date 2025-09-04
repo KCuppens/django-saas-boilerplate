@@ -12,7 +12,7 @@ ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 # DATABASE_URL=mysql://user:pass@localhost:3306/dbname
 DATABASES = {
     "default": env.db(
-        "DATABASE_URL", 
+        "DATABASE_URL",
         default=f"sqlite:///{BASE_DIR}/db.sqlite3"
     )
 }

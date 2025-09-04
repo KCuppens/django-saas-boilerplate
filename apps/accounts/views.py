@@ -1,18 +1,18 @@
-from rest_framework import status, permissions
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet
-from rest_framework.mixins import RetrieveModelMixin, UpdateModelMixin
-from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
+from allauth.account import app_settings as allauth_settings
 from django.contrib.auth import get_user_model
 from drf_spectacular.utils import extend_schema, extend_schema_view
-from allauth.account import app_settings as allauth_settings
-from allauth.account.views import ConfirmEmailView
+from rest_framework import permissions, status
+from rest_framework.decorators import action
+from rest_framework.mixins import RetrieveModelMixin, UpdateModelMixin
+from rest_framework.response import Response
+from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
+from rest_framework.viewsets import GenericViewSet
+
 from .serializers import (
-    UserSerializer,
-    UserRegistrationSerializer,
     PasswordChangeSerializer,
-    UserUpdateSerializer
+    UserRegistrationSerializer,
+    UserSerializer,
+    UserUpdateSerializer,
 )
 
 User = get_user_model()
@@ -40,21 +40,21 @@ class AuthThrottle(AnonRateThrottle):
 )
 class UserViewSet(RetrieveModelMixin, UpdateModelMixin, GenericViewSet):
     """ViewSet for user profile management"""
-    
+
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
     throttle_classes = [UserRateThrottle]
-    
+
     def get_object(self):
         """Return the current user"""
         return self.request.user
-    
+
     def get_serializer_class(self):
         """Return appropriate serializer class"""
         if self.action in ['update', 'partial_update']:
             return UserUpdateSerializer
         return UserSerializer
-    
+
     @extend_schema(
         summary="Register new user",
         description="Register a new user account. Email verification will be required if enabled.",
@@ -72,12 +72,12 @@ class UserViewSet(RetrieveModelMixin, UpdateModelMixin, GenericViewSet):
         """Register a new user"""
         serializer = UserRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
+
         user = serializer.save(request)
-        
+
         # Return user data
         user_serializer = UserSerializer(user, context={'request': request})
-        
+
         return Response(
             {
                 'user': user_serializer.data,
@@ -87,7 +87,7 @@ class UserViewSet(RetrieveModelMixin, UpdateModelMixin, GenericViewSet):
             },
             status=status.HTTP_201_CREATED
         )
-    
+
     @extend_schema(
         summary="Change password",
         description="Change the current user's password.",
@@ -107,11 +107,11 @@ class UserViewSet(RetrieveModelMixin, UpdateModelMixin, GenericViewSet):
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        
+
         return Response({
             'message': 'Password changed successfully.'
         })
-    
+
     @extend_schema(
         summary="Update last seen timestamp",
         description="Update the user's last seen timestamp.",
@@ -129,7 +129,7 @@ class UserViewSet(RetrieveModelMixin, UpdateModelMixin, GenericViewSet):
             'message': 'Last seen updated.',
             'last_seen': request.user.last_seen
         })
-    
+
     @extend_schema(
         summary="Delete user account",
         description="Delete the current user's account permanently.",
@@ -145,9 +145,9 @@ class UserViewSet(RetrieveModelMixin, UpdateModelMixin, GenericViewSet):
         user = request.user
         user.is_active = False
         user.save()
-        
+
         # You might want to actually delete the user or just deactivate
         # For compliance reasons, you might want to keep the user record
         # user.delete()
-        
+
         return Response(status=status.HTTP_204_NO_CONTENT)

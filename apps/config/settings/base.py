@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 import environ
@@ -31,7 +30,7 @@ THIRD_PARTY_APPS = [
     "corsheaders",
     "drf_spectacular",
     "allauth",
-    "allauth.account", 
+    "allauth.account",
     "allauth.socialaccount",
     "waffle",
 ]
@@ -90,7 +89,7 @@ WSGI_APPLICATION = "apps.config.wsgi.application"
 # Default to SQLite for easy development, configurable via DATABASE_URL
 DATABASES = {
     "default": env.db(
-        "DATABASE_URL", 
+        "DATABASE_URL",
         default=f"sqlite:///{BASE_DIR}/db.sqlite3"
     )
 }

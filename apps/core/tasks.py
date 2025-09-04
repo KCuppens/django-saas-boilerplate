@@ -1,8 +1,8 @@
+import logging
+
 from celery import shared_task
 from django.contrib.sessions.models import Session
 from django.utils import timezone
-from django.core.management import call_command
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +14,7 @@ def cleanup_expired_sessions():
         expired_sessions = Session.objects.filter(expire_date__lt=timezone.now())
         count = expired_sessions.count()
         expired_sessions.delete()
-        
+
         logger.info(f"Cleaned up {count} expired sessions")
         return {"success": True, "cleaned_sessions": count}
     except Exception as e:
@@ -28,20 +28,20 @@ def health_check():
     try:
         # Perform basic health checks
         from django.db import connection
-        
+
         # Check database connection
         with connection.cursor() as cursor:
             cursor.execute("SELECT 1")
-        
+
         # Check cache connection
         from django.core.cache import cache
         cache.set('health_check', 'ok', 30)
         if cache.get('health_check') != 'ok':
             raise Exception("Cache not working")
-        
+
         logger.info("Health check passed")
         return {"success": True, "timestamp": timezone.now().isoformat()}
-    
+
     except Exception as e:
         logger.error(f"Health check failed: {str(e)}")
         return {"success": False, "error": str(e)}
@@ -53,10 +53,10 @@ def collect_garbage():
     try:
         import gc
         collected = gc.collect()
-        
+
         logger.info(f"Garbage collection completed, collected {collected} objects")
         return {"success": True, "collected_objects": collected}
-    
+
     except Exception as e:
         logger.error(f"Garbage collection failed: {str(e)}")
         return {"success": False, "error": str(e)}

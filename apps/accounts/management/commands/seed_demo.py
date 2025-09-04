@@ -1,18 +1,19 @@
-from django.core.management.base import BaseCommand
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
-from apps.emails.models import EmailTemplate
+from django.core.management.base import BaseCommand
+
 from apps.api.models import Note
-import json
+from apps.emails.models import EmailTemplate
 
 User = get_user_model()
 
 
 class Command(BaseCommand):
     """Management command to seed demo data"""
-    
+
     help = "Create demo users, groups, and sample data for development/testing"
-    
+
     def add_arguments(self, parser):
         parser.add_argument(
             '--reset',
@@ -40,39 +41,39 @@ class Command(BaseCommand):
             action='store_true',
             help='Skip creating demo notes',
         )
-    
+
     def handle(self, *args, **options):
         reset = options['reset']
         password = options['password']
         skip_users = options['skip_users']
         skip_templates = options['skip_templates']
         skip_notes = options['skip_notes']
-        
+
         if reset:
             self.stdout.write(
                 self.style.WARNING('Resetting demo data...')
             )
             self._reset_demo_data()
-        
+
         # Create demo users
         if not skip_users:
             self._create_demo_users(password)
-        
+
         # Create email templates
         if not skip_templates:
             self._create_email_templates()
-        
+
         # Create sample notes
         if not skip_notes:
             self._create_demo_notes()
-        
+
         self.stdout.write(
             self.style.SUCCESS('Demo data seeding completed successfully!')
         )
-        
+
         # Show summary
         self._show_summary()
-    
+
     def _reset_demo_data(self):
         """Delete existing demo data"""
         # Delete demo users (except superusers)
@@ -82,23 +83,23 @@ class Command(BaseCommand):
             'member@example.com',
             'readonly@example.com'
         ]
-        
+
         deleted_users = User.objects.filter(
             email__in=demo_emails,
             is_superuser=False
         ).delete()[0]
-        
+
         if deleted_users > 0:
             self.stdout.write(f'Deleted {deleted_users} demo users')
-        
+
         # Delete demo notes
         deleted_notes = Note.objects.filter(
             title__startswith='Demo:'
         ).delete()[0]
-        
+
         if deleted_notes > 0:
             self.stdout.write(f'Deleted {deleted_notes} demo notes')
-    
+
     def _create_demo_users(self, password):
         """Create demo users with different roles"""
         demo_users = [
@@ -127,9 +128,9 @@ class Command(BaseCommand):
                 'is_staff': False
             }
         ]
-        
+
         created_count = 0
-        
+
         for user_data in demo_users:
             user, created = User.objects.get_or_create(
                 email=user_data['email'],
@@ -139,12 +140,12 @@ class Command(BaseCommand):
                     'is_active': True
                 }
             )
-            
+
             if created:
                 user.set_password(password)
                 user.save()
                 created_count += 1
-                
+
                 # Add to group
                 try:
                     group = Group.objects.get(name=user_data['group'])
@@ -164,7 +165,7 @@ class Command(BaseCommand):
                 self.stdout.write(
                     self.style.NOTICE(f'User {user.email} already exists')
                 )
-        
+
         if created_count > 0:
             self.stdout.write(
                 self.style.SUCCESS(f'Created {created_count} demo users')
@@ -172,7 +173,7 @@ class Command(BaseCommand):
             self.stdout.write(
                 f'Demo user password: {password}'
             )
-    
+
     def _create_email_templates(self):
         """Create demo email templates"""
         templates = [
@@ -288,15 +289,15 @@ The {{ site_name }} Team
                 }
             }
         ]
-        
+
         created_count = 0
-        
+
         for template_data in templates:
             template, created = EmailTemplate.objects.get_or_create(
                 key=template_data['key'],
                 defaults=template_data
             )
-            
+
             if created:
                 created_count += 1
                 self.stdout.write(
@@ -310,12 +311,12 @@ The {{ site_name }} Team
                         f'Email template {template.key} already exists'
                     )
                 )
-        
+
         if created_count > 0:
             self.stdout.write(
                 self.style.SUCCESS(f'Created {created_count} email templates')
             )
-    
+
     def _create_demo_notes(self):
         """Create demo notes"""
         try:
@@ -325,7 +326,7 @@ The {{ site_name }} Team
                 self.style.WARNING('Demo user not found, skipping notes creation')
             )
             return
-        
+
         demo_notes = [
             {
                 'title': 'Demo: Welcome to the API',
@@ -346,9 +347,9 @@ The {{ site_name }} Team
                 'tags': 'demo, features, ideas'
             }
         ]
-        
+
         created_count = 0
-        
+
         for note_data in demo_notes:
             note, created = Note.objects.get_or_create(
                 title=note_data['title'],
@@ -358,7 +359,7 @@ The {{ site_name }} Team
                     'updated_by': demo_user
                 }
             )
-            
+
             if created:
                 created_count += 1
                 self.stdout.write(
@@ -368,50 +369,50 @@ The {{ site_name }} Team
                 self.stdout.write(
                     self.style.NOTICE(f'Note "{note.title}" already exists')
                 )
-        
+
         if created_count > 0:
             self.stdout.write(
                 self.style.SUCCESS(f'Created {created_count} demo notes')
             )
-    
+
     def _show_summary(self):
         """Show summary of created data"""
         self.stdout.write('\n' + '='*50)
         self.stdout.write('DEMO DATA SUMMARY')
         self.stdout.write('='*50)
-        
+
         # Users
         user_count = User.objects.filter(
             email__endswith='@example.com'
         ).count()
         self.stdout.write(f'Demo users: {user_count}')
-        
+
         # Email templates
         template_count = EmailTemplate.objects.count()
         self.stdout.write(f'Email templates: {template_count}')
-        
+
         # Notes
         note_count = Note.objects.filter(
             title__startswith='Demo:'
         ).count()
         self.stdout.write(f'Demo notes: {note_count}')
-        
+
         # Groups
         group_count = Group.objects.count()
         self.stdout.write(f'User groups: {group_count}')
-        
+
         self.stdout.write('\n' + 'LOGIN CREDENTIALS:')
         self.stdout.write('Email: admin@example.com | Password: demo123 (Admin)')
         self.stdout.write('Email: manager@example.com | Password: demo123 (Manager)')
         self.stdout.write('Email: member@example.com | Password: demo123 (Member)')
         self.stdout.write('Email: readonly@example.com | Password: demo123 (ReadOnly)')
-        
+
         self.stdout.write('\n' + 'API ENDPOINTS:')
         self.stdout.write('Health: http://localhost:8000/healthz')
         self.stdout.write('API Schema: http://localhost:8000/schema/swagger/')
         self.stdout.write('User Registration: POST http://localhost:8000/api/v1/auth/users/register/')
         self.stdout.write('Notes API: http://localhost:8000/api/v1/notes/')
-        
+
         if EmailTemplate.objects.exists():
             self.stdout.write('\n' + 'EMAIL TEMPLATES (Development only):')
             self.stdout.write('Template List: http://localhost:8000/dev/emails/')
