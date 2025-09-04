@@ -80,10 +80,10 @@ def version_info(request):
     # Add git info if available
     try:
         import subprocess  # nosec B404
-        git_hash = subprocess.check_output(  # nosec B603,B607
+        git_hash = subprocess.check_output(  # nosec B603
             ['/usr/bin/git', 'rev-parse', 'HEAD'], timeout=10
         ).decode('ascii').strip()
-        git_branch = subprocess.check_output(  # nosec B603,B607
+        git_branch = subprocess.check_output(  # nosec B603
             ['/usr/bin/git', 'rev-parse', '--abbrev-ref', 'HEAD'], timeout=10
         ).decode('ascii').strip()
         version_data.update({
