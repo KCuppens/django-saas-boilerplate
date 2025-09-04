@@ -15,8 +15,14 @@ class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
         fields = [
-            'bio', 'location', 'website', 'phone', 'timezone',
-            'language', 'receive_notifications', 'receive_marketing_emails'
+            "bio",
+            "location",
+            "website",
+            "phone",
+            "timezone",
+            "language",
+            "receive_notifications",
+            "receive_marketing_emails",
         ]
 
 
@@ -24,25 +30,39 @@ class UserSerializer(serializers.ModelSerializer):
     """Serializer for User model"""
 
     profile = UserProfileSerializer(read_only=True)
-    full_name = serializers.CharField(source='get_full_name', read_only=True)
-    short_name = serializers.CharField(source='get_short_name', read_only=True)
+    full_name = serializers.CharField(source="get_full_name", read_only=True)
+    short_name = serializers.CharField(source="get_short_name", read_only=True)
     avatar_url = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = [
-            'id', 'email', 'name', 'avatar', 'avatar_url', 'full_name',
-            'short_name', 'last_seen', 'is_active', 'date_joined',
-            'created_at', 'updated_at', 'profile'
+            "id",
+            "email",
+            "name",
+            "avatar",
+            "avatar_url",
+            "full_name",
+            "short_name",
+            "last_seen",
+            "is_active",
+            "date_joined",
+            "created_at",
+            "updated_at",
+            "profile",
         ]
         read_only_fields = [
-            'id', 'last_seen', 'date_joined', 'created_at', 'updated_at'
+            "id",
+            "last_seen",
+            "date_joined",
+            "created_at",
+            "updated_at",
         ]
 
     def get_avatar_url(self, obj):
         """Get avatar URL"""
         if obj.avatar:
-            request = self.context.get('request')
+            request = self.context.get("request")
             if request:
                 return request.build_absolute_uri(obj.avatar.url)
             return obj.avatar.url
@@ -68,14 +88,14 @@ class UserRegistrationSerializer(serializers.Serializer):
 
     def validate(self, data):
         """Validate passwords match and meet requirements"""
-        if data['password1'] != data['password2']:
+        if data["password1"] != data["password2"]:
             raise serializers.ValidationError("The two password fields didn't match.")
 
-        password = data.get('password1')
+        password = data.get("password1")
         try:
             validate_password(password)
         except Exception as e:
-            raise serializers.ValidationError({'password1': list(e.messages)})
+            raise serializers.ValidationError({"password1": list(e.messages)})
 
         return data
 
@@ -83,12 +103,12 @@ class UserRegistrationSerializer(serializers.Serializer):
         """Create and return a new user"""
         adapter = get_adapter()
         user = adapter.new_user(request)
-        user.email = self.validated_data.get('email')
-        user.name = self.validated_data.get('name', '')
+        user.email = self.validated_data.get("email")
+        user.name = self.validated_data.get("name", "")
 
         adapter.save_user(request, user, form=None)
         setup_user_email(request, user, [])
-        user.set_password(self.validated_data.get('password1'))
+        user.set_password(self.validated_data.get("password1"))
         user.save()
 
         return user
@@ -103,29 +123,31 @@ class PasswordChangeSerializer(serializers.Serializer):
 
     def validate_old_password(self, value):
         """Validate old password is correct"""
-        user = self.context['request'].user
+        user = self.context["request"].user
         if not user.check_password(value):
-            raise serializers.ValidationError("Your old password was entered incorrectly.")
+            raise serializers.ValidationError(
+                "Your old password was entered incorrectly."
+            )
         return value
 
     def validate(self, data):
         """Validate new passwords match and meet requirements"""
-        if data['new_password1'] != data['new_password2']:
+        if data["new_password1"] != data["new_password2"]:
             raise serializers.ValidationError("The two password fields didn't match.")
 
-        password = data.get('new_password1')
-        user = self.context['request'].user
+        password = data.get("new_password1")
+        user = self.context["request"].user
         try:
             validate_password(password, user)
         except Exception as e:
-            raise serializers.ValidationError({'new_password1': list(e.messages)})
+            raise serializers.ValidationError({"new_password1": list(e.messages)})
 
         return data
 
     def save(self):
         """Change user password"""
-        user = self.context['request'].user
-        password = self.validated_data['new_password1']
+        user = self.context["request"].user
+        password = self.validated_data["new_password1"]
         user.set_password(password)
         user.save()
         return user
@@ -138,11 +160,11 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['name', 'avatar', 'profile']
+        fields = ["name", "avatar", "profile"]
 
     def update(self, instance, validated_data):
         """Update user and profile"""
-        profile_data = validated_data.pop('profile', None)
+        profile_data = validated_data.pop("profile", None)
 
         # Update user fields
         for attr, value in validated_data.items():
@@ -150,7 +172,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         instance.save()
 
         # Update profile fields
-        if profile_data and hasattr(instance, 'profile'):
+        if profile_data and hasattr(instance, "profile"):
             profile = instance.profile
             for attr, value in profile_data.items():
                 setattr(profile, attr, value)

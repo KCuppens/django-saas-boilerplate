@@ -13,8 +13,7 @@ class NoteModelTest(APITestCase):
 
     def setUp(self):
         self.user = User.objects.create_user(
-            email="test@example.com",
-            password="testpass123"
+            email="test@example.com", password="testpass123"
         )
 
     def test_create_note(self):
@@ -23,7 +22,7 @@ class NoteModelTest(APITestCase):
             title="Test Note",
             content="This is a test note",
             created_by=self.user,
-            updated_by=self.user
+            updated_by=self.user,
         )
 
         self.assertEqual(note.title, "Test Note")
@@ -46,44 +45,43 @@ class NoteAPITest(APITestCase):
 
     def setUp(self):
         self.user = User.objects.create_user(
-            email="test@example.com",
-            password="testpass123"
+            email="test@example.com", password="testpass123"
         )
         self.note = Note.objects.create(
             title="Test Note",
             content="Test content",
             created_by=self.user,
-            updated_by=self.user
+            updated_by=self.user,
         )
 
     def test_list_notes_authenticated(self):
         """Test listing notes for authenticated user"""
         self.client.force_authenticate(user=self.user)
-        url = reverse('note-list')
+        url = reverse("note-list")
 
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data['results']), 1)
+        self.assertEqual(len(response.data["results"]), 1)
 
     def test_create_note(self):
         """Test creating a new note"""
         self.client.force_authenticate(user=self.user)
-        url = reverse('note-list')
+        url = reverse("note-list")
         data = {
-            'title': 'New Note',
-            'content': 'New content',
-            'tag_list': ['test', 'api']
+            "title": "New Note",
+            "content": "New content",
+            "tag_list": ["test", "api"],
         }
 
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertTrue(Note.objects.filter(title='New Note').exists())
+        self.assertTrue(Note.objects.filter(title="New Note").exists())
 
     def test_list_notes_unauthenticated(self):
         """Test listing notes for unauthenticated user"""
-        url = reverse('note-list')
+        url = reverse("note-list")
 
         response = self.client.get(url)
 
@@ -95,28 +93,28 @@ class HealthCheckAPITest(APITestCase):
 
     def test_health_check(self):
         """Test health check endpoint"""
-        url = reverse('health-list')
+        url = reverse("health-list")
 
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['status'], 'healthy')
-        self.assertTrue('timestamp' in response.data)
+        self.assertEqual(response.data["status"], "healthy")
+        self.assertTrue("timestamp" in response.data)
 
     def test_readiness_check(self):
         """Test readiness check endpoint"""
-        url = reverse('health-ready')
+        url = reverse("health-ready")
 
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['status'], 'ready')
+        self.assertEqual(response.data["status"], "ready")
 
     def test_liveness_check(self):
         """Test liveness check endpoint"""
-        url = reverse('health-live')
+        url = reverse("health-live")
 
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['status'], 'alive')
+        self.assertEqual(response.data["status"], "alive")

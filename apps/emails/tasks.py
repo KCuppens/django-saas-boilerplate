@@ -7,7 +7,7 @@ from .models import EmailMessageLog
 logger = logging.getLogger(__name__)
 
 
-@shared_task(name='apps.emails.tasks.send_email_task', bind=True)
+@shared_task(name="apps.emails.tasks.send_email_task", bind=True)
 def send_email_task(self, email_log_id: int):
     """
     Celery task to send email asynchronously
@@ -30,28 +30,24 @@ def send_email_task(self, email_log_id: int):
         if success:
             logger.info(f"Email task completed successfully for {email_log.to_email}")
             return {
-                'success': True,
-                'email_log_id': email_log_id,
-                'to_email': email_log.to_email,
-                'subject': email_log.subject
+                "success": True,
+                "email_log_id": email_log_id,
+                "to_email": email_log.to_email,
+                "subject": email_log.subject,
             }
         else:
             logger.error(f"Email task failed for {email_log.to_email}")
             return {
-                'success': False,
-                'email_log_id': email_log_id,
-                'to_email': email_log.to_email,
-                'error': email_log.error_message
+                "success": False,
+                "email_log_id": email_log_id,
+                "to_email": email_log.to_email,
+                "error": email_log.error_message,
             }
 
     except EmailMessageLog.DoesNotExist:
         error_msg = f"EmailMessageLog with id {email_log_id} not found"
         logger.error(error_msg)
-        return {
-            'success': False,
-            'error': error_msg,
-            'email_log_id': email_log_id
-        }
+        return {"success": False, "error": error_msg, "email_log_id": email_log_id}
 
     except Exception as e:
         error_msg = f"Unexpected error in email task: {str(e)}"
@@ -65,14 +61,10 @@ def send_email_task(self, email_log_id: int):
             pass
 
         # Retry the task up to 3 times with exponential backoff
-        raise self.retry(
-            exc=e,
-            countdown=60 * (2 ** self.request.retries),
-            max_retries=3
-        )
+        raise self.retry(exc=e, countdown=60 * (2**self.request.retries), max_retries=3)
 
 
-@shared_task(name='apps.emails.tasks.cleanup_old_email_logs')
+@shared_task(name="apps.emails.tasks.cleanup_old_email_logs")
 def cleanup_old_email_logs(days_to_keep: int = 30):
     """
     Celery task to clean up old email logs
@@ -98,23 +90,22 @@ def cleanup_old_email_logs(days_to_keep: int = 30):
         logger.info(f"Cleaned up {deleted_count} old email logs")
 
         return {
-            'success': True,
-            'deleted_count': deleted_count,
-            'cutoff_date': cutoff_date.isoformat(),
-            'days_kept': days_to_keep
+            "success": True,
+            "deleted_count": deleted_count,
+            "cutoff_date": cutoff_date.isoformat(),
+            "days_kept": days_to_keep,
         }
 
     except Exception as e:
         error_msg = f"Failed to cleanup old email logs: {str(e)}"
         logger.error(error_msg)
-        return {
-            'success': False,
-            'error': error_msg
-        }
+        return {"success": False, "error": error_msg}
 
 
-@shared_task(name='apps.emails.tasks.send_bulk_email_task')
-def send_bulk_email_task(template_key: str, recipient_emails: list, context: dict | None = None):
+@shared_task(name="apps.emails.tasks.send_bulk_email_task")
+def send_bulk_email_task(
+    template_key: str, recipient_emails: list, context: dict | None = None
+):
     """
     Celery task to send bulk emails
 
@@ -139,12 +130,12 @@ def send_bulk_email_task(template_key: str, recipient_emails: list, context: dic
                     template_key=template_key,
                     to_email=email,
                     context=context or {},
-                    async_send=False  # Send synchronously within this task
+                    async_send=False,  # Send synchronously within this task
                 )
                 sent_count += 1
             except Exception as e:
                 failed_count += 1
-                failed_emails.append({'email': email, 'error': str(e)})
+                failed_emails.append({"email": email, "error": str(e)})
                 logger.error(f"Failed to send bulk email to {email}: {str(e)}")
 
         logger.info(
@@ -152,26 +143,26 @@ def send_bulk_email_task(template_key: str, recipient_emails: list, context: dic
         )
 
         return {
-            'success': True,
-            'sent_count': sent_count,
-            'failed_count': failed_count,
-            'failed_emails': failed_emails,
-            'template_key': template_key,
-            'total_recipients': len(recipient_emails)
+            "success": True,
+            "sent_count": sent_count,
+            "failed_count": failed_count,
+            "failed_emails": failed_emails,
+            "template_key": template_key,
+            "total_recipients": len(recipient_emails),
         }
 
     except Exception as e:
         error_msg = f"Bulk email task failed: {str(e)}"
         logger.error(error_msg)
         return {
-            'success': False,
-            'error': error_msg,
-            'template_key': template_key,
-            'total_recipients': len(recipient_emails) if recipient_emails else 0
+            "success": False,
+            "error": error_msg,
+            "template_key": template_key,
+            "total_recipients": len(recipient_emails) if recipient_emails else 0,
         }
 
 
-@shared_task(name='apps.emails.tasks.retry_failed_emails')
+@shared_task(name="apps.emails.tasks.retry_failed_emails")
 def retry_failed_emails(max_retries: int = 3):
     """
     Celery task to retry failed emails
@@ -192,8 +183,7 @@ def retry_failed_emails(max_retries: int = 3):
         # Get failed emails from the last 24 hours
         cutoff_time = timezone.now() - timedelta(hours=24)
         failed_emails = EmailMessageLog.objects.filter(
-            status=EmailStatus.FAILED,
-            created_at__gte=cutoff_time
+            status=EmailStatus.FAILED, created_at__gte=cutoff_time
         )[:100]  # Limit to 100 at a time
 
         retried_count = 0
@@ -204,12 +194,12 @@ def retry_failed_emails(max_retries: int = 3):
                 # Reset status to pending
                 email_log.status = EmailStatus.PENDING
                 email_log.error_message = ""
-                email_log.save(update_fields=['status', 'error_message'])
+                email_log.save(update_fields=["status", "error_message"])
 
                 # Retry sending
                 task = send_email_task.delay(email_log.id)  # type: ignore
                 email_log.celery_task_id = task.id
-                email_log.save(update_fields=['celery_task_id'])
+                email_log.save(update_fields=["celery_task_id"])
 
                 retried_count += 1
 
@@ -219,15 +209,12 @@ def retry_failed_emails(max_retries: int = 3):
         logger.info(f"Retried {retried_count} failed emails")
 
         return {
-            'success': True,
-            'retried_count': retried_count,
-            'success_count': success_count
+            "success": True,
+            "retried_count": retried_count,
+            "success_count": success_count,
         }
 
     except Exception as e:
         error_msg = f"Failed to retry failed emails: {str(e)}"
         logger.error(error_msg)
-        return {
-            'success': False,
-            'error': error_msg
-        }
+        return {"success": False, "error": error_msg}

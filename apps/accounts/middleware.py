@@ -10,7 +10,8 @@ class LastSeenMiddleware(MiddlewareMixin):
         if request.user.is_authenticated:
             # Update last_seen every 5 minutes to avoid too many DB writes
             now = timezone.now()
-            if not hasattr(request.user, 'last_seen') or \
-               (request.user.last_seen and (now - request.user.last_seen).seconds > 300):
+            if not hasattr(request.user, "last_seen") or (
+                request.user.last_seen and (now - request.user.last_seen).seconds > 300
+            ):
                 request.user.update_last_seen()
         return None

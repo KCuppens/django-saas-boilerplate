@@ -20,25 +20,25 @@ class FileService:
 
     # File type mappings
     FILE_TYPE_MAP = {
-        'image/jpeg': FileType.IMAGE,
-        'image/png': FileType.IMAGE,
-        'image/gif': FileType.IMAGE,
-        'image/webp': FileType.IMAGE,
-        'image/svg+xml': FileType.IMAGE,
-        'application/pdf': FileType.DOCUMENT,
-        'application/msword': FileType.DOCUMENT,
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': FileType.DOCUMENT,
-        'text/plain': FileType.DOCUMENT,
-        'text/csv': FileType.DOCUMENT,
-        'video/mp4': FileType.VIDEO,
-        'video/webm': FileType.VIDEO,
-        'video/quicktime': FileType.VIDEO,
-        'audio/mpeg': FileType.AUDIO,
-        'audio/wav': FileType.AUDIO,
-        'audio/ogg': FileType.AUDIO,
-        'application/zip': FileType.ARCHIVE,
-        'application/x-tar': FileType.ARCHIVE,
-        'application/gzip': FileType.ARCHIVE,
+        "image/jpeg": FileType.IMAGE,
+        "image/png": FileType.IMAGE,
+        "image/gif": FileType.IMAGE,
+        "image/webp": FileType.IMAGE,
+        "image/svg+xml": FileType.IMAGE,
+        "application/pdf": FileType.DOCUMENT,
+        "application/msword": FileType.DOCUMENT,
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document": FileType.DOCUMENT,
+        "text/plain": FileType.DOCUMENT,
+        "text/csv": FileType.DOCUMENT,
+        "video/mp4": FileType.VIDEO,
+        "video/webm": FileType.VIDEO,
+        "video/quicktime": FileType.VIDEO,
+        "audio/mpeg": FileType.AUDIO,
+        "audio/wav": FileType.AUDIO,
+        "audio/ogg": FileType.AUDIO,
+        "application/zip": FileType.ARCHIVE,
+        "application/x-tar": FileType.ARCHIVE,
+        "application/gzip": FileType.ARCHIVE,
     }
 
     @classmethod
@@ -49,7 +49,7 @@ class FileService:
         description: str = "",
         tags: str = "",
         is_public: bool = False,
-        expires_at = None
+        expires_at=None,
     ) -> FileUpload:
         """Upload a file and create a FileUpload record"""
 
@@ -65,7 +65,7 @@ class FileService:
         file.seek(0)  # Reset file pointer
 
         # Determine file type
-        mime_type = getattr(file, 'content_type', 'application/octet-stream')
+        mime_type = getattr(file, "content_type", "application/octet-stream")
         file_type = cls.FILE_TYPE_MAP.get(mime_type, FileType.OTHER)
 
         # Store file
@@ -85,7 +85,7 @@ class FileService:
             tags=tags,
             expires_at=expires_at,
             created_by=user,
-            updated_by=user
+            updated_by=user,
         )
 
         logger.info(f"File uploaded: {file.name} -> {stored_path} by user {user.id}")
@@ -97,26 +97,27 @@ class FileService:
         """Get signed download URL for file"""
 
         # For public files, return direct URL
-        if file_upload.is_public and hasattr(default_storage, 'url'):
+        if file_upload.is_public and hasattr(default_storage, "url"):
             try:
                 return default_storage.url(file_upload.storage_path)
             except Exception as e:
-                logger.warning(f"Failed to generate direct URL for file {file_upload.id}: {e}")
+                logger.warning(
+                    f"Failed to generate direct URL for file {file_upload.id}: {e}"
+                )
 
         # For private files or S3, generate signed URL
-        if hasattr(default_storage, 'generate_presigned_url'):
+        if hasattr(default_storage, "generate_presigned_url"):
             try:
                 return default_storage.generate_presigned_url(
-                    file_upload.storage_path,
-                    expires_in=expires_in,
-                    method='GET'
+                    file_upload.storage_path, expires_in=expires_in, method="GET"
                 )
             except Exception as e:
                 logger.error(f"Failed to generate presigned URL: {str(e)}")
 
         # Fallback to local file serving (development)
         from django.urls import reverse
-        return reverse('file_download', kwargs={'file_id': file_upload.id})
+
+        return reverse("file_download", kwargs={"file_id": file_upload.id})
 
     @classmethod
     def get_upload_url(
@@ -124,11 +125,11 @@ class FileService:
         storage_path: str,
         expires_in: int = 3600,
         content_type: str | None = None,
-        max_size: int | None = None
+        max_size: int | None = None,
     ) -> dict[str, Any]:
         """Get signed upload URL and required fields"""
 
-        if hasattr(default_storage, 'generate_presigned_post'):
+        if hasattr(default_storage, "generate_presigned_post"):
             try:
                 conditions = []
                 if content_type:
@@ -137,19 +138,15 @@ class FileService:
                     conditions.append(["content-length-range", "0", str(max_size)])
 
                 return default_storage.generate_presigned_post(
-                    storage_path,
-                    expires_in=expires_in,
-                    conditions=conditions
+                    storage_path, expires_in=expires_in, conditions=conditions
                 )
             except Exception as e:
                 logger.error(f"Failed to generate presigned upload URL: {str(e)}")
 
         # Fallback for local development
         from django.urls import reverse
-        return {
-            'url': reverse('file_upload'),
-            'fields': {}
-        }
+
+        return {"url": reverse("file_upload"), "fields": {}}
 
     @classmethod
     def delete_file(cls, file_upload: FileUpload) -> bool:
@@ -180,35 +177,52 @@ class FileService:
         # Check file size
         max_size_bytes = max_size_mb * 1024 * 1024
         if file.size > max_size_bytes:
-            errors.append(f"File size ({file.size} bytes) exceeds maximum allowed ({max_size_bytes} bytes)")
+            errors.append(
+                f"File size ({file.size} bytes) exceeds maximum allowed ({max_size_bytes} bytes)"
+            )
 
         # Check file extension
-        allowed_extensions = getattr(settings, 'ALLOWED_FILE_EXTENSIONS', [
-            '.jpg', '.jpeg', '.png', '.gif', '.pdf', '.doc', '.docx', '.txt', '.csv'
-        ])
+        allowed_extensions = getattr(
+            settings,
+            "ALLOWED_FILE_EXTENSIONS",
+            [".jpg", ".jpeg", ".png", ".gif", ".pdf", ".doc", ".docx", ".txt", ".csv"],
+        )
 
         file_extension = os.path.splitext(file.name)[1].lower()
         if file_extension not in allowed_extensions:
             errors.append(f"File extension '{file_extension}' not allowed")
 
         # Check MIME type
-        mime_type = getattr(file, 'content_type', 'application/octet-stream')
-        allowed_mime_types = getattr(settings, 'ALLOWED_MIME_TYPES', list(cls.FILE_TYPE_MAP.keys()))
+        mime_type = getattr(file, "content_type", "application/octet-stream")
+        allowed_mime_types = getattr(
+            settings, "ALLOWED_MIME_TYPES", list(cls.FILE_TYPE_MAP.keys())
+        )
 
         if mime_type not in allowed_mime_types:
             warnings.append(f"MIME type '{mime_type}' may not be supported")
 
         # Check for potential security issues
-        dangerous_extensions = ['.exe', '.bat', '.cmd', '.com', '.pif', '.scr', '.vbs', '.js']
+        dangerous_extensions = [
+            ".exe",
+            ".bat",
+            ".cmd",
+            ".com",
+            ".pif",
+            ".scr",
+            ".vbs",
+            ".js",
+        ]
         if file_extension in dangerous_extensions:
-            errors.append(f"File type '{file_extension}' is not allowed for security reasons")
+            errors.append(
+                f"File type '{file_extension}' is not allowed for security reasons"
+            )
 
         return {
-            'valid': len(errors) == 0,
-            'errors': errors,
-            'warnings': warnings,
-            'file_type': cls.FILE_TYPE_MAP.get(mime_type, FileType.OTHER),
-            'mime_type': mime_type
+            "valid": len(errors) == 0,
+            "errors": errors,
+            "warnings": warnings,
+            "file_type": cls.FILE_TYPE_MAP.get(mime_type, FileType.OTHER),
+            "mime_type": mime_type,
         }
 
     @classmethod
@@ -217,9 +231,7 @@ class FileService:
 
         from django.utils import timezone
 
-        expired_files = FileUpload.objects.filter(
-            expires_at__lt=timezone.now()
-        )
+        expired_files = FileUpload.objects.filter(expires_at__lt=timezone.now())
 
         deleted_count = 0
         error_count = 0
@@ -230,7 +242,4 @@ class FileService:
             else:
                 error_count += 1
 
-        return {
-            'deleted': deleted_count,
-            'errors': error_count
-        }
+        return {"deleted": deleted_count, "errors": error_count}

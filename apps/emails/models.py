@@ -18,15 +18,19 @@ class EmailTemplate(TimestampMixin, UserTrackingMixin):
         "Template key",
         max_length=100,
         unique=True,
-        help_text="Unique key to identify this template"
+        help_text="Unique key to identify this template",
     )
     name = models.CharField("Template name", max_length=200)
     description = models.TextField("Description", blank=True)
 
     # Email content
     subject = models.CharField("Email subject", max_length=255)
-    html_content = models.TextField("HTML content", help_text="HTML version of the email")
-    text_content = models.TextField("Text content", help_text="Plain text version of the email")
+    html_content = models.TextField(
+        "HTML content", help_text="HTML version of the email"
+    )
+    text_content = models.TextField(
+        "Text content", help_text="Plain text version of the email"
+    )
 
     # Template configuration
     is_active = models.BooleanField("Active", default=True)
@@ -38,14 +42,14 @@ class EmailTemplate(TimestampMixin, UserTrackingMixin):
         "Template variables",
         default=dict,
         blank=True,
-        help_text="JSON object describing available template variables"
+        help_text="JSON object describing available template variables",
     )
 
     class Meta:
         verbose_name = "Email Template"
         verbose_name_plural = "Email Templates"
-        ordering = ['category', 'name']
-        unique_together = [['key', 'language']]
+        ordering = ["category", "name"]
+        unique_together = [["key", "language"]]
 
     def __str__(self):
         return f"{self.name} ({self.key})"
@@ -84,13 +88,13 @@ class EmailTemplate(TimestampMixin, UserTrackingMixin):
     def render_all(self, context_data=None):
         """Render all parts of the email"""
         return {
-            'subject': self.render_subject(context_data),
-            'html_content': self.render_html(context_data),
-            'text_content': self.render_text(context_data)
+            "subject": self.render_subject(context_data),
+            "html_content": self.render_html(context_data),
+            "text_content": self.render_text(context_data),
         }
 
     @classmethod
-    def get_template(cls, key, language='en'):
+    def get_template(cls, key, language="en"):
         """Get template by key with caching"""
         cache_key = f"email_template:{key}:{language}"
         template = cache.get(cache_key)
@@ -101,8 +105,8 @@ class EmailTemplate(TimestampMixin, UserTrackingMixin):
                 cache.set(cache_key, template, timeout=3600)  # Cache for 1 hour
             except cls.DoesNotExist:
                 # Try to get default language template
-                if language != 'en':
-                    return cls.get_template(key, 'en')
+                if language != "en":
+                    return cls.get_template(key, "en")
                 return None
 
         return template
@@ -117,15 +121,19 @@ class EmailMessageLog(TimestampMixin):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        help_text="Template used (if any)"
+        help_text="Template used (if any)",
     )
     template_key = models.CharField("Template key", max_length=100, blank=True)
 
     # Recipients
     to_email = models.EmailField("To email")
     from_email = models.EmailField("From email")
-    cc = models.TextField("CC recipients", blank=True, help_text="JSON array of email addresses")
-    bcc = models.TextField("BCC recipients", blank=True, help_text="JSON array of email addresses")
+    cc = models.TextField(
+        "CC recipients", blank=True, help_text="JSON array of email addresses"
+    )
+    bcc = models.TextField(
+        "BCC recipients", blank=True, help_text="JSON array of email addresses"
+    )
 
     # Content
     subject = models.CharField("Subject", max_length=255)
@@ -137,16 +145,13 @@ class EmailMessageLog(TimestampMixin):
         "Status",
         max_length=20,
         choices=EmailStatus.choices,
-        default=EmailStatus.PENDING
+        default=EmailStatus.PENDING,
     )
     celery_task_id = models.CharField("Celery task ID", max_length=255, blank=True)
 
     # Metadata
     context_data = models.JSONField(
-        "Context data",
-        default=dict,
-        blank=True,
-        help_text="Template context data used"
+        "Context data", default=dict, blank=True, help_text="Template context data used"
     )
     error_message = models.TextField("Error message", blank=True)
 
@@ -162,17 +167,17 @@ class EmailMessageLog(TimestampMixin):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        help_text="User who triggered the email (if any)"
+        help_text="User who triggered the email (if any)",
     )
 
     class Meta:
         verbose_name = "Email Message Log"
         verbose_name_plural = "Email Message Logs"
-        ordering = ['-created_at']
+        ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=['status', 'created_at']),
-            models.Index(fields=['to_email', 'created_at']),
-            models.Index(fields=['template_key', 'created_at']),
+            models.Index(fields=["status", "created_at"]),
+            models.Index(fields=["to_email", "created_at"]),
+            models.Index(fields=["template_key", "created_at"]),
         ]
 
     def __str__(self):
@@ -217,33 +222,37 @@ class EmailMessageLog(TimestampMixin):
     def mark_as_sent(self):
         """Mark email as sent"""
         from django.utils import timezone
+
         self.status = EmailStatus.SENT
         self.sent_at = timezone.now()
-        self.save(update_fields=['status', 'sent_at'])
+        self.save(update_fields=["status", "sent_at"])
 
     def mark_as_failed(self, error_message=""):
         """Mark email as failed"""
         self.status = EmailStatus.FAILED
         self.error_message = error_message
-        self.save(update_fields=['status', 'error_message'])
+        self.save(update_fields=["status", "error_message"])
 
     def mark_as_delivered(self):
         """Mark email as delivered"""
         from django.utils import timezone
+
         self.status = EmailStatus.DELIVERED
         self.delivered_at = timezone.now()
-        self.save(update_fields=['status', 'delivered_at'])
+        self.save(update_fields=["status", "delivered_at"])
 
     def mark_as_opened(self):
         """Mark email as opened"""
         from django.utils import timezone
+
         self.status = EmailStatus.OPENED
         self.opened_at = timezone.now()
-        self.save(update_fields=['status', 'opened_at'])
+        self.save(update_fields=["status", "opened_at"])
 
     def mark_as_clicked(self):
         """Mark email as clicked"""
         from django.utils import timezone
+
         self.status = EmailStatus.CLICKED
         self.clicked_at = timezone.now()
-        self.save(update_fields=['status', 'clicked_at'])
+        self.save(update_fields=["status", "clicked_at"])

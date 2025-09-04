@@ -41,11 +41,11 @@ class IsOwnerOrAdmin(permissions.BasePermission):
             return True
 
         # Check if object has a user field
-        if hasattr(obj, 'user'):
+        if hasattr(obj, "user"):
             return obj.user == request.user
 
         # Check if object has a created_by field
-        if hasattr(obj, 'created_by'):
+        if hasattr(obj, "created_by"):
             return obj.created_by == request.user
 
         # Default to checking if obj is the user themselves

@@ -3,6 +3,7 @@ from django.db import models
 
 class UserRole(models.TextChoices):
     """User role choices"""
+
     ADMIN = "admin", "Admin"
     MANAGER = "manager", "Manager"
     MEMBER = "member", "Member"
@@ -11,6 +12,7 @@ class UserRole(models.TextChoices):
 
 class EmailStatus(models.TextChoices):
     """Email status choices"""
+
     PENDING = "pending", "Pending"
     SENT = "sent", "Sent"
     FAILED = "failed", "Failed"
@@ -22,6 +24,7 @@ class EmailStatus(models.TextChoices):
 
 class FileType(models.TextChoices):
     """File type choices"""
+
     IMAGE = "image", "Image"
     DOCUMENT = "document", "Document"
     VIDEO = "video", "Video"
@@ -32,6 +35,7 @@ class FileType(models.TextChoices):
 
 class NotificationType(models.TextChoices):
     """Notification type choices"""
+
     INFO = "info", "Info"
     SUCCESS = "success", "Success"
     WARNING = "warning", "Warning"
@@ -40,6 +44,7 @@ class NotificationType(models.TextChoices):
 
 class Priority(models.TextChoices):
     """Priority choices"""
+
     LOW = "low", "Low"
     MEDIUM = "medium", "Medium"
     HIGH = "high", "High"
@@ -48,6 +53,7 @@ class Priority(models.TextChoices):
 
 class Status(models.TextChoices):
     """Generic status choices"""
+
     DRAFT = "draft", "Draft"
     ACTIVE = "active", "Active"
     INACTIVE = "inactive", "Inactive"
@@ -57,6 +63,7 @@ class Status(models.TextChoices):
 
 class TaskStatus(models.TextChoices):
     """Task status choices"""
+
     PENDING = "pending", "Pending"
     IN_PROGRESS = "in_progress", "In Progress"
     COMPLETED = "completed", "Completed"

@@ -11,10 +11,7 @@ ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 # DATABASE_URL=postgres://user:pass@localhost:5432/dbname
 # DATABASE_URL=mysql://user:pass@localhost:3306/dbname
 DATABASES = {
-    "default": env.db(
-        "DATABASE_URL",
-        default=f"sqlite:///{BASE_DIR}/db.sqlite3"
-    )
+    "default": env.db("DATABASE_URL", default=f"sqlite:///{BASE_DIR}/db.sqlite3")
 }
 
 # Email backend for development

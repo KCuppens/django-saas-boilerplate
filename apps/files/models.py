@@ -19,10 +19,7 @@ class FileUpload(TimestampMixin, UserTrackingMixin):
 
     # File metadata
     file_type = models.CharField(
-        "File type",
-        max_length=20,
-        choices=FileType.choices,
-        default=FileType.OTHER
+        "File type", max_length=20, choices=FileType.choices, default=FileType.OTHER
     )
     mime_type = models.CharField("MIME type", max_length=100)
     file_size = models.PositiveIntegerField("File size (bytes)")
@@ -57,6 +54,7 @@ class FileUpload(TimestampMixin, UserTrackingMixin):
     def file_size_human(self):
         """Human readable file size"""
         from apps.core.utils import format_file_size
+
         return format_file_size(self.file_size)
 
     @property
@@ -65,6 +63,7 @@ class FileUpload(TimestampMixin, UserTrackingMixin):
         if not self.expires_at:
             return False
         from django.utils import timezone
+
         return timezone.now() > self.expires_at
 
     @property
@@ -100,14 +99,16 @@ class FileUpload(TimestampMixin, UserTrackingMixin):
     def increment_download_count(self):
         """Increment download counter"""
         self.download_count += 1
-        self.save(update_fields=['download_count'])
+        self.save(update_fields=["download_count"])
 
     def get_download_url(self, expires_in=3600):
         """Get signed download URL"""
         from .services import FileService
+
         return FileService.get_download_url(self, expires_in)
 
     def get_upload_url(self, expires_in=3600):
         """Get signed upload URL"""
         from .services import FileService
+
         return FileService.get_upload_url(self.storage_path, expires_in)

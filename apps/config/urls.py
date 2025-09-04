@@ -11,19 +11,21 @@ from drf_spectacular.views import (
 urlpatterns = [
     # Admin
     path("admin/", admin.site.urls),
-
     # API Schema
     path("schema/", SpectacularAPIView.as_view(), name="schema"),
-    path("schema/swagger/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
-    path("schema/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
-
+    path(
+        "schema/swagger/",
+        SpectacularSwaggerView.as_view(url_name="schema"),
+        name="swagger-ui",
+    ),
+    path(
+        "schema/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"
+    ),
     # API endpoints
     path("api/v1/", include("apps.api.urls")),
-
     # Authentication
     path("auth/", include("apps.accounts.urls")),
     path("accounts/", include("allauth.urls")),
-
     # Operations
     path("", include("apps.ops.urls")),
 ]

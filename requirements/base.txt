@@ -1,6 +1,9 @@
 # Base requirements for Django SaaS Boilerplate
 # Core Django and framework dependencies
 
+# Core Python packages
+setuptools>=78.1.1  # Security fix for PYSEC-2022-43012, PYSEC-2025-49
+
 # Django Framework
 Django>=4.2,<5.0
 

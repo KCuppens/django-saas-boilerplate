@@ -23,7 +23,7 @@ class UserTrackingMixin(models.Model):
         null=True,
         blank=True,
         related_name="%(app_label)s_%(class)s_created",
-        verbose_name="Created by"
+        verbose_name="Created by",
     )
     updated_by = models.ForeignKey(
         User,
@@ -31,7 +31,7 @@ class UserTrackingMixin(models.Model):
         null=True,
         blank=True,
         related_name="%(app_label)s_%(class)s_updated",
-        verbose_name="Updated by"
+        verbose_name="Updated by",
     )
 
     class Meta:
@@ -56,7 +56,7 @@ class SoftDeleteMixin(models.Model):
         null=True,
         blank=True,
         related_name="%(app_label)s_%(class)s_deleted",
-        verbose_name="Deleted by"
+        verbose_name="Deleted by",
     )
 
     class Meta:
@@ -66,6 +66,7 @@ class SoftDeleteMixin(models.Model):
         """Override delete to provide soft delete by default"""
         if soft:
             from django.utils import timezone
+
             self.is_deleted = True
             self.deleted_at = timezone.now()
             self.save()

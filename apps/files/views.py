@@ -23,23 +23,23 @@ from .services import FileService
 logger = logging.getLogger(__name__)
 
 
-@require_feature_flag('FILES')
+@require_feature_flag("FILES")
 @extend_schema_view(
     list=extend_schema(
         summary="List files",
-        description="Get a list of files. Users can see their own files and public files."
+        description="Get a list of files. Users can see their own files and public files.",
     ),
     create=extend_schema(
         summary="Upload file",
-        description="Upload a new file. The authenticated user will be set as the owner."
+        description="Upload a new file. The authenticated user will be set as the owner.",
     ),
     retrieve=extend_schema(
         summary="Get file details",
-        description="Get file metadata. Users can only access their own files or public files."
+        description="Get file metadata. Users can only access their own files or public files.",
     ),
     destroy=extend_schema(
         summary="Delete file",
-        description="Delete a file. Users can only delete their own files."
+        description="Delete a file. Users can only delete their own files.",
     ),
 )
 class FileUploadViewSet(viewsets.ModelViewSet):
@@ -51,62 +51,62 @@ class FileUploadViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Get files based on user permissions"""
-        queryset = FileUpload.objects.select_related('created_by', 'updated_by')
+        queryset = FileUpload.objects.select_related("created_by", "updated_by")
 
         # Users can see their own files and public files
         if not self.request.user.is_admin():
             from django.db.models import Q
+
             queryset = queryset.filter(
                 Q(created_by=self.request.user) | Q(is_public=True)
             )
 
         # Filter by file type
-        file_type = self.request.query_params.get('file_type')
+        file_type = self.request.query_params.get("file_type")
         if file_type:
             queryset = queryset.filter(file_type=file_type)
 
         # Filter by public status
-        is_public = self.request.query_params.get('is_public')
+        is_public = self.request.query_params.get("is_public")
         if is_public is not None:
-            queryset = queryset.filter(is_public=is_public.lower() == 'true')
+            queryset = queryset.filter(is_public=is_public.lower() == "true")
 
         return queryset
 
     def get_serializer_class(self):
         """Return appropriate serializer class"""
-        if self.action == 'create':
+        if self.action == "create":
             return FileUploadCreateSerializer
         return FileUploadSerializer
 
     def perform_create(self, serializer):
         """Handle file upload"""
-        file = self.request.FILES['file']
+        file = self.request.FILES["file"]
 
         # Validate file
         validation = FileService.validate_file(file)
-        if not validation['valid']:
+        if not validation["valid"]:
             return Response(
-                {'errors': validation['errors']},
-                status=status.HTTP_400_BAD_REQUEST
+                {"errors": validation["errors"]}, status=status.HTTP_400_BAD_REQUEST
             )
 
         # Upload file
         file_upload = FileService.upload_file(
             file=file,
             user=self.request.user,
-            description=serializer.validated_data.get('description', ''),
-            tags=serializer.validated_data.get('tags', ''),
-            is_public=serializer.validated_data.get('is_public', False),
-            expires_at=serializer.validated_data.get('expires_at')
+            description=serializer.validated_data.get("description", ""),
+            tags=serializer.validated_data.get("tags", ""),
+            is_public=serializer.validated_data.get("is_public", False),
+            expires_at=serializer.validated_data.get("expires_at"),
         )
 
         serializer.instance = file_upload
 
     @extend_schema(
         summary="Get download URL",
-        description="Get a signed download URL for the file."
+        description="Get a signed download URL for the file.",
     )
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=["get"])
     def download_url(self, request, pk=None):
         """Get download URL for file"""
         file_upload = self.get_object()
@@ -114,24 +114,22 @@ class FileUploadViewSet(viewsets.ModelViewSet):
         # Check access permissions
         if not file_upload.can_access(request.user):
             return Response(
-                {'error': 'Access denied'},
-                status=status.HTTP_403_FORBIDDEN
+                {"error": "Access denied"}, status=status.HTTP_403_FORBIDDEN
             )
 
         # Get download URL
         download_url = file_upload.get_download_url()
 
-        return Response({
-            'download_url': download_url,
-            'expires_in': 3600,  # 1 hour
-            'filename': file_upload.original_filename
-        })
+        return Response(
+            {
+                "download_url": download_url,
+                "expires_in": 3600,  # 1 hour
+                "filename": file_upload.original_filename,
+            }
+        )
 
-    @extend_schema(
-        summary="Download file",
-        description="Download the file directly."
-    )
-    @action(detail=True, methods=['get'])
+    @extend_schema(summary="Download file", description="Download the file directly.")
+    @action(detail=True, methods=["get"])
     def download(self, request, pk=None):
         """Download file directly"""
         file_upload = self.get_object()
@@ -155,7 +153,7 @@ class FileUploadViewSet(viewsets.ModelViewSet):
             response = FileResponse(
                 file_obj,
                 content_type=file_upload.mime_type,
-                filename=file_upload.original_filename
+                filename=file_upload.original_filename,
             )
 
             return response
@@ -166,21 +164,22 @@ class FileUploadViewSet(viewsets.ModelViewSet):
 
     @extend_schema(
         summary="Get signed upload URL",
-        description="Get a signed URL for direct upload to storage (S3/MinIO)."
+        description="Get a signed URL for direct upload to storage (S3/MinIO).",
     )
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=["post"])
     def signed_upload_url(self, request):
         """Get signed upload URL"""
         serializer = SignedUrlSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        filename = serializer.validated_data['filename']
-        content_type = serializer.validated_data.get('content_type')
-        max_size = serializer.validated_data.get('max_size', 10 * 1024 * 1024)  # 10MB
+        filename = serializer.validated_data["filename"]
+        content_type = serializer.validated_data.get("content_type")
+        max_size = serializer.validated_data.get("max_size", 10 * 1024 * 1024)  # 10MB
 
         # Generate storage path
         import os
         import uuid
+
         file_extension = os.path.splitext(filename)[1].lower()
         unique_filename = f"{uuid.uuid4().hex}{file_extension}"
         storage_path = f"uploads/{request.user.id}/{unique_filename}"
@@ -190,21 +189,23 @@ class FileUploadViewSet(viewsets.ModelViewSet):
             storage_path=storage_path,
             expires_in=3600,
             content_type=content_type,
-            max_size=max_size
+            max_size=max_size,
         )
 
-        return Response({
-            'upload_url': upload_data['url'],
-            'fields': upload_data.get('fields', {}),
-            'storage_path': storage_path,
-            'expires_in': 3600
-        })
+        return Response(
+            {
+                "upload_url": upload_data["url"],
+                "fields": upload_data.get("fields", {}),
+                "storage_path": storage_path,
+                "expires_in": 3600,
+            }
+        )
 
     @extend_schema(
         summary="Get my files",
-        description="Get all files uploaded by the current user."
+        description="Get all files uploaded by the current user.",
     )
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=["get"])
     def my_files(self, request):
         """Get files uploaded by current user"""
         queryset = self.get_queryset().filter(created_by=request.user)
@@ -217,11 +218,8 @@ class FileUploadViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
-    @extend_schema(
-        summary="Get public files",
-        description="Get all public files."
-    )
-    @action(detail=False, methods=['get'])
+    @extend_schema(summary="Get public files", description="Get all public files.")
+    @action(detail=False, methods=["get"])
     def public(self, request):
         """Get public files"""
         queryset = self.get_queryset().filter(is_public=True)
@@ -259,7 +257,7 @@ def file_download_view(request, file_id):
         response = FileResponse(
             file_obj,
             content_type=file_upload.mime_type,
-            filename=file_upload.original_filename
+            filename=file_upload.original_filename,
         )
 
         return response

@@ -14,7 +14,7 @@ def user():
     return User.objects.create_user(
         email="test@example.com",
         password="testpass123",  # nosec B106
-        name="Test User"
+        name="Test User",
     )
 
 
@@ -26,11 +26,11 @@ def admin_user():
         password="adminpass123",  # nosec B106
         name="Admin User",
         is_staff=True,
-        is_superuser=True
+        is_superuser=True,
     )
 
     # Add to Admin group if it exists
-    admin_group, _ = Group.objects.get_or_create(name='Admin')
+    admin_group, _ = Group.objects.get_or_create(name="Admin")
     user.groups.add(admin_group)
 
     return user
@@ -42,11 +42,11 @@ def manager_user():
     user = User.objects.create_user(
         email="manager@example.com",
         password="managerpass123",  # nosec B106
-        name="Manager User"
+        name="Manager User",
     )
 
     # Add to Manager group if it exists
-    manager_group, _ = Group.objects.get_or_create(name='Manager')
+    manager_group, _ = Group.objects.get_or_create(name="Manager")
     user.groups.add(manager_group)
 
     return user
@@ -58,11 +58,11 @@ def member_user():
     user = User.objects.create_user(
         email="member@example.com",
         password="memberpass123",  # nosec B106
-        name="Member User"
+        name="Member User",
     )
 
     # Add to Member group if it exists
-    member_group, _ = Group.objects.get_or_create(name='Member')
+    member_group, _ = Group.objects.get_or_create(name="Member")
     user.groups.add(member_group)
 
     return user
@@ -100,22 +100,22 @@ def celery_eager(settings):
 @pytest.fixture
 def mailpit(settings):
     """Configure mailpit for email testing"""
-    settings.EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
+    settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 
 
 @pytest.fixture
 def groups():
     """Create default user groups"""
-    admin_group, _ = Group.objects.get_or_create(name='Admin')
-    manager_group, _ = Group.objects.get_or_create(name='Manager')
-    member_group, _ = Group.objects.get_or_create(name='Member')
-    readonly_group, _ = Group.objects.get_or_create(name='ReadOnly')
+    admin_group, _ = Group.objects.get_or_create(name="Admin")
+    manager_group, _ = Group.objects.get_or_create(name="Manager")
+    member_group, _ = Group.objects.get_or_create(name="Member")
+    readonly_group, _ = Group.objects.get_or_create(name="ReadOnly")
 
     return {
-        'admin': admin_group,
-        'manager': manager_group,
-        'member': member_group,
-        'readonly': readonly_group
+        "admin": admin_group,
+        "manager": manager_group,
+        "member": member_group,
+        "readonly": readonly_group,
     }
 
 
@@ -125,9 +125,7 @@ def sample_file():
     from django.core.files.uploadedfile import SimpleUploadedFile
 
     return SimpleUploadedFile(
-        "test.txt",
-        b"This is a test file content",
-        content_type="text/plain"
+        "test.txt", b"This is a test file content", content_type="text/plain"
     )
 
 
@@ -140,13 +138,9 @@ def sample_image():
     from PIL import Image
 
     # Create a simple image
-    image = Image.new('RGB', (100, 100), color='red')
+    image = Image.new("RGB", (100, 100), color="red")
     image_io = io.BytesIO()
-    image.save(image_io, format='PNG')
+    image.save(image_io, format="PNG")
     image_io.seek(0)
 
-    return SimpleUploadedFile(
-        "test.png",
-        image_io.getvalue(),
-        content_type="image/png"
-    )
+    return SimpleUploadedFile("test.png", image_io.getvalue(), content_type="image/png")

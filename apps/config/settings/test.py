@@ -18,6 +18,7 @@ CACHES = {
     }
 }
 
+
 # Disable migrations for tests
 class DisableMigrations:
     def __contains__(self, item):
@@ -25,6 +26,7 @@ class DisableMigrations:
 
     def __getitem__(self, item):
         return None
+
 
 MIGRATION_MODULES = DisableMigrations()
 
@@ -44,10 +46,10 @@ CELERY_TASK_EAGER_PROPAGATES = True
 LOGGING_CONFIG = None
 
 # Media files - use temp directory safely
-MEDIA_ROOT = Path(tempfile.mkdtemp(prefix='test_media_'))
+MEDIA_ROOT = Path(tempfile.mkdtemp(prefix="test_media_"))
 
 # Static files - use temp directory safely
-STATIC_ROOT = Path(tempfile.mkdtemp(prefix='test_static_'))
+STATIC_ROOT = Path(tempfile.mkdtemp(prefix="test_static_"))
 
 # Security settings (can be relaxed for tests)
 SECRET_KEY = env("SECRET_KEY", default="test-secret-key-not-for-production")  # nosec B105

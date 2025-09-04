@@ -9,25 +9,29 @@ from django.utils import timezone
 class CustomUserManager(BaseUserManager["User"]):
     """Custom user manager for email-based authentication"""
 
-    def create_user(self, email: str, password: str | None = None, **extra_fields: Any) -> "User":
+    def create_user(
+        self, email: str, password: str | None = None, **extra_fields: Any
+    ) -> "User":
         """Create and return a regular user with an email and password."""
         if not email:
-            raise ValueError('The Email field must be set')
+            raise ValueError("The Email field must be set")
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email: str, password: str | None = None, **extra_fields: Any) -> "User":
+    def create_superuser(
+        self, email: str, password: str | None = None, **extra_fields: Any
+    ) -> "User":
         """Create and return a superuser with an email and password."""
-        extra_fields.setdefault('is_staff', True)
-        extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault("is_staff", True)
+        extra_fields.setdefault("is_superuser", True)
 
-        if extra_fields.get('is_staff') is not True:
-            raise ValueError('Superuser must have is_staff=True.')
-        if extra_fields.get('is_superuser') is not True:
-            raise ValueError('Superuser must have is_superuser=True.')
+        if extra_fields.get("is_staff") is not True:
+            raise ValueError("Superuser must have is_staff=True.")
+        if extra_fields.get("is_superuser") is not True:
+            raise ValueError("Superuser must have is_superuser=True.")
 
         return self.create_user(email, password, **extra_fields)
 
@@ -43,7 +47,9 @@ class User(AbstractUser):
         upload_to="avatars/%Y/%m/%d/",
         blank=True,
         null=True,
-        validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'gif'])]
+        validators=[
+            FileExtensionValidator(allowed_extensions=["jpg", "jpeg", "png", "gif"])
+        ],
     )
     last_seen = models.DateTimeField("Last seen", default=timezone.now)
 
@@ -70,12 +76,12 @@ class User(AbstractUser):
 
     def get_short_name(self):
         """Return the short name for the user."""
-        return self.name.split(' ')[0] if self.name else self.email.split('@')[0]
+        return self.name.split(" ")[0] if self.name else self.email.split("@")[0]
 
     def update_last_seen(self):
         """Update the last_seen timestamp"""
         self.last_seen = timezone.now()
-        self.save(update_fields=['last_seen'])
+        self.save(update_fields=["last_seen"])
 
     def has_group(self, group_name):
         """Check if user belongs to a specific group"""
@@ -83,21 +89,21 @@ class User(AbstractUser):
 
     def is_admin(self):
         """Check if user is an admin"""
-        return self.has_group('Admin') or self.is_superuser
+        return self.has_group("Admin") or self.is_superuser
 
     def is_manager(self):
         """Check if user is a manager or admin"""
-        return self.has_group('Manager') or self.is_admin()
+        return self.has_group("Manager") or self.is_admin()
 
     def is_member(self):
         """Check if user is a member, manager, or admin"""
-        return self.has_group('Member') or self.is_manager()
+        return self.has_group("Member") or self.is_manager()
 
 
 class UserProfile(models.Model):
     """Extended user profile information"""
 
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
 
     # Profile fields
     bio = models.TextField("Biography", max_length=500, blank=True)
@@ -109,7 +115,9 @@ class UserProfile(models.Model):
     timezone = models.CharField("Timezone", max_length=50, default="UTC")
     language = models.CharField("Language", max_length=10, default="en")
     receive_notifications = models.BooleanField("Receive notifications", default=True)
-    receive_marketing_emails = models.BooleanField("Receive marketing emails", default=False)
+    receive_marketing_emails = models.BooleanField(
+        "Receive marketing emails", default=False
+    )
 
     # Timestamps
     created_at = models.DateTimeField("Created", auto_now_add=True)

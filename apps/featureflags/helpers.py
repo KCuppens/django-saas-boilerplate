@@ -14,34 +14,34 @@ class FeatureFlags:
 
     # Default flags configuration
     DEFAULT_FLAGS = {
-        'FILES': {
-            'description': 'Enable file upload and management functionality',
-            'default': False,
+        "FILES": {
+            "description": "Enable file upload and management functionality",
+            "default": False,
         },
-        'EMAIL_EDITOR': {
-            'description': 'Enable email template editor in admin',
-            'default': True,
+        "EMAIL_EDITOR": {
+            "description": "Enable email template editor in admin",
+            "default": True,
         },
-        'RABBITMQ': {
-            'description': 'Use RabbitMQ instead of Redis for Celery',
-            'default': False,
+        "RABBITMQ": {
+            "description": "Use RabbitMQ instead of Redis for Celery",
+            "default": False,
         },
-        'ADVANCED_ANALYTICS': {
-            'description': 'Enable advanced analytics and reporting',
-            'default': False,
+        "ADVANCED_ANALYTICS": {
+            "description": "Enable advanced analytics and reporting",
+            "default": False,
         },
-        'BETA_FEATURES': {
-            'description': 'Enable beta features for testing',
-            'default': False,
+        "BETA_FEATURES": {
+            "description": "Enable beta features for testing",
+            "default": False,
         },
-        'API_V2': {
-            'description': 'Enable API version 2 endpoints',
-            'default': False,
+        "API_V2": {
+            "description": "Enable API version 2 endpoints",
+            "default": False,
         },
-        'MAINTENANCE_MODE': {
-            'description': 'Enable maintenance mode',
-            'default': False,
-        }
+        "MAINTENANCE_MODE": {
+            "description": "Enable maintenance mode",
+            "default": False,
+        },
     }
 
     @classmethod
@@ -58,10 +58,14 @@ class FeatureFlags:
             bool: True if flag is active, False otherwise
         """
         try:
-            return flag_is_active(request, flag_name) if request else flag_is_active(None, flag_name)
+            return (
+                flag_is_active(request, flag_name)
+                if request
+                else flag_is_active(None, flag_name)
+            )
         except Exception:
             # Return default value if flag doesn't exist
-            return cls.DEFAULT_FLAGS.get(flag_name, {}).get('default', False)
+            return cls.DEFAULT_FLAGS.get(flag_name, {}).get("default", False)
 
     @classmethod
     def is_switch_active(cls, switch_name: str) -> bool:
@@ -113,7 +117,9 @@ class FeatureFlags:
         return enabled_flags
 
     @classmethod
-    def get_flag_status(cls, flag_name: str, request=None, user: User | None = None) -> dict:
+    def get_flag_status(
+        cls, flag_name: str, request=None, user: User | None = None
+    ) -> dict:
         """
         Get detailed status of a feature flag
 
@@ -128,10 +134,10 @@ class FeatureFlags:
         flag_config = cls.DEFAULT_FLAGS.get(flag_name, {})
 
         return {
-            'name': flag_name,
-            'enabled': cls.is_enabled(flag_name, request, user),
-            'description': flag_config.get('description', 'No description available'),
-            'default': flag_config.get('default', False)
+            "name": flag_name,
+            "enabled": cls.is_enabled(flag_name, request, user),
+            "description": flag_config.get("description", "No description available"),
+            "default": flag_config.get("default", False),
         }
 
 
@@ -143,6 +149,7 @@ def is_feature_enabled(flag_name: str, request=None, user: User | None = None) -
 
 def require_feature_flag(flag_name: str):
     """Decorator to require a feature flag to be enabled"""
+
     def decorator(func_or_class):
         if isinstance(func_or_class, type):
             # Decorating a class (ViewSet)
@@ -151,6 +158,7 @@ def require_feature_flag(flag_name: str):
             def dispatch(self, request, *args, **kwargs):
                 if not is_feature_enabled(flag_name, request):
                     from django.http import Http404
+
                     raise Http404("Feature not available")
                 return original_dispatch(self, request, *args, **kwargs)
 
@@ -162,22 +170,25 @@ def require_feature_flag(flag_name: str):
                 # Try to get request from args/kwargs
                 request = None
                 for arg in args:
-                    if hasattr(arg, 'user') and hasattr(arg, 'META'):
+                    if hasattr(arg, "user") and hasattr(arg, "META"):
                         request = arg
                         break
 
                 if not is_feature_enabled(flag_name, request):
                     from django.http import Http404
+
                     raise Http404("Feature not available")
 
                 return func_or_class(*args, **kwargs)
+
             return wrapper
+
     return decorator
 
 
 def get_feature_context(request=None, user: User | None = None) -> dict:
     """Get feature flags context for templates"""
     return {
-        'features': FeatureFlags.get_enabled_flags(request, user),
-        'feature_flags': FeatureFlags
+        "features": FeatureFlags.get_enabled_flags(request, user),
+        "feature_flags": FeatureFlags,
     }

@@ -23,10 +23,10 @@ class EmailService:
         from_email: str | None = None,
         cc: list[str] | None = None,
         bcc: list[str] | None = None,
-        language: str = 'en',
+        language: str = "en",
         user: User | None = None,
         async_send: bool = True,
-        **kwargs
+        **kwargs,
     ) -> EmailMessageLog:
         """
         Send email using template
@@ -56,7 +56,9 @@ class EmailService:
         # Get template
         template = EmailTemplate.get_template(template_key, language)
         if not template:
-            raise ValueError(f"Email template '{template_key}' not found for language '{language}'")
+            raise ValueError(
+                f"Email template '{template_key}' not found for language '{language}'"
+            )
 
         # Prepare context
         email_context = context or {}
@@ -76,11 +78,11 @@ class EmailService:
             from_email=from_email or settings.DEFAULT_FROM_EMAIL,
             cc=cc or [],
             bcc=bcc or [],
-            subject=rendered_content['subject'],
-            html_content=rendered_content['html_content'],
-            text_content=rendered_content['text_content'],
+            subject=rendered_content["subject"],
+            html_content=rendered_content["html_content"],
+            text_content=rendered_content["text_content"],
             context_data=email_context,
-            user=user
+            user=user,
         )
 
         # Send email
@@ -88,7 +90,7 @@ class EmailService:
             # Send asynchronously via Celery
             task = send_email_task.delay(email_log.id)
             email_log.celery_task_id = task.id
-            email_log.save(update_fields=['celery_task_id'])
+            email_log.save(update_fields=["celery_task_id"])
         else:
             # Send synchronously
             EmailService._send_email_now(email_log)
@@ -129,7 +131,9 @@ class EmailService:
 
         except Exception as e:
             error_message = str(e)
-            logger.error(f"Failed to send email to {email_log.to_email}: {error_message}")
+            logger.error(
+                f"Failed to send email to {email_log.to_email}: {error_message}"
+            )
 
             # Mark as failed
             email_log.mark_as_failed(error_message)
@@ -140,14 +144,11 @@ class EmailService:
         template_key: str,
         to_email: str,
         context: dict[str, Any] | None = None,
-        **kwargs
+        **kwargs,
     ) -> EmailMessageLog:
         """Convenience method for sending template emails"""
         return EmailService.send_email(
-            template_key=template_key,
-            to_email=to_email,
-            context=context,
-            **kwargs
+            template_key=template_key, to_email=to_email, context=context, **kwargs
         )
 
     @staticmethod
@@ -155,7 +156,7 @@ class EmailService:
         template_key: str,
         recipients: list[str],
         context: dict[str, Any] | None = None,
-        **kwargs
+        **kwargs,
     ) -> list[EmailMessageLog]:
         """Send email to multiple recipients"""
         email_logs = []
@@ -166,7 +167,7 @@ class EmailService:
                     template_key=template_key,
                     to_email=recipient,
                     context=context,
-                    **kwargs
+                    **kwargs,
                 )
                 email_logs.append(email_log)
             except Exception as e:
@@ -176,9 +177,7 @@ class EmailService:
 
     @staticmethod
     def preview_email(
-        template_key: str,
-        context: dict[str, Any] | None = None,
-        language: str = 'en'
+        template_key: str, context: dict[str, Any] | None = None, language: str = "en"
     ) -> dict[str, str]:
         """Preview email content without sending"""
         template = EmailTemplate.get_template(template_key, language)
@@ -189,37 +188,40 @@ class EmailService:
 
 
 # Convenience functions for common email types
-def send_welcome_email(user: User, context: dict[str, Any] | None = None) -> EmailMessageLog:
+def send_welcome_email(
+    user: User, context: dict[str, Any] | None = None
+) -> EmailMessageLog:
     """Send welcome email to new user"""
     email_context = {
-        'user': user,
-        'user_name': user.get_full_name(),
-        'login_url': settings.LOGIN_URL if hasattr(settings, 'LOGIN_URL') else '/auth/login/',
-        **(context or {})
+        "user": user,
+        "user_name": user.get_full_name(),
+        "login_url": settings.LOGIN_URL
+        if hasattr(settings, "LOGIN_URL")
+        else "/auth/login/",
+        **(context or {}),
     }
 
     return EmailService.send_email(
-        template_key='welcome',
-        to_email=user.email,
-        context=email_context,
-        user=user
+        template_key="welcome", to_email=user.email, context=email_context, user=user
     )
 
 
-def send_password_reset_email(user: User, reset_link: str, context: dict[str, Any] | None = None) -> EmailMessageLog:
+def send_password_reset_email(
+    user: User, reset_link: str, context: dict[str, Any] | None = None
+) -> EmailMessageLog:
     """Send password reset email"""
     email_context = {
-        'user': user,
-        'user_name': user.get_full_name(),
-        'reset_link': reset_link,
-        **(context or {})
+        "user": user,
+        "user_name": user.get_full_name(),
+        "reset_link": reset_link,
+        **(context or {}),
     }
 
     return EmailService.send_email(
-        template_key='password_reset',
+        template_key="password_reset",
         to_email=user.email,
         context=email_context,
-        user=user
+        user=user,
     )
 
 
@@ -228,21 +230,21 @@ def send_notification_email(
     title: str,
     message: str,
     action_url: str | None = None,
-    context: dict[str, Any] | None = None
+    context: dict[str, Any] | None = None,
 ) -> EmailMessageLog:
     """Send notification email"""
     email_context = {
-        'user': user,
-        'user_name': user.get_full_name(),
-        'title': title,
-        'message': message,
-        'action_url': action_url,
-        **(context or {})
+        "user": user,
+        "user_name": user.get_full_name(),
+        "title": title,
+        "message": message,
+        "action_url": action_url,
+        **(context or {}),
     }
 
     return EmailService.send_email(
-        template_key='notification',
+        template_key="notification",
         to_email=user.email,
         context=email_context,
-        user=user
+        user=user,
     )
