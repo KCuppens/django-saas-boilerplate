@@ -82,9 +82,11 @@ def email_preview_html(request, template_key):
     # Sample context data
     sample_context = {
         "user": request.user if request.user.is_authenticated else None,
-        "user_name": request.user.get_full_name()
-        if request.user.is_authenticated
-        else "John Doe",
+        "user_name": (
+            request.user.get_full_name()
+            if request.user.is_authenticated
+            else "John Doe"
+        ),
         "site_name": "Django SaaS Boilerplate",
         "site_url": request.build_absolute_uri("/"),
         "login_url": request.build_absolute_uri("/auth/login/"),
@@ -110,9 +112,11 @@ def email_preview_text(request, template_key):
 
     sample_context = {
         "user": request.user if request.user.is_authenticated else None,
-        "user_name": request.user.get_full_name()
-        if request.user.is_authenticated
-        else "John Doe",
+        "user_name": (
+            request.user.get_full_name()
+            if request.user.is_authenticated
+            else "John Doe"
+        ),
         "site_name": "Django SaaS Boilerplate",
         "site_url": request.build_absolute_uri("/"),
     }

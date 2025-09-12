@@ -64,7 +64,9 @@ class FileUploadSerializer(serializers.ModelSerializer):
         """Get download URL if user has access"""
         request = self.context.get("request")
         if request and obj.can_access(request.user):
-            return request.build_absolute_uri(f"/api/v1/files/{obj.id}/download/")
+            return request.build_absolute_uri(
+                f"/api/v1/files/{obj.id}/download/"
+            )
         return None
 
 
@@ -105,7 +107,9 @@ class SignedUrlSerializer(serializers.Serializer):
         # Check file extension
         file_extension = os.path.splitext(value)[1].lower()
         if not file_extension:
-            raise serializers.ValidationError("Filename must have an extension")
+            raise serializers.ValidationError(
+                "Filename must have an extension"
+            )
 
         return value
 

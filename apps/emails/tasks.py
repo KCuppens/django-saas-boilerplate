@@ -47,7 +47,11 @@ def send_email_task(self, email_log_id: int):
     except EmailMessageLog.DoesNotExist:
         error_msg = f"EmailMessageLog with id {email_log_id} not found"
         logger.error(error_msg)
-        return {"success": False, "error": error_msg, "email_log_id": email_log_id}
+        return {
+            "success": False,
+            "error": error_msg,
+            "email_log_id": email_log_id,
+        }
 
     except Exception as e:
         error_msg = f"Unexpected error in email task: {str(e)}"
@@ -158,7 +162,7 @@ def send_bulk_email_task(
             "success": False,
             "error": error_msg,
             "template_key": template_key,
-            "total_recipients": len(recipient_emails) if recipient_emails else 0,
+            "total_recipients": (len(recipient_emails) if recipient_emails else 0),
         }
 
 
@@ -184,7 +188,9 @@ def retry_failed_emails(max_retries: int = 3):
         cutoff_time = timezone.now() - timedelta(hours=24)
         failed_emails = EmailMessageLog.objects.filter(
             status=EmailStatus.FAILED, created_at__gte=cutoff_time
-        )[:100]  # Limit to 100 at a time
+        )[
+            :100
+        ]  # Limit to 100 at a time
 
         retried_count = 0
         success_count = 0
@@ -204,7 +210,9 @@ def retry_failed_emails(max_retries: int = 3):
                 retried_count += 1
 
             except Exception as e:
-                logger.error(f"Failed to retry email {email_log.id}: {str(e)}")  # type: ignore
+                logger.error(
+                    f"Failed to retry email {email_log.id}: {str(e)}"
+                )
 
         logger.info(f"Retried {retried_count} failed emails")
 

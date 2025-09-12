@@ -54,7 +54,8 @@ def validate_image_dimensions(value, max_width=1920, max_height=1080):
             if width > max_width or height > max_height:
                 raise ValidationError(
                     _(
-                        "Image dimensions cannot exceed {max_width}x{max_height} pixels."
+                        "Image dimensions cannot exceed "
+                        "{max_width}x{max_height} pixels."
                     ).format(max_width=max_width, max_height=max_height)
                 )
     except Exception:

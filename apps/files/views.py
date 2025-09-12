@@ -3,6 +3,7 @@ import logging
 from django.core.files.storage import default_storage
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
+
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
@@ -27,15 +28,24 @@ logger = logging.getLogger(__name__)
 @extend_schema_view(
     list=extend_schema(
         summary="List files",
-        description="Get a list of files. Users can see their own files and public files.",
+        description=(
+            "Get a list of files. Users can see their own files and "
+            "public files."
+        ),
     ),
     create=extend_schema(
         summary="Upload file",
-        description="Upload a new file. The authenticated user will be set as the owner.",
+        description=(
+            "Upload a new file. The authenticated user will be set as "
+            "the owner."
+        ),
     ),
     retrieve=extend_schema(
         summary="Get file details",
-        description="Get file metadata. Users can only access their own files or public files.",
+        description=(
+            "Get file metadata. Users can only access their own files "
+            "or public files."
+        ),
     ),
     destroy=extend_schema(
         summary="Delete file",
@@ -51,7 +61,9 @@ class FileUploadViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Get files based on user permissions"""
-        queryset = FileUpload.objects.select_related("created_by", "updated_by")
+        queryset = FileUpload.objects.select_related(
+            "created_by", "updated_by"
+        )
 
         # Users can see their own files and public files
         if not self.request.user.is_admin():
@@ -87,7 +99,8 @@ class FileUploadViewSet(viewsets.ModelViewSet):
         validation = FileService.validate_file(file)
         if not validation["valid"]:
             return Response(
-                {"errors": validation["errors"]}, status=status.HTTP_400_BAD_REQUEST
+                {"errors": validation["errors"]},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         # Upload file
@@ -164,7 +177,9 @@ class FileUploadViewSet(viewsets.ModelViewSet):
 
     @extend_schema(
         summary="Get signed upload URL",
-        description="Get a signed URL for direct upload to storage (S3/MinIO).",
+        description=(
+            "Get a signed URL for direct upload to storage (S3/MinIO)."
+        ),
     )
     @action(detail=False, methods=["post"])
     def signed_upload_url(self, request):
@@ -174,7 +189,9 @@ class FileUploadViewSet(viewsets.ModelViewSet):
 
         filename = serializer.validated_data["filename"]
         content_type = serializer.validated_data.get("content_type")
-        max_size = serializer.validated_data.get("max_size", 10 * 1024 * 1024)  # 10MB
+        max_size = serializer.validated_data.get(
+            "max_size", 10 * 1024 * 1024
+        )  # 10MB
 
         # Generate storage path
         import os

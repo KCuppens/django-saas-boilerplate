@@ -36,17 +36,52 @@ class FileUploadAdmin(admin.ModelAdmin):
     ]
 
     fieldsets = (
-        (None, {"fields": ("original_filename", "filename", "file_type", "mime_type")}),
+        (
+            None,
+            {
+                "fields": (
+                    "original_filename",
+                    "filename",
+                    "file_type",
+                    "mime_type",
+                )
+            },
+        ),
         (
             "File Details",
-            {"fields": ("file_size", "file_size_human", "checksum", "storage_path")},
+            {
+                "fields": (
+                    "file_size",
+                    "file_size_human",
+                    "checksum",
+                    "storage_path",
+                )
+            },
         ),
-        ("Settings", {"fields": ("is_public", "description", "tags", "expires_at")}),
-        ("Statistics", {"fields": ("download_count",), "classes": ("collapse",)}),
+        (
+            "Settings",
+            {
+                "fields": (
+                    "is_public",
+                    "description",
+                    "tags",
+                    "expires_at",
+                )
+            },
+        ),
+        (
+            "Statistics",
+            {"fields": ("download_count",), "classes": ("collapse",)},
+        ),
         (
             "Metadata",
             {
-                "fields": ("created_by", "updated_by", "created_at", "updated_at"),
+                "fields": (
+                    "created_by",
+                    "updated_by",
+                    "created_at",
+                    "updated_at",
+                ),
                 "classes": ("collapse",),
             },
         ),

@@ -19,7 +19,10 @@ class FileUpload(TimestampMixin, UserTrackingMixin):
 
     # File metadata
     file_type = models.CharField(
-        "File type", max_length=20, choices=FileType.choices, default=FileType.OTHER
+        "File type",
+        max_length=20,
+        choices=FileType.choices,
+        default=FileType.OTHER,
     )
     mime_type = models.CharField("MIME type", max_length=100)
     file_size = models.PositiveIntegerField("File size (bytes)")

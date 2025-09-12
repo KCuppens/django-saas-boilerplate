@@ -27,7 +27,10 @@ class FileService:
         "image/svg+xml": FileType.IMAGE,
         "application/pdf": FileType.DOCUMENT,
         "application/msword": FileType.DOCUMENT,
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document": FileType.DOCUMENT,
+        (
+            "application/vnd.openxmlformats-officedocument."
+            "wordprocessingml.document"
+        ): FileType.DOCUMENT,
         "text/plain": FileType.DOCUMENT,
         "text/csv": FileType.DOCUMENT,
         "video/mp4": FileType.VIDEO,
@@ -69,7 +72,9 @@ class FileService:
         file_type = cls.FILE_TYPE_MAP.get(mime_type, FileType.OTHER)
 
         # Store file
-        stored_path = default_storage.save(storage_path, ContentFile(file_content))
+        stored_path = default_storage.save(
+            storage_path, ContentFile(file_content)
+        )
 
         # Create FileUpload record
         file_upload = FileUpload.objects.create(
@@ -88,12 +93,16 @@ class FileService:
             updated_by=user,
         )
 
-        logger.info(f"File uploaded: {file.name} -> {stored_path} by user {user.id}")
+        logger.info(
+            f"File uploaded: {file.name} -> {stored_path} by user {user.id}"
+        )
 
         return file_upload
 
     @classmethod
-    def get_download_url(cls, file_upload: FileUpload, expires_in: int = 3600) -> str:
+    def get_download_url(
+        cls, file_upload: FileUpload, expires_in: int = 3600
+    ) -> str:
         """Get signed download URL for file"""
 
         # For public files, return direct URL
@@ -102,14 +111,17 @@ class FileService:
                 return default_storage.url(file_upload.storage_path)
             except Exception as e:
                 logger.warning(
-                    f"Failed to generate direct URL for file {file_upload.id}: {e}"
+                    f"Failed to generate direct URL for file "
+                    f"{file_upload.id}: {e}"
                 )
 
         # For private files or S3, generate signed URL
         if hasattr(default_storage, "generate_presigned_url"):
             try:
                 return default_storage.generate_presigned_url(
-                    file_upload.storage_path, expires_in=expires_in, method="GET"
+                    file_upload.storage_path,
+                    expires_in=expires_in,
+                    method="GET",
                 )
             except Exception as e:
                 logger.error(f"Failed to generate presigned URL: {str(e)}")
@@ -135,13 +147,17 @@ class FileService:
                 if content_type:
                     conditions.append(["eq", "$Content-Type", content_type])
                 if max_size:
-                    conditions.append(["content-length-range", "0", str(max_size)])
+                    conditions.append(
+                        ["content-length-range", "0", str(max_size)]
+                    )
 
                 return default_storage.generate_presigned_post(
                     storage_path, expires_in=expires_in, conditions=conditions
                 )
             except Exception as e:
-                logger.error(f"Failed to generate presigned upload URL: {str(e)}")
+                logger.error(
+                    f"Failed to generate presigned upload URL: {str(e)}"
+                )
 
         # Fallback for local development
         from django.urls import reverse
@@ -164,7 +180,9 @@ class FileService:
             return True
 
         except Exception as e:
-            logger.error(f"Failed to delete file {file_upload.storage_path}: {str(e)}")
+            logger.error(
+                f"Failed to delete file {file_upload.storage_path}: {str(e)}"
+            )
             return False
 
     @classmethod
@@ -178,14 +196,25 @@ class FileService:
         max_size_bytes = max_size_mb * 1024 * 1024
         if file.size > max_size_bytes:
             errors.append(
-                f"File size ({file.size} bytes) exceeds maximum allowed ({max_size_bytes} bytes)"
+                f"File size ({file.size} bytes) exceeds maximum allowed "
+                f"({max_size_bytes} bytes)"
             )
 
         # Check file extension
         allowed_extensions = getattr(
             settings,
             "ALLOWED_FILE_EXTENSIONS",
-            [".jpg", ".jpeg", ".png", ".gif", ".pdf", ".doc", ".docx", ".txt", ".csv"],
+            [
+                ".jpg",
+                ".jpeg",
+                ".png",
+                ".gif",
+                ".pdf",
+                ".doc",
+                ".docx",
+                ".txt",
+                ".csv",
+            ],
         )
 
         file_extension = os.path.splitext(file.name)[1].lower()

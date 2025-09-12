@@ -1,5 +1,6 @@
-from allauth.account import app_settings as allauth_settings
 from django.contrib.auth import get_user_model
+
+from allauth.account import app_settings as allauth_settings
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import permissions, status
 from rest_framework.decorators import action
@@ -88,12 +89,14 @@ class UserViewSet(RetrieveModelMixin, UpdateModelMixin, GenericViewSet):
             {
                 "user": user_serializer.data,
                 "message": (
-                    "Registration successful. Please check your email to "
-                    "verify your account."
-                )
-                if allauth_settings.EMAIL_VERIFICATION
-                == allauth_settings.EmailVerificationMethod.MANDATORY
-                else "Registration successful.",
+                    (
+                        "Registration successful. Please check your email to "
+                        "verify your account."
+                    )
+                    if allauth_settings.EMAIL_VERIFICATION
+                    == allauth_settings.EmailVerificationMethod.MANDATORY
+                    else "Registration successful."
+                ),
             },
             status=status.HTTP_201_CREATED,
         )

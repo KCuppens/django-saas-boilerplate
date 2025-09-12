@@ -151,7 +151,10 @@ class EmailMessageLog(TimestampMixin):
 
     # Metadata
     context_data = models.JSONField(
-        "Context data", default=dict, blank=True, help_text="Template context data used"
+        "Context data",
+        default=dict,
+        blank=True,
+        help_text="Template context data used",
     )
     error_message = models.TextField("Error message", blank=True)
 

@@ -1,5 +1,6 @@
 from django.db.models import Q
 from django.utils import timezone
+
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
     OpenApiParameter,
@@ -24,8 +25,7 @@ from .serializers import (
     list=extend_schema(
         summary="List notes",
         description=(
-            "Get a list of notes. Users can see their own notes and public "
-            "notes."
+            "Get a list of notes. Users can see their own notes and public notes."
         ),
         parameters=[
             OpenApiParameter(
@@ -48,8 +48,7 @@ from .serializers import (
     create=extend_schema(
         summary="Create note",
         description=(
-            "Create a new note. The authenticated user will be set as the "
-            "creator."
+            "Create a new note. The authenticated user will be set as the creator."
         ),
     ),
     retrieve=extend_schema(
@@ -65,9 +64,7 @@ from .serializers import (
     ),
     partial_update=extend_schema(
         summary="Partially update note",
-        description=(
-            "Partially update a note. Users can only update their own notes."
-        ),
+        description=("Partially update a note. Users can only update their own notes."),
     ),
     destroy=extend_schema(
         summary="Delete note",
@@ -117,9 +114,7 @@ class NoteViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """Set the creator when creating a note"""
-        serializer.save(
-            created_by=self.request.user, updated_by=self.request.user
-        )
+        serializer.save(created_by=self.request.user, updated_by=self.request.user)
 
     def perform_update(self, serializer):
         """Set the updater when updating a note"""
@@ -217,9 +212,7 @@ class HealthCheckViewSet(viewsets.ViewSet):
 
         if not all(checks):
             health_data["status"] = "unhealthy"
-            return Response(
-                health_data, status=status.HTTP_503_SERVICE_UNAVAILABLE
-            )
+            return Response(health_data, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
         serializer = HealthCheckSerializer(health_data)
         return Response(serializer.data)

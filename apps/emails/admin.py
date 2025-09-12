@@ -47,7 +47,12 @@ class EmailTemplateAdmin(admin.ModelAdmin):
         (
             _("Metadata"),
             {
-                "fields": ("created_by", "updated_by", "created_at", "updated_at"),
+                "fields": (
+                    "created_by",
+                    "updated_by",
+                    "created_at",
+                    "updated_at",
+                ),
                 "classes": ("collapse",),
             },
         ),
@@ -101,7 +106,10 @@ class EmailMessageLogAdmin(admin.ModelAdmin):
     ]
 
     fieldsets = (
-        (None, {"fields": ("template", "template_key", "status", "celery_task_id")}),
+        (
+            None,
+            {"fields": ("template", "template_key", "status", "celery_task_id")},
+        ),
         (_("Recipients"), {"fields": ("to_email", "from_email", "cc", "bcc")}),
         (
             _("Content"),

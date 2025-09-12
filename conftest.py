@@ -1,8 +1,9 @@
 """Global pytest configuration and fixtures"""
 
-import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+
+import pytest
 from rest_framework.test import APIClient
 
 User = get_user_model()
@@ -135,6 +136,7 @@ def sample_image():
     import io
 
     from django.core.files.uploadedfile import SimpleUploadedFile
+
     from PIL import Image
 
     # Create a simple image

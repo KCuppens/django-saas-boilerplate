@@ -1,4 +1,5 @@
 from django.core.management.base import BaseCommand
+
 from waffle.models import Flag, Switch
 
 from apps.featureflags.helpers import FeatureFlags
@@ -44,7 +45,9 @@ class Command(BaseCommand):
 
             if created:
                 created_flags += 1
-                self.stdout.write(self.style.SUCCESS(f"Created flag: {flag_name}"))
+                self.stdout.write(
+                    self.style.SUCCESS(f"Created flag: {flag_name}")
+                )
             elif force:
                 updated_flags += 1
                 if not dry_run:
@@ -52,11 +55,14 @@ class Command(BaseCommand):
                     flag.note = flag_config.get("description", "")
                     flag.save()
 
-                self.stdout.write(self.style.WARNING(f"Updated flag: {flag_name}"))
+                self.stdout.write(
+                    self.style.WARNING(f"Updated flag: {flag_name}")
+                )
             else:
                 self.stdout.write(
                     self.style.NOTICE(
-                        f"Flag {flag_name} already exists (use --force to update)"
+                        f"Flag {flag_name} already exists (use --force to "
+                        f"update)"
                     )
                 )
 
@@ -66,7 +72,10 @@ class Command(BaseCommand):
                 "active": False,
                 "note": "Global maintenance mode switch",
             },
-            "DEBUG_MODE": {"active": False, "note": "Debug mode for development"},
+            "DEBUG_MODE": {
+                "active": False,
+                "note": "Debug mode for development",
+            },
         }
 
         for switch_name, switch_config in default_switches.items():
@@ -80,13 +89,17 @@ class Command(BaseCommand):
 
             if created:
                 created_flags += 1
-                self.stdout.write(self.style.SUCCESS(f"Created switch: {switch_name}"))
+                self.stdout.write(
+                    self.style.SUCCESS(f"Created switch: {switch_name}")
+                )
             elif force and not dry_run:
                 switch.active = switch_config["active"]
                 switch.note = switch_config["note"]
                 switch.save()
                 updated_flags += 1
-                self.stdout.write(self.style.WARNING(f"Updated switch: {switch_name}"))
+                self.stdout.write(
+                    self.style.WARNING(f"Updated switch: {switch_name}")
+                )
 
         # Summary
         if not dry_run:
@@ -99,7 +112,8 @@ class Command(BaseCommand):
         else:
             self.stdout.write(
                 self.style.NOTICE(
-                    f"\nDry run completed: would create {created_flags} flags, "
+                    f"\nDry run completed: would create {created_flags} "
+                    f"flags, "
                     f"update {updated_flags} flags"
                 )
             )
@@ -109,5 +123,6 @@ class Command(BaseCommand):
         for flag_name, flag_config in FeatureFlags.DEFAULT_FLAGS.items():
             status = "✓" if flag_config.get("default", False) else "✗"
             self.stdout.write(
-                f"  {status} {flag_name}: {flag_config.get('description', 'No description')}"
+                f"  {status} {flag_name}: "
+                f"{flag_config.get('description', 'No description')}"
             )

@@ -64,7 +64,9 @@ def prometheus_metrics(request):
         try:
             total_emails = EmailMessageLog.objects.count()
             sent_emails = EmailMessageLog.objects.filter(status="sent").count()
-            failed_emails = EmailMessageLog.objects.filter(status="failed").count()
+            failed_emails = EmailMessageLog.objects.filter(
+                status="failed"
+            ).count()
 
             metrics.extend(
                 [
@@ -90,7 +92,9 @@ def prometheus_metrics(request):
             total_files = FileUpload.objects.count()
             public_files = FileUpload.objects.filter(is_public=True).count()
             image_files = FileUpload.objects.filter(file_type="IMAGE").count()
-            document_files = FileUpload.objects.filter(file_type="DOCUMENT").count()
+            document_files = FileUpload.objects.filter(
+                file_type="DOCUMENT"
+            ).count()
 
             metrics.extend(
                 [
@@ -124,7 +128,8 @@ def prometheus_metrics(request):
 
             metrics.extend(
                 [
-                    "# HELP django_db_connection_duration_seconds Database connection duration",
+                    "# HELP django_db_connection_duration_seconds "
+                    "Database connection duration",
                     "# TYPE django_db_connection_duration_seconds histogram",
                     f"django_db_connection_duration_seconds {db_duration:.6f}",
                     "",
@@ -150,7 +155,8 @@ def prometheus_metrics(request):
                     "# TYPE django_cache_status gauge",
                     f"django_cache_status {cache_status}",
                     "",
-                    "# HELP django_cache_duration_seconds Cache operation duration",
+                    "# HELP django_cache_duration_seconds "
+                    "Cache operation duration",
                     "# TYPE django_cache_duration_seconds histogram",
                     f"django_cache_duration_seconds {cache_duration:.6f}",
                     "",
@@ -181,11 +187,13 @@ def prometheus_metrics(request):
                     "# TYPE system_uptime_seconds counter",
                     f"system_uptime_seconds {uptime:.0f}",
                     "",
-                    "# HELP system_memory_usage_percent Memory usage percentage",
+                    "# HELP system_memory_usage_percent "
+                    "Memory usage percentage",
                     "# TYPE system_memory_usage_percent gauge",
                     f"system_memory_usage_percent {memory_percent}",
                     "",
-                    "# HELP system_memory_available_bytes Available memory in bytes",
+                    "# HELP system_memory_available_bytes "
+                    "Available memory in bytes",
                     "# TYPE system_memory_available_bytes gauge",
                     f"system_memory_available_bytes {memory_available}",
                     "",
@@ -218,21 +226,27 @@ def prometheus_metrics(request):
     # Add timestamp
     metrics.extend(
         [
-            "# HELP django_metrics_timestamp Last metrics collection timestamp",
+            "# HELP django_metrics_timestamp "
+            "Last metrics collection timestamp",
             "# TYPE django_metrics_timestamp gauge",
             f"django_metrics_timestamp {int(time.time())}",
         ]
     )
 
     return HttpResponse(
-        "\n".join(metrics), content_type="text/plain; version=0.0.4; charset=utf-8"
+        "\n".join(metrics),
+        content_type="text/plain; version=0.0.4; charset=utf-8",
     )
 
 
 def health_metrics(request):
     """Simple health metrics for monitoring"""
 
-    metrics = {"status": "healthy", "timestamp": int(time.time()), "checks": {}}
+    metrics = {
+        "status": "healthy",
+        "timestamp": int(time.time()),
+        "checks": {},
+    }
 
     # Database check
     try:
@@ -258,7 +272,8 @@ def health_metrics(request):
 
     # Convert to Prometheus format
     prometheus_metrics = [
-        "# HELP django_health_status Application health status (1=healthy, 0=unhealthy)",
+        "# HELP django_health_status Application health status "
+        "(1=healthy, 0=unhealthy)",
         "# TYPE django_health_status gauge",
         f"django_health_status {1 if metrics['status'] == 'healthy' else 0}",
         "",

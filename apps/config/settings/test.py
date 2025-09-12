@@ -3,7 +3,8 @@ from pathlib import Path
 
 from .base import *
 
-# Database configuration - use DATABASE_URL if provided (for CI), otherwise SQLite
+# Database configuration - use DATABASE_URL if provided (for CI),
+# otherwise SQLite
 if env("DATABASE_URL", default=""):
     # CI environment - use the configured database and run migrations
     DATABASES = {"default": env.db("DATABASE_URL")}
@@ -58,7 +59,9 @@ MEDIA_ROOT = Path(tempfile.mkdtemp(prefix="test_media_"))
 STATIC_ROOT = Path(tempfile.mkdtemp(prefix="test_static_"))
 
 # Security settings (can be relaxed for tests)
-SECRET_KEY = env("SECRET_KEY", default="test-secret-key-not-for-production")  # nosec B105
+SECRET_KEY = env(
+    "SECRET_KEY", default="test-secret-key-not-for-production"
+)  # nosec B105
 
 # Disable CSRF for API tests
 REST_FRAMEWORK = {

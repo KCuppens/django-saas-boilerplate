@@ -3,9 +3,10 @@ import logging
 import os
 import subprocess  # nosec B404
 
-from celery import shared_task
 from django.conf import settings
 from django.core.management import call_command
+
+from celery import shared_task
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +17,9 @@ def backup_database():
     try:
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         backup_filename = f"backup_{timestamp}.sql"
-        backup_path = os.path.join(settings.BASE_DIR, "backups", backup_filename)
+        backup_path = os.path.join(
+            settings.BASE_DIR, "backups", backup_filename
+        )
 
         # Ensure backup directory exists
         os.makedirs(os.path.dirname(backup_path), exist_ok=True)
@@ -50,7 +53,9 @@ def backup_database():
             )  # nosec B603
 
             if result.returncode == 0:
-                logger.info(f"Database backup created successfully: {backup_path}")
+                logger.info(
+                    f"Database backup created successfully: {backup_path}"
+                )
                 return {
                     "success": True,
                     "backup_file": backup_filename,
@@ -95,7 +100,9 @@ def cleanup_old_backups(days_to_keep=7):
             }
 
         # Find backup files older than specified days
-        cutoff_time = datetime.datetime.now() - datetime.timedelta(days=days_to_keep)
+        cutoff_time = datetime.datetime.now() - datetime.timedelta(
+            days=days_to_keep
+        )
 
         backup_files = glob.glob(os.path.join(backup_dir, "backup_*.sql"))
         cleaned_count = 0
@@ -169,7 +176,10 @@ def system_maintenance():
 def health_check_task():
     """Periodic health check task"""
     try:
-        results = {"timestamp": datetime.datetime.now().isoformat(), "checks": {}}
+        results = {
+            "timestamp": datetime.datetime.now().isoformat(),
+            "checks": {},
+        }
 
         # Check database
         try:

@@ -29,7 +29,11 @@ urlpatterns = [
         email_preview_text,
         name="email_preview_text",
     ),
-    path("emails/<slug:template_key>/test/", send_test_email, name="send_test_email"),
+    path(
+        "emails/<slug:template_key>/test/",
+        send_test_email,
+        name="send_test_email",
+    ),
     # Email logs
     path("email-logs/", EmailLogListView.as_view(), name="email_log_list"),
     # Webhook endpoint for email tracking

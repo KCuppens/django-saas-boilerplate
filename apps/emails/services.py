@@ -148,7 +148,10 @@ class EmailService:
     ) -> EmailMessageLog:
         """Convenience method for sending template emails"""
         return EmailService.send_email(
-            template_key=template_key, to_email=to_email, context=context, **kwargs
+            template_key=template_key,
+            to_email=to_email,
+            context=context,
+            **kwargs,
         )
 
     @staticmethod
@@ -177,7 +180,9 @@ class EmailService:
 
     @staticmethod
     def preview_email(
-        template_key: str, context: dict[str, Any] | None = None, language: str = "en"
+        template_key: str,
+        context: dict[str, Any] | None = None,
+        language: str = "en",
     ) -> dict[str, str]:
         """Preview email content without sending"""
         template = EmailTemplate.get_template(template_key, language)
@@ -195,14 +200,17 @@ def send_welcome_email(
     email_context = {
         "user": user,
         "user_name": user.get_full_name(),
-        "login_url": settings.LOGIN_URL
-        if hasattr(settings, "LOGIN_URL")
-        else "/auth/login/",
+        "login_url": (
+            settings.LOGIN_URL if hasattr(settings, "LOGIN_URL") else "/auth/login/"
+        ),
         **(context or {}),
     }
 
     return EmailService.send_email(
-        template_key="welcome", to_email=user.email, context=email_context, user=user
+        template_key="welcome",
+        to_email=user.email,
+        context=email_context,
+        user=user,
     )
 
 
