@@ -25,7 +25,8 @@ urlpatterns = [
     path("api/v1/", include("apps.api.urls")),
     # Authentication
     path("auth/", include("apps.accounts.urls")),
-    path("accounts/", include("allauth.urls")),
+    path("accounts/", include("apps.accounts.urls")),  # Additional accounts URLs
+    path("allauth/", include("allauth.urls")),
     # Operations
     path("", include("apps.ops.urls")),
 ]

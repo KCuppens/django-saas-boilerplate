@@ -2,7 +2,7 @@ import hashlib
 import logging
 import os
 import uuid
-from typing import Any
+from typing import Any, Optional
 
 from django.conf import settings
 from django.core.files.base import ContentFile
@@ -136,8 +136,8 @@ class FileService:
         cls,
         storage_path: str,
         expires_in: int = 3600,
-        content_type: str | None = None,
-        max_size: int | None = None,
+        content_type: Optional[str] = None,
+        max_size: Optional[int] = None,
     ) -> dict[str, Any]:
         """Get signed upload URL and required fields"""
 

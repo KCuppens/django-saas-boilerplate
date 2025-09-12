@@ -12,8 +12,10 @@ from rest_framework.response import Response
 
 from apps.core.permissions import IsOwnerOrAdmin
 
-from .models import Note
+from .models import APIKey, Note
 from .serializers import (
+    APIKeyCreateSerializer,
+    APIKeySerializer,
     HealthCheckSerializer,
     NoteCreateUpdateSerializer,
     NoteSerializer,
@@ -310,3 +312,50 @@ class HealthCheckViewSet(viewsets.ViewSet):
     def live(self, request):
         """Liveness check (for Kubernetes probes)"""
         return Response({"status": "alive", "timestamp": timezone.now()})
+
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="List API keys",
+        description="Get a list of API keys for the authenticated user.",
+    ),
+    create=extend_schema(
+        summary="Create API key",
+        description="Create a new API key for the authenticated user.",
+    ),
+    retrieve=extend_schema(
+        summary="Get API key",
+        description="Get a specific API key.",
+    ),
+    update=extend_schema(
+        summary="Update API key",
+        description="Update an API key.",
+    ),
+    partial_update=extend_schema(
+        summary="Partially update API key",
+        description="Partially update an API key.",
+    ),
+    destroy=extend_schema(
+        summary="Delete API key",
+        description="Delete an API key.",
+    ),
+)
+class APIKeyViewSet(viewsets.ModelViewSet):
+    """ViewSet for managing API keys"""
+
+    serializer_class = APIKeySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        """Get API keys for the current user"""
+        return APIKey.objects.filter(user=self.request.user)
+
+    def get_serializer_class(self):
+        """Return appropriate serializer class"""
+        if self.action == "create":
+            return APIKeyCreateSerializer
+        return APIKeySerializer
+
+    def perform_create(self, serializer):
+        """Set the user when creating an API key"""
+        serializer.save(user=self.request.user)

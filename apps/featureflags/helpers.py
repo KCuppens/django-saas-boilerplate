@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from django.contrib.auth import get_user_model
 from waffle import flag_is_active, sample_is_active, switch_is_active
@@ -45,7 +45,7 @@ class FeatureFlags:
     }
 
     @classmethod
-    def is_enabled(cls, flag_name: str, request=None, user: User | None = None) -> bool:
+    def is_enabled(cls, flag_name: str, request=None, user: Optional[User] = None) -> bool:
         """
         Check if a feature flag is enabled
 
@@ -100,7 +100,7 @@ class FeatureFlags:
             return False
 
     @classmethod
-    def get_enabled_flags(cls, request=None, user: User | None = None) -> dict:
+    def get_enabled_flags(cls, request=None, user: Optional[User] = None) -> dict:
         """
         Get all enabled flags
 
@@ -118,7 +118,7 @@ class FeatureFlags:
 
     @classmethod
     def get_flag_status(
-        cls, flag_name: str, request=None, user: User | None = None
+        cls, flag_name: str, request=None, user: Optional[User] = None
     ) -> dict:
         """
         Get detailed status of a feature flag
@@ -142,7 +142,7 @@ class FeatureFlags:
 
 
 # Convenience functions
-def is_feature_enabled(flag_name: str, request=None, user: User | None = None) -> bool:
+def is_feature_enabled(flag_name: str, request=None, user: Optional[User] = None) -> bool:
     """Convenience function to check if a feature flag is enabled"""
     return FeatureFlags.is_enabled(flag_name, request, user)
 
@@ -186,7 +186,7 @@ def require_feature_flag(flag_name: str):
     return decorator
 
 
-def get_feature_context(request=None, user: User | None = None) -> dict:
+def get_feature_context(request=None, user: Optional[User] = None) -> dict:
     """Get feature flags context for templates"""
     return {
         "features": FeatureFlags.get_enabled_flags(request, user),

@@ -1,5 +1,5 @@
 import logging
-from typing import Any
+from typing import Any, List, Optional, Union
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -18,13 +18,13 @@ class EmailService:
     @staticmethod
     def send_email(
         template_key: str,
-        to_email: str | list[str],
-        context: dict[str, Any] | None = None,
-        from_email: str | None = None,
-        cc: list[str] | None = None,
-        bcc: list[str] | None = None,
+        to_email: Union[str, List[str]],
+        context: Optional[dict[str, Any]] = None,
+        from_email: Optional[str] = None,
+        cc: Optional[List[str]] = None,
+        bcc: Optional[List[str]] = None,
         language: str = "en",
-        user: User | None = None,
+        user: Optional[User] = None,
         async_send: bool = True,
         **kwargs,
     ) -> EmailMessageLog:
@@ -143,7 +143,7 @@ class EmailService:
     def send_template_email(
         template_key: str,
         to_email: str,
-        context: dict[str, Any] | None = None,
+        context: Optional[dict[str, Any]] = None,
         **kwargs,
     ) -> EmailMessageLog:
         """Convenience method for sending template emails"""
@@ -157,10 +157,10 @@ class EmailService:
     @staticmethod
     def send_bulk_email(
         template_key: str,
-        recipients: list[str],
-        context: dict[str, Any] | None = None,
+        recipients: List[str],
+        context: Optional[dict[str, Any]] = None,
         **kwargs,
-    ) -> list[EmailMessageLog]:
+    ) -> List[EmailMessageLog]:
         """Send email to multiple recipients"""
         email_logs = []
 
@@ -181,7 +181,7 @@ class EmailService:
     @staticmethod
     def preview_email(
         template_key: str,
-        context: dict[str, Any] | None = None,
+        context: Optional[dict[str, Any]] = None,
         language: str = "en",
     ) -> dict[str, str]:
         """Preview email content without sending"""
@@ -194,7 +194,7 @@ class EmailService:
 
 # Convenience functions for common email types
 def send_welcome_email(
-    user: User, context: dict[str, Any] | None = None
+    user: User, context: Optional[dict[str, Any]] = None
 ) -> EmailMessageLog:
     """Send welcome email to new user"""
     email_context = {
@@ -215,7 +215,7 @@ def send_welcome_email(
 
 
 def send_password_reset_email(
-    user: User, reset_link: str, context: dict[str, Any] | None = None
+    user: User, reset_link: str, context: Optional[dict[str, Any]] = None
 ) -> EmailMessageLog:
     """Send password reset email"""
     email_context = {
@@ -237,8 +237,8 @@ def send_notification_email(
     user: User,
     title: str,
     message: str,
-    action_url: str | None = None,
-    context: dict[str, Any] | None = None,
+    action_url: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
 ) -> EmailMessageLog:
     """Send notification email"""
     email_context = {

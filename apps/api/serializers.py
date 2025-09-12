@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Note
+from .models import APIKey, Note
 
 
 class NoteSerializer(serializers.ModelSerializer):
@@ -65,7 +65,8 @@ class NoteCreateUpdateSerializer(NoteSerializer):
     """Serializer for creating/updating notes"""
 
     class Meta(NoteSerializer.Meta):
-        fields = ["title", "content", "is_public", "tag_list"]
+        fields = ["id", "title", "content", "is_public", "tag_list", "created_at", "updated_at"]
+        read_only_fields = ["id", "created_at", "updated_at"]
 
 
 class HealthCheckSerializer(serializers.Serializer):
@@ -86,3 +87,43 @@ class HealthCheckSerializer(serializers.Serializer):
     # Service-specific checks
     services = serializers.DictField(required=False)
     errors = serializers.ListField(required=False)
+
+
+class APIKeySerializer(serializers.ModelSerializer):
+    """Serializer for APIKey model"""
+
+    class Meta:
+        model = APIKey
+        fields = [
+            "id",
+            "name", 
+            "key",
+            "permissions",
+            "is_active",
+            "user",
+            "last_used",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
+            "key", 
+            "user",
+            "last_used",
+            "created_at", 
+            "updated_at",
+        ]
+
+
+class APIKeyCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating API keys"""
+
+    class Meta:
+        model = APIKey
+        fields = ["id", "name", "key", "permissions", "is_active", "created_at"]
+        read_only_fields = ["id", "key", "created_at"]
+
+    def create(self, validated_data):
+        """Create API key with current user"""
+        validated_data['user'] = self.context['request'].user
+        return super().create(validated_data)

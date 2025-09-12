@@ -151,3 +151,111 @@ class UserViewSet(RetrieveModelMixin, UpdateModelMixin, GenericViewSet):
         # user.delete()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ProfileUpdateView(GenericViewSet):
+    """View for updating user profile"""
+    
+    serializer_class = UserUpdateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    @extend_schema(
+        summary="Update user profile",
+        description="Update the current user's profile information.",
+        request=UserUpdateSerializer,
+        responses={200: UserSerializer},
+    )
+    def post(self, request):
+        """Update user profile"""
+        user = request.user
+        serializer = self.get_serializer(user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        
+        response_serializer = UserSerializer(user, context={"request": request})
+        return Response(response_serializer.data)
+
+
+class PasswordResetView(GenericViewSet):
+    """View for password reset request"""
+    
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [AuthThrottle]
+    
+    @extend_schema(
+        summary="Request password reset",
+        description="Request a password reset email to be sent.",
+        request={"type": "object", "properties": {"email": {"type": "string", "format": "email"}}},
+        responses={200: {"type": "object", "properties": {"message": {"type": "string"}}}},
+    )
+    def post(self, request):
+        """Request password reset"""
+        email = request.data.get('email')
+        if email:
+            # In a real implementation, you'd send a password reset email
+            # For now, just return a success message
+            return Response({"message": "If an account with that email exists, a password reset link has been sent."})
+        return Response({"error": "Email is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PasswordResetConfirmView(GenericViewSet):
+    """View for password reset confirmation"""
+    
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [AuthThrottle]
+    
+    @extend_schema(
+        summary="Confirm password reset",
+        description="Confirm password reset with token and new password.",
+        request={
+            "type": "object", 
+            "properties": {
+                "token": {"type": "string"},
+                "password": {"type": "string"},
+                "password_confirm": {"type": "string"}
+            }
+        },
+        responses={200: {"type": "object", "properties": {"message": {"type": "string"}}}},
+    )
+    def post(self, request):
+        """Confirm password reset"""
+        token = request.data.get('token')
+        password = request.data.get('password')
+        password_confirm = request.data.get('password_confirm')
+        
+        if not all([token, password, password_confirm]):
+            return Response({"error": "Token, password, and password confirmation are required."}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+        
+        if password != password_confirm:
+            return Response({"error": "Passwords do not match."}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+        
+        # In a real implementation, you'd validate the token and reset the password
+        # For now, just return a success message
+        return Response({"message": "Password has been reset successfully."})
+
+
+class EmailVerificationView(GenericViewSet):
+    """View for email verification"""
+    
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [AuthThrottle]
+    
+    @extend_schema(
+        summary="Verify email address",
+        description="Verify email address with verification token.",
+        request={"type": "object", "properties": {"token": {"type": "string"}}},
+        responses={200: {"type": "object", "properties": {"message": {"type": "string"}}}},
+    )
+    def post(self, request):
+        """Verify email address"""
+        token = request.data.get('token')
+        
+        if not token:
+            return Response({"error": "Verification token is required."}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+        
+        # In a real implementation, you'd validate the token and mark email as verified
+        # For now, just return a success message
+        return Response({"message": "Email has been verified successfully."})

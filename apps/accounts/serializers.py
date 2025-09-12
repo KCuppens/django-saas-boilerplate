@@ -2,6 +2,7 @@ from allauth.account.adapter import get_adapter
 from allauth.account.utils import setup_user_email
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from rest_framework import serializers
 
 from .models import UserProfile
@@ -94,8 +95,12 @@ class UserRegistrationSerializer(serializers.Serializer):
         password = data.get("password1")
         try:
             validate_password(password)
-        except Exception as e:
+        except ValidationError as e:
             raise serializers.ValidationError({"password1": list(e.messages)})
+        except Exception as e:
+            # Handle generic exceptions that might not have messages attribute
+            error_messages = list(e) if hasattr(e, '__iter__') and not isinstance(e, str) else [str(e)]
+            raise serializers.ValidationError({"password1": error_messages})
 
         return data
 
@@ -105,11 +110,11 @@ class UserRegistrationSerializer(serializers.Serializer):
         user = adapter.new_user(request)
         user.email = self.validated_data.get("email")
         user.name = self.validated_data.get("name", "")
-
-        adapter.save_user(request, user, form=None)
-        setup_user_email(request, user, [])
         user.set_password(self.validated_data.get("password1"))
+        
+        # Save user first
         user.save()
+        setup_user_email(request, user, [])
 
         return user
 
@@ -139,8 +144,12 @@ class PasswordChangeSerializer(serializers.Serializer):
         user = self.context["request"].user
         try:
             validate_password(password, user)
-        except Exception as e:
+        except ValidationError as e:
             raise serializers.ValidationError({"new_password1": list(e.messages)})
+        except Exception as e:
+            # Handle generic exceptions that might not have messages attribute
+            error_messages = list(e) if hasattr(e, '__iter__') and not isinstance(e, str) else [str(e)]
+            raise serializers.ValidationError({"new_password1": error_messages})
 
         return data
 
@@ -160,7 +169,8 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["name", "avatar", "profile"]
+        fields = ["id", "name", "avatar", "profile", "email", "updated_at"]
+        read_only_fields = ["id", "email", "updated_at"]
 
     def update(self, instance, validated_data):
         """Update user and profile"""
