@@ -18,7 +18,7 @@ urlpatterns = [
     # Additional URL patterns for the missing functionality
     path(
         "profile/update/",
-        ProfileUpdateView.as_view({"post": "post"}),
+        ProfileUpdateView.as_view(),
         name="api-profile-update",
     ),
     path(

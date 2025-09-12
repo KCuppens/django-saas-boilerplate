@@ -67,10 +67,16 @@ SECRET_KEY = env(
 REST_FRAMEWORK = {
     **REST_FRAMEWORK,
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.SessionAuthentication",
+        "apps.core.authentication.CustomSessionAuthentication",
     ],
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
+    # Completely disable throttling for tests
+    "DEFAULT_THROTTLE_CLASSES": [],
+    "DEFAULT_THROTTLE_RATES": {},
 }
+
+# Testing flag
+TESTING = True
 
 # Waffle settings for tests
 WAFFLE_FLAG_DEFAULT = False

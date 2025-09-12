@@ -7,7 +7,7 @@ from .views import APIKeyViewSet, HealthCheckViewSet, NoteViewSet
 # Create router and register viewsets
 router = DefaultRouter()
 router.register(r"notes", NoteViewSet, basename="note")
-router.register(r"health", HealthCheckViewSet, basename="health")
+router.register(r"health", HealthCheckViewSet, basename="healthcheck")
 router.register(r"api-keys", APIKeyViewSet, basename="apikey")
 
 urlpatterns = [

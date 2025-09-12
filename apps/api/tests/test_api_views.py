@@ -426,10 +426,24 @@ class HealthCheckViewSetTestCase(APITestCase):
 
     def test_get_system_metrics_no_psutil(self):
         """Test system metrics when psutil is not available"""
-        with patch("builtins.__import__", side_effect=ImportError):
-            viewset = self.get_viewset_instance()
+        viewset = self.get_viewset_instance()
+        
+        # Remove psutil from sys.modules if it exists
+        import sys
+        psutil_backup = sys.modules.pop('psutil', None)
+        
+        # Make sure importing psutil raises ImportError
+        sys.modules['psutil'] = None
+        
+        try:
             metrics = viewset._get_system_metrics()
             self.assertEqual(metrics, {})
+        finally:
+            # Restore psutil
+            if psutil_backup is not None:
+                sys.modules['psutil'] = psutil_backup
+            elif 'psutil' in sys.modules:
+                del sys.modules['psutil']
 
     def get_viewset_instance(self):
         """Get HealthCheckViewSet instance"""

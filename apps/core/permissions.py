@@ -70,3 +70,32 @@ class IsMemberOrAbove(permissions.BasePermission):
             return False
 
         return request.user.is_member()
+
+
+class IsOwnerOrPublic(permissions.BasePermission):
+    """Permission that allows owners to modify, everyone to read public items"""
+
+    def has_permission(self, request, view):
+        # All authenticated users can list and create
+        if not request.user or not request.user.is_authenticated:
+            return False
+        return True
+
+    def has_object_permission(self, request, view, obj):
+        if not request.user or not request.user.is_authenticated:
+            return False
+
+        # Admin users can access everything
+        if request.user.is_admin():
+            return True
+
+        # Owner can always access their own items
+        if hasattr(obj, "created_by") and obj.created_by == request.user:
+            return True
+
+        # For read operations, check if item is public
+        if request.method in permissions.SAFE_METHODS:
+            if hasattr(obj, "is_public") and obj.is_public:
+                return True
+
+        return False

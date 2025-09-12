@@ -354,8 +354,13 @@ class FileViewsTestCase(APITestCase):
         """Test file serializer with actual model data"""
         self.client.force_authenticate(user=self.user)
 
+        # Create a proper request object for the serializer context
+        factory = RequestFactory()
+        request = factory.get("/")
+        request.user = self.user
+
         serializer = FileUploadSerializer(
-            self.file_upload, context={"request": self.client.request()}
+            self.file_upload, context={"request": request}
         )
 
         data = serializer.data

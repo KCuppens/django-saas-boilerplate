@@ -57,12 +57,10 @@ class APIKey(TimestampMixin):
         "Name", max_length=100, help_text="Human-readable name for this API key"
     )
     key = models.CharField("API Key", max_length=64, unique=True, editable=False)
-    permissions = models.CharField(
+    permissions = models.JSONField(
         "Permissions",
-        max_length=10,
-        choices=PERMISSION_CHOICES,
-        default="read",
-        help_text="Permission level for this API key",
+        default=list,
+        help_text="List of permissions for this API key",
     )
     is_active = models.BooleanField(
         "Active", default=True, help_text="Whether this API key is active"
@@ -103,6 +101,11 @@ class APIKey(TimestampMixin):
         if not self.is_active:
             return False
 
+        # Handle both array-style permissions and old string-style permissions
+        if isinstance(self.permissions, list):
+            return permission in self.permissions
+        
+        # Fallback for old string-style permissions
         permission_levels = {
             "read": ["read"],
             "write": ["read", "write"],

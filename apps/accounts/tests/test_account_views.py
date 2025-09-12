@@ -76,7 +76,6 @@ class UserViewSetTestCase(APITestCase):
         # Verify user was created
         self.assertTrue(User.objects.filter(email="newuser@example.com").exists())
 
-    @patch("allauth.account.app_settings.EMAIL_VERIFICATION", "mandatory")
     def test_register_with_email_verification(self):
         """Test registration when email verification is required"""
         url = reverse("user-register")
@@ -88,10 +87,8 @@ class UserViewSetTestCase(APITestCase):
             "password2": "verifypass123456",
         }
 
-        with patch(
-            "allauth.account.app_settings.EmailVerificationMethod.MANDATORY",
-            "mandatory",
-        ):
+        # Mock the EMAIL_VERIFICATION setting to be mandatory
+        with patch("allauth.account.app_settings.EMAIL_VERIFICATION", "mandatory"):
             response = self.client.post(url, data, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)

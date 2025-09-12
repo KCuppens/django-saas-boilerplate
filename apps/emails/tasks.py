@@ -108,7 +108,7 @@ def cleanup_old_email_logs(days_to_keep: int = 30):
 
 @shared_task(name="apps.emails.tasks.send_bulk_email_task")
 def send_bulk_email_task(
-    template_key: str, recipient_emails: list, context: dict | None = None
+    template_key: str, recipient_emails: list, context: dict = None
 ):
     """
     Celery task to send bulk emails
@@ -123,6 +123,15 @@ def send_bulk_email_task(
     """
     try:
         from .services import EmailService
+        from .models import EmailTemplate
+
+        # Validate template exists before processing any emails
+        try:
+            template = EmailTemplate.objects.get(key=template_key, language="en")
+            if not template.is_active:
+                raise ValueError(f"Email template '{template_key}' is not active")
+        except EmailTemplate.DoesNotExist:
+            raise ValueError(f"Email template '{template_key}' not found")
 
         sent_count = 0
         failed_count = 0

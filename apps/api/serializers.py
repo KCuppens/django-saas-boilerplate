@@ -73,8 +73,9 @@ class NoteCreateUpdateSerializer(NoteSerializer):
             "tag_list",
             "created_at",
             "updated_at",
+            "created_by_name",
         ]
-        read_only_fields = ["id", "created_at", "updated_at"]
+        read_only_fields = ["id", "created_at", "updated_at", "created_by_name"]
 
 
 class HealthCheckSerializer(serializers.Serializer):
@@ -99,6 +100,13 @@ class HealthCheckSerializer(serializers.Serializer):
 
 class APIKeySerializer(serializers.ModelSerializer):
     """Serializer for APIKey model"""
+    
+    permissions = serializers.ListField(
+        child=serializers.ChoiceField(choices=['read', 'write', 'admin']),
+        required=False,
+        default=list,
+        help_text="List of permissions for this API key"
+    )
 
     class Meta:
         model = APIKey
@@ -125,6 +133,13 @@ class APIKeySerializer(serializers.ModelSerializer):
 
 class APIKeyCreateSerializer(serializers.ModelSerializer):
     """Serializer for creating API keys"""
+    
+    permissions = serializers.ListField(
+        child=serializers.ChoiceField(choices=['read', 'write', 'admin']),
+        required=False,
+        default=list,
+        help_text="List of permissions for this API key"
+    )
 
     class Meta:
         model = APIKey

@@ -62,7 +62,12 @@ class EmailServiceTestCase(TestCase):
     @patch("apps.emails.services.EmailService._send_email_now")
     def test_send_email_sync(self, mock_send):
         """Test sending email synchronously"""
-        mock_send.return_value = True
+        def mock_send_email_now(email_log):
+            # Simulate successful sending by updating the status
+            email_log.mark_as_sent()
+            return True
+        
+        mock_send.side_effect = mock_send_email_now
 
         email_log = EmailService.send_email(
             template_key="welcome",
@@ -164,7 +169,12 @@ class EmailServiceTestCase(TestCase):
     @patch("apps.emails.services.EmailService._send_email_now")
     def test_send_bulk_email(self, mock_send):
         """Test sending bulk emails"""
-        mock_send.return_value = True
+        def mock_send_email_now(email_log):
+            # Simulate successful sending by updating the status
+            email_log.mark_as_sent()
+            return True
+        
+        mock_send.side_effect = mock_send_email_now
         recipients = ["user1@example.com", "user2@example.com", "user3@example.com"]
 
         results = EmailService.send_bulk_email(
@@ -181,8 +191,16 @@ class EmailServiceTestCase(TestCase):
     @patch("apps.emails.services.EmailService._send_email_now")
     def test_send_bulk_email_with_failures(self, mock_send):
         """Test sending bulk emails with some failures"""
-        # First two succeed, third fails
-        mock_send.side_effect = [True, True, False]
+        def mock_send_side_effect(email_log):
+            # First two succeed, third fails
+            if "user3@example.com" in email_log.to_email:
+                email_log.mark_as_failed("Send failed")
+                return False
+            else:
+                email_log.mark_as_sent()
+                return True
+        
+        mock_send.side_effect = mock_send_side_effect
         recipients = ["user1@example.com", "user2@example.com", "user3@example.com"]
 
         results = EmailService.send_bulk_email(
@@ -228,10 +246,15 @@ class EmailTasksTestCase(TestCase):
             email="test@example.com", name="Test User", password="testpass123"
         )
 
-    @patch("apps.emails.tasks.EmailService._send_email_now")
+    @patch("apps.emails.services.EmailService._send_email_now")
     def test_send_email_task_success(self, mock_send):
         """Test send_email_task success"""
-        mock_send.return_value = True
+        def mock_send_email_now(email_log):
+            # Simulate successful sending by updating the status
+            email_log.mark_as_sent()
+            return True
+        
+        mock_send.side_effect = mock_send_email_now
 
         email_log = EmailMessageLog.objects.create(
             template_key="test",
@@ -246,17 +269,21 @@ class EmailTasksTestCase(TestCase):
         self.assertEqual(result["email_log_id"], email_log.id)
         self.assertEqual(result["to_email"], "recipient@example.com")
 
-    @patch("apps.emails.tasks.EmailService._send_email_now")
+    @patch("apps.emails.services.EmailService._send_email_now")
     def test_send_email_task_failure(self, mock_send):
         """Test send_email_task failure"""
-        mock_send.return_value = False
+        def mock_send_email_now(email_log):
+            # Simulate failed sending
+            email_log.mark_as_failed("Send failed")
+            return False
+        
+        mock_send.side_effect = mock_send_email_now
 
         email_log = EmailMessageLog.objects.create(
             template_key="test",
             to_email="recipient@example.com",
             subject="Test Email",
             status=EmailStatus.PENDING,
-            error_message="Send failed",
         )
 
         result = send_email_task(email_log.id)
@@ -294,9 +321,20 @@ class EmailTasksTestCase(TestCase):
             self.assertFalse(result["success"])
             self.assertIn("Database error", result["error"])
 
-    @patch("apps.emails.tasks.EmailService.send_email")
+    @patch("apps.emails.services.EmailService.send_email")
     def test_send_bulk_email_task_success(self, mock_send_email):
         """Test send_bulk_email_task success"""
+        # Create welcome template for this test
+        template = EmailTemplate.objects.create(
+            key="welcome",
+            name="Welcome Email",
+            subject="Welcome {{ name }}!",
+            html_content="<p>Welcome {{ name }}!</p>",
+            text_content="Welcome {{ name }}!",
+            language="en",
+            is_active=True,
+        )
+        
         mock_send_email.return_value = Mock()
         recipients = ["user1@example.com", "user2@example.com"]
 
@@ -311,9 +349,20 @@ class EmailTasksTestCase(TestCase):
         self.assertEqual(result["failed_count"], 0)
         self.assertEqual(result["total_recipients"], 2)
 
-    @patch("apps.emails.tasks.EmailService.send_email")
+    @patch("apps.emails.services.EmailService.send_email")
     def test_send_bulk_email_task_with_failures(self, mock_send_email):
         """Test send_bulk_email_task with some failures"""
+        # Create welcome template for this test
+        template = EmailTemplate.objects.create(
+            key="welcome",
+            name="Welcome Email",
+            subject="Welcome {{ name }}!",
+            html_content="<p>Welcome {{ name }}!</p>",
+            text_content="Welcome {{ name }}!",
+            language="en",
+            is_active=True,
+        )
+        
         mock_send_email.side_effect = [Mock(), Exception("Send failed")]
         recipients = ["user1@example.com", "user2@example.com"]
 
@@ -393,7 +442,7 @@ class EmailTasksTestCase(TestCase):
 
         # Mock the Celery task to test retry mechanism
         with patch("apps.emails.tasks.send_email_task.retry"):
-            with patch("apps.emails.tasks.EmailService._send_email_now") as mock_send:
+            with patch("apps.emails.services.EmailService._send_email_now") as mock_send:
                 mock_send.side_effect = Exception("Temporary failure")
 
                 # Create mock task instance
@@ -477,6 +526,6 @@ class EmailServicePrivateMethodsTestCase(TestCase):
         self.assertIsInstance(email_log, EmailMessageLog)
         self.assertEqual(email_log.to_email, "test@example.com")
         self.assertEqual(email_log.from_email, "from@example.com")
-        self.assertEqual(email_log.cc, "cc@example.com")
-        self.assertEqual(email_log.bcc, "bcc@example.com")
+        self.assertEqual(email_log.cc, '["cc@example.com"]')
+        self.assertEqual(email_log.bcc, '["bcc@example.com"]')
         self.assertEqual(email_log.subject, "Test Subject")

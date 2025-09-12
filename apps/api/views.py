@@ -11,7 +11,7 @@ from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from apps.core.permissions import IsOwnerOrAdmin
+from apps.core.permissions import IsOwnerOrAdmin, IsOwnerOrPublic
 
 from .models import APIKey, Note
 from .serializers import (
@@ -77,7 +77,7 @@ class NoteViewSet(viewsets.ModelViewSet):
     """ViewSet for managing notes"""
 
     serializer_class = NoteSerializer
-    permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdmin]
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrPublic]
 
     def get_queryset(self):
         """Get notes based on user permissions"""
@@ -107,6 +107,35 @@ class NoteViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(is_public=is_public.lower() == "true")
 
         return queryset
+
+    def get_object(self):
+        """Get object and handle 404 vs 403"""
+        # For modify operations (update, destroy), we want to return 404 
+        # if the user can't modify the note (instead of 403)
+        if self.action in ['update', 'partial_update', 'destroy', 'toggle_visibility']:
+            try:
+                # For modify operations, only include notes the user owns
+                obj = Note.objects.select_related("created_by", "updated_by").get(
+                    pk=self.kwargs['pk'], 
+                    created_by=self.request.user
+                )
+                return obj
+            except Note.DoesNotExist:
+                # Return 404 instead of 403 for privacy
+                from rest_framework.exceptions import NotFound
+                raise NotFound()
+        
+        # For read operations, use the normal filtered queryset
+        if self.action == 'retrieve':
+            try:
+                obj = self.get_queryset().get(pk=self.kwargs['pk'])
+                self.check_object_permissions(self.request, obj)
+                return obj
+            except Note.DoesNotExist:
+                from rest_framework.exceptions import NotFound
+                raise NotFound()
+        
+        return super().get_object()
 
     def get_serializer_class(self):
         """Return appropriate serializer class"""
@@ -265,7 +294,6 @@ class HealthCheckViewSet(viewsets.ViewSet):
         """Get system metrics (for staff users only)"""
         try:
             import time
-
             import psutil
 
             # Get uptime (approximate)
@@ -278,10 +306,8 @@ class HealthCheckViewSet(viewsets.ViewSet):
                 "memory_usage": psutil.virtual_memory().percent,
                 "cpu_usage": psutil.cpu_percent(),
             }
-        except ImportError:
-            # psutil not available
-            return {}
-        except Exception:
+        except (ImportError, Exception):
+            # psutil not available or other error
             return {}
 
     @extend_schema(
