@@ -2,7 +2,7 @@ import hashlib
 import logging
 import os
 import uuid
-from typing import Any, Dict, Optional
+from typing import Any
 
 from django.conf import settings
 from django.core.files.base import ContentFile
@@ -128,9 +128,9 @@ class FileService:
         cls,
         storage_path: str,
         expires_in: int = 3600,
-        content_type: Optional[str] = None,
-        max_size: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        content_type: str | None = None,
+        max_size: int | None = None,
+    ) -> dict[str, Any]:
         """Get signed upload URL and required fields"""
 
         if hasattr(default_storage, "generate_presigned_post"):
@@ -172,7 +172,7 @@ class FileService:
             return False
 
     @classmethod
-    def validate_file(cls, file, max_size_mb: int = 10) -> Dict[str, Any]:
+    def validate_file(cls, file, max_size_mb: int = 10) -> dict[str, Any]:
         """Validate uploaded file"""
 
         errors = []
@@ -241,7 +241,7 @@ class FileService:
         }
 
     @classmethod
-    def cleanup_expired_files(cls) -> Dict[str, int]:
+    def cleanup_expired_files(cls) -> dict[str, int]:
         """Clean up expired files"""
 
         from django.utils import timezone

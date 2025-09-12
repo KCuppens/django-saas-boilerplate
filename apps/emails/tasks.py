@@ -188,7 +188,9 @@ def retry_failed_emails(max_retries: int = 3):
         cutoff_time = timezone.now() - timedelta(hours=24)
         failed_emails = EmailMessageLog.objects.filter(
             status=EmailStatus.FAILED, created_at__gte=cutoff_time
-        )[:100]  # Limit to 100 at a time
+        )[
+            :100
+        ]  # Limit to 100 at a time
 
         retried_count = 0
         success_count = 0

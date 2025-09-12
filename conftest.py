@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 import django
+
 import pytest
 
 # Add project root to path
@@ -16,6 +17,7 @@ django.setup()
 
 from django.contrib.auth import get_user_model  # noqa: E402
 from django.contrib.auth.models import Group  # noqa: E402
+
 from rest_framework.test import APIClient  # noqa: E402
 
 User = get_user_model()
@@ -148,6 +150,7 @@ def sample_image():
     import io
 
     from django.core.files.uploadedfile import SimpleUploadedFile
+
     from PIL import Image
 
     # Create a simple image
