@@ -1,5 +1,17 @@
 """Global pytest configuration and fixtures"""
 
+import os
+import sys
+import django
+from pathlib import Path
+
+# Add project root to path
+sys.path.insert(0, str(Path(__file__).parent))
+
+# Setup Django
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "apps.config.settings.test")
+django.setup()
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 

@@ -211,7 +211,7 @@ def retry_failed_emails(max_retries: int = 3):
 
             except Exception as e:
                 logger.error(
-                    f"Failed to retry email {email_log.id}: {str(e)}"
+                    f"Failed to retry email {email_log.id}: {str(e)}"  # type: ignore
                 )
 
         logger.info(f"Retried {retried_count} failed emails")

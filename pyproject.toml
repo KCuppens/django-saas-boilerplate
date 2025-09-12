@@ -137,7 +137,7 @@ markers = [
 ]
 
 [tool.coverage.run]
-source = "apps"
+source = ["apps"]
 omit = [
     "*/migrations/*",
     "*/tests/*",
