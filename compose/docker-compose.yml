@@ -57,7 +57,7 @@ services:
       retries: 3
 
   api:
-    build: 
+    build:
       context: ..
       dockerfile: Dockerfile.dev
     ports:
@@ -86,7 +86,7 @@ services:
              python manage.py runserver 0.0.0.0:8000"
 
   celery:
-    build: 
+    build:
       context: ..
       dockerfile: Dockerfile.dev
     env_file:
@@ -105,7 +105,7 @@ services:
     command: celery -A apps.config worker -l info
 
   celery-beat:
-    build: 
+    build:
       context: ..
       dockerfile: Dockerfile.dev
     env_file:

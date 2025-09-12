@@ -152,7 +152,8 @@ class Command(BaseCommand):
                 except Group.DoesNotExist:
                     self.stdout.write(
                         self.style.WARNING(
-                            f"Group {user_data['group']} not found. Run sync_groups first."
+                            f"Group {user_data['group']} not found. "
+                            "Run sync_groups first."
                         )
                     )
             else:
@@ -217,8 +218,12 @@ The {{ site_name }} Team
 <h2>Password Reset Request</h2>
 <p>Hi {{ user_name }},</p>
 <p>You requested a password reset for your {{ site_name }} account.</p>
-<p><a href="{{ reset_link }}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Reset Your Password</a></p>
-<p>This link will expire in 24 hours. If you didn't request this reset, please ignore this email.</p>
+<p><a href="{{ reset_link }}"
+      style="background-color: #007bff; color: white;
+             padding: 10px 20px; text-decoration: none;
+             border-radius: 5px;">Reset Your Password</a></p>
+<p>This link will expire in 24 hours. If you didn't request this
+   reset, please ignore this email.</p>
 <p>Best regards,<br>The {{ site_name }} Team</p>
                 """,
                 "text_content": """
@@ -230,7 +235,8 @@ You requested a password reset for your {{ site_name }} account.
 
 Click this link to reset your password: {{ reset_link }}
 
-This link will expire in 24 hours. If you didn't request this reset, please ignore this email.
+This link will expire in 24 hours. If you didn't request this
+reset, please ignore this email.
 
 Best regards,
 The {{ site_name }} Team
@@ -252,7 +258,10 @@ The {{ site_name }} Team
 <p>Hi {{ user_name }},</p>
 <p>{{ message }}</p>
 {% if action_url %}
-<p><a href="{{ action_url }}" style="background-color: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Take Action</a></p>
+<p><a href="{{ action_url }}"
+      style="background-color: #28a745; color: white;
+             padding: 10px 20px; text-decoration: none;
+             border-radius: 5px;">Take Action</a></p>
 {% endif %}
 <p>Best regards,<br>The {{ site_name }} Team</p>
                 """,
@@ -315,19 +324,32 @@ The {{ site_name }} Team
         demo_notes = [
             {
                 "title": "Demo: Welcome to the API",
-                "content": "This is a sample note to demonstrate the Notes API functionality. You can create, update, and delete notes through the REST API.",
+                "content": (
+                    "This is a sample note to demonstrate the Notes API "
+                    "functionality. You can create, update, and delete notes "
+                    "through the REST API."
+                ),
                 "is_public": True,
                 "tags": "demo, api, welcome",
             },
             {
                 "title": "Demo: Private Note",
-                "content": "This is a private note that only the creator can see. Perfect for storing personal information or drafts.",
+                "content": (
+                    "This is a private note that only the creator can see. "
+                    "Perfect for storing personal information or drafts."
+                ),
                 "is_public": False,
                 "tags": "demo, private",
             },
             {
                 "title": "Demo: Feature Ideas",
-                "content": "Here are some feature ideas for the application:\n- Real-time notifications\n- File attachments\n- Collaborative editing\n- Export functionality",
+                "content": (
+                    "Here are some feature ideas for the application:\n"
+                    "- Real-time notifications\n"
+                    "- File attachments\n"
+                    "- Collaborative editing\n"
+                    "- Export functionality"
+                ),
                 "is_public": True,
                 "tags": "demo, features, ideas",
             },

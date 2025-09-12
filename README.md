@@ -325,7 +325,7 @@ make lint
 
 # Tools used:
 # - ruff (linting)
-# - black (formatting)  
+# - black (formatting)
 # - isort (import sorting)
 # - mypy (type checking)
 # - bandit (security)
@@ -372,7 +372,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🆘 Support
 
 - **Documentation**: Check the `/docs/` directory for detailed guides
-- **Issues**: Open an issue on GitHub for bugs or feature requests  
+- **Issues**: Open an issue on GitHub for bugs or feature requests
 - **Discussions**: Use GitHub Discussions for questions and ideas
 
 ---

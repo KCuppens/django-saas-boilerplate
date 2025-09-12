@@ -15,7 +15,7 @@ else:
             "NAME": ":memory:",
         }
     }
-    
+
     # Disable migrations for local tests only
     class DisableMigrations:
         def __contains__(self, item):

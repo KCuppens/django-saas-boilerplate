@@ -129,7 +129,7 @@ if [[ -n "$DRY_RUN" ]]; then
 else
     # Perform the backup
     log_info "Creating backup..."
-    
+
     if pg_dump \
         --host "$DB_HOST" \
         --port "$DB_PORT" \
@@ -138,7 +138,7 @@ else
         --format custom \
         --file "$BACKUP_PATH" \
         "$DB_NAME"; then
-        
+
         # Check if backup file was created and has content
         if [[ -f "$BACKUP_PATH" && -s "$BACKUP_PATH" ]]; then
             BACKUP_SIZE=$(du -h "$BACKUP_PATH" | cut -f1)
@@ -158,7 +158,7 @@ fi
 # Cleanup old backups
 if [[ "$RETENTION_DAYS" -gt 0 ]]; then
     log_info "Cleaning up backups older than $RETENTION_DAYS days..."
-    
+
     if [[ -n "$DRY_RUN" ]]; then
         log_info "Would remove files older than $RETENTION_DAYS days from $BACKUP_DIR"
         find "$BACKUP_DIR" -name "backup_*.sql" -type f -mtime +$RETENTION_DAYS -print | while read -r file; do
@@ -171,7 +171,7 @@ if [[ "$RETENTION_DAYS" -gt 0 ]]; then
             rm "$file"
             ((REMOVED_COUNT++))
         done
-        
+
         if [[ $REMOVED_COUNT -gt 0 ]]; then
             log_info "Removed $REMOVED_COUNT old backup files"
         else
@@ -183,7 +183,7 @@ fi
 # Summary
 if [[ -z "$DRY_RUN" ]]; then
     log_info "Backup process completed successfully!"
-    
+
     # List current backups
     log_info "Current backups in $BACKUP_DIR:"
     ls -lah "$BACKUP_DIR"/backup_*.sql 2>/dev/null | while read -r line; do

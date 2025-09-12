@@ -36,7 +36,9 @@ class AuthThrottle(AnonRateThrottle):
     ),
     partial_update=extend_schema(
         summary="Partially update user profile",
-        description="Partially update the current authenticated user's profile information.",
+        description=(
+            "Partially update the current authenticated user's profile information."
+        ),
     ),
 )
 class UserViewSet(RetrieveModelMixin, UpdateModelMixin, GenericViewSet):
@@ -58,7 +60,10 @@ class UserViewSet(RetrieveModelMixin, UpdateModelMixin, GenericViewSet):
 
     @extend_schema(
         summary="Register new user",
-        description="Register a new user account. Email verification will be required if enabled.",
+        description=(
+            "Register a new user account. Email verification will be "
+            "required if enabled."
+        ),
         request=UserRegistrationSerializer,
         responses={201: UserSerializer},
     )
@@ -82,7 +87,10 @@ class UserViewSet(RetrieveModelMixin, UpdateModelMixin, GenericViewSet):
         return Response(
             {
                 "user": user_serializer.data,
-                "message": "Registration successful. Please check your email to verify your account."
+                "message": (
+                    "Registration successful. Please check your email to "
+                    "verify your account."
+                )
                 if allauth_settings.EMAIL_VERIFICATION
                 == allauth_settings.EmailVerificationMethod.MANDATORY
                 else "Registration successful.",

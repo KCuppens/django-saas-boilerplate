@@ -37,7 +37,7 @@ For production deployment:
 # Using Make
 make install-prod
 
-# Or manually  
+# Or manually
 pip install --upgrade pip
 pip install -r requirements.txt
 ```

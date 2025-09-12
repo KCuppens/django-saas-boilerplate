@@ -1,6 +1,6 @@
 # 📌 GitHub Issues Plan — Django Boilerplate (API-only)
 
-We keep code in `/apps/` for clear modular separation.  
+We keep code in `/apps/` for clear modular separation.
 Core principles: async emails via Celery, Django Groups for RBAC, feature flags via `django-waffle`, pre-commit enforced linting, no React/Next.js here.
 
 ---
@@ -306,4 +306,3 @@ Nightly Celery beat job
 scripts/backup_db.sh → S3/MinIO
 
 Retention cleanup
-

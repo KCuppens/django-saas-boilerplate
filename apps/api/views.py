@@ -1,7 +1,11 @@
 from django.db.models import Q
 from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
+from drf_spectacular.utils import (
+    OpenApiParameter,
+    extend_schema,
+    extend_schema_view,
+)
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -19,7 +23,9 @@ from .serializers import (
 @extend_schema_view(
     list=extend_schema(
         summary="List notes",
-        description="Get a list of notes. Users can see their own notes and public notes.",
+        description=(
+            "Get a list of notes. Users can see their own notes and public notes."
+        ),
         parameters=[
             OpenApiParameter(
                 name="search",
@@ -40,11 +46,15 @@ from .serializers import (
     ),
     create=extend_schema(
         summary="Create note",
-        description="Create a new note. The authenticated user will be set as the creator.",
+        description=(
+            "Create a new note. The authenticated user will be set as the creator."
+        ),
     ),
     retrieve=extend_schema(
         summary="Get note",
-        description="Get a specific note. Users can only access their own notes or public notes.",
+        description=(
+            "Get a specific note. Users can only access their own notes or public notes."
+        ),
     ),
     update=extend_schema(
         summary="Update note",
@@ -52,7 +62,9 @@ from .serializers import (
     ),
     partial_update=extend_schema(
         summary="Partially update note",
-        description="Partially update a note. Users can only update their own notes.",
+        description=(
+            "Partially update a note. Users can only update their own notes."
+        ),
     ),
     destroy=extend_schema(
         summary="Delete note",
@@ -102,14 +114,17 @@ class NoteViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """Set the creator when creating a note"""
-        serializer.save(created_by=self.request.user, updated_by=self.request.user)
+        serializer.save(
+            created_by=self.request.user, updated_by=self.request.user
+        )
 
     def perform_update(self, serializer):
         """Set the updater when updating a note"""
         serializer.save(updated_by=self.request.user)
 
     @extend_schema(
-        summary="Get my notes", description="Get all notes created by the current user."
+        summary="Get my notes",
+        description="Get all notes created by the current user.",
     )
     @action(detail=False, methods=["get"])
     def my_notes(self, request):
@@ -124,7 +139,10 @@ class NoteViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
-    @extend_schema(summary="Get public notes", description="Get all public notes.")
+    @extend_schema(
+        summary="Get public notes",
+        description="Get all public notes.",
+    )
     @action(detail=False, methods=["get"])
     def public(self, request):
         """Get public notes"""
@@ -196,7 +214,9 @@ class HealthCheckViewSet(viewsets.ViewSet):
 
         if not all(checks):
             health_data["status"] = "unhealthy"
-            return Response(health_data, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            return Response(
+                health_data, status=status.HTTP_503_SERVICE_UNAVAILABLE
+            )
 
         serializer = HealthCheckSerializer(health_data)
         return Response(serializer.data)

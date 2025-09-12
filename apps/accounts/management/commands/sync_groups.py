@@ -126,7 +126,8 @@ class Command(BaseCommand):
             else:
                 self.stdout.write(
                     self.style.NOTICE(
-                        f"Group {group_name} already exists (use --force to update permissions)"
+                        f"Group {group_name} already exists "
+                        "(use --force to update permissions)"
                     )
                 )
                 continue
@@ -165,7 +166,8 @@ class Command(BaseCommand):
             else:
                 # Dry run - just show what would be added
                 self.stdout.write(
-                    f"  Would add {len(group_config['permissions'])} permissions to {group_name}"
+                    f"  Would add {len(group_config['permissions'])} "
+                    f"permissions to {group_name}"
                 )
                 for permission in group_config["permissions"]:
                     self.stdout.write(f"    - {permission}")
@@ -181,8 +183,8 @@ class Command(BaseCommand):
         else:
             self.stdout.write(
                 self.style.NOTICE(
-                    f"\nDry run completed: would create {created_groups} groups, "
-                    f"update {updated_groups} groups"
+                    f"\nDry run completed: would create {created_groups} "
+                    f"groups, update {updated_groups} groups"
                 )
             )
 
