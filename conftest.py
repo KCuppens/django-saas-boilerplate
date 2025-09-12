@@ -2,8 +2,10 @@
 
 import os
 import sys
-import django
 from pathlib import Path
+
+import django
+import pytest
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -12,11 +14,9 @@ sys.path.insert(0, str(Path(__file__).parent))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "apps.config.settings.test")
 django.setup()
 
-from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
-
-import pytest
-from rest_framework.test import APIClient
+from django.contrib.auth import get_user_model  # noqa: E402
+from django.contrib.auth.models import Group  # noqa: E402
+from rest_framework.test import APIClient  # noqa: E402
 
 User = get_user_model()
 
@@ -148,7 +148,6 @@ def sample_image():
     import io
 
     from django.core.files.uploadedfile import SimpleUploadedFile
-
     from PIL import Image
 
     # Create a simple image

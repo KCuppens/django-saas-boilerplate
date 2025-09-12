@@ -1,6 +1,5 @@
-from django.contrib.auth import get_user_model
-
 from allauth.account import app_settings as allauth_settings
+from django.contrib.auth import get_user_model
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import permissions, status
 from rest_framework.decorators import action

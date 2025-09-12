@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING
 
 from django.contrib.auth import get_user_model
-
 from waffle import flag_is_active, sample_is_active, switch_is_active
 
 if TYPE_CHECKING:
