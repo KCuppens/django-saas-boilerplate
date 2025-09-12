@@ -99,7 +99,11 @@ class UserRegistrationSerializer(serializers.Serializer):
             raise serializers.ValidationError({"password1": list(e.messages)})
         except Exception as e:
             # Handle generic exceptions that might not have messages attribute
-            error_messages = list(e) if hasattr(e, '__iter__') and not isinstance(e, str) else [str(e)]
+            error_messages = (
+                list(e)
+                if hasattr(e, "__iter__") and not isinstance(e, str)
+                else [str(e)]
+            )
             raise serializers.ValidationError({"password1": error_messages})
 
         return data
@@ -111,7 +115,7 @@ class UserRegistrationSerializer(serializers.Serializer):
         user.email = self.validated_data.get("email")
         user.name = self.validated_data.get("name", "")
         user.set_password(self.validated_data.get("password1"))
-        
+
         # Save user first
         user.save()
         setup_user_email(request, user, [])
@@ -148,7 +152,11 @@ class PasswordChangeSerializer(serializers.Serializer):
             raise serializers.ValidationError({"new_password1": list(e.messages)})
         except Exception as e:
             # Handle generic exceptions that might not have messages attribute
-            error_messages = list(e) if hasattr(e, '__iter__') and not isinstance(e, str) else [str(e)]
+            error_messages = (
+                list(e)
+                if hasattr(e, "__iter__") and not isinstance(e, str)
+                else [str(e)]
+            )
             raise serializers.ValidationError({"new_password1": error_messages})
 
         return data

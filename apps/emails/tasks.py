@@ -108,7 +108,7 @@ def cleanup_old_email_logs(days_to_keep: int = 30):
 
 @shared_task(name="apps.emails.tasks.send_bulk_email_task")
 def send_bulk_email_task(
-    template_key: str, recipient_emails: list, context: dict = None
+    template_key: str, recipient_emails: list, context: dict | None = None
 ):
     """
     Celery task to send bulk emails

@@ -1,7 +1,7 @@
 import hashlib
 import secrets
 import uuid
-from typing import Any, Optional
+from typing import Any
 
 from django.conf import settings
 from django.core.mail import send_mail
@@ -106,7 +106,7 @@ def send_notification_email(
     subject: str,
     message: str,
     recipient_list: list,
-    from_email: Optional[str] = None,
+    from_email: str | None = None,
     fail_silently: bool = False,
 ) -> bool:
     """Send notification email"""

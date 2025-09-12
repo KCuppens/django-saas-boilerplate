@@ -1,8 +1,8 @@
-from django.test import TestCase
 from django.contrib.auth import get_user_model
+from django.test import TestCase
 
-from apps.emails.models import EmailTemplate, EmailMessageLog
 from apps.core.enums import EmailStatus
+from apps.emails.models import EmailMessageLog, EmailTemplate
 
 User = get_user_model()
 
@@ -12,8 +12,7 @@ class EmailModelTests(TestCase):
 
     def setUp(self):
         self.user = User.objects.create_user(
-            email="test@example.com",
-            password="testpass123"
+            email="test@example.com", password="testpass123"
         )
 
     def test_email_template_creation(self):
@@ -24,7 +23,7 @@ class EmailModelTests(TestCase):
             subject="Welcome!",
             html_content="<h1>Welcome!</h1>",
             text_content="Welcome!",
-            language="en"
+            language="en",
         )
         # Check if the string representation works as expected
         expected_str = f"{template.name} ({template.language})"
@@ -35,11 +34,11 @@ class EmailModelTests(TestCase):
         """Test EmailTemplate subject rendering"""
         template = EmailTemplate.objects.create(
             key="welcome",
-            name="Welcome Email", 
+            name="Welcome Email",
             subject="Welcome {{name}}!",
             html_content="<h1>Welcome {{name}}!</h1>",
             text_content="Welcome {{name}}!",
-            language="en"
+            language="en",
         )
         rendered = template.render_subject({"name": "John"})
         self.assertEqual(rendered, "Welcome John!")
@@ -52,9 +51,9 @@ class EmailModelTests(TestCase):
             subject="Welcome!",
             html_content="<h1>Welcome!</h1>",
             text_content="Welcome!",
-            language="en"
+            language="en",
         )
-        
+
         log = EmailMessageLog.objects.create(
             template=template,
             template_key="welcome",
@@ -63,9 +62,9 @@ class EmailModelTests(TestCase):
             subject="Welcome!",
             html_content="<h1>Welcome!</h1>",
             text_content="Welcome!",
-            status=EmailStatus.PENDING
+            status=EmailStatus.PENDING,
         )
-        
+
         # Check the string representation works
         expected_str = f"{log.to_email} - {log.subject}"
         self.assertEqual(str(log), expected_str)
@@ -78,9 +77,9 @@ class EmailModelTests(TestCase):
             to_email="test@example.com",
             from_email="noreply@example.com",
             subject="Test",
-            status=EmailStatus.PENDING
+            status=EmailStatus.PENDING,
         )
-        
+
         log.mark_as_sent()
         self.assertEqual(log.status, EmailStatus.SENT)
         self.assertIsNotNone(log.sent_at)
@@ -89,12 +88,12 @@ class EmailModelTests(TestCase):
         """Test EmailMessageLog mark_as_failed method"""
         log = EmailMessageLog.objects.create(
             template_key="test",
-            to_email="test@example.com", 
+            to_email="test@example.com",
             from_email="noreply@example.com",
             subject="Test",
-            status=EmailStatus.PENDING
+            status=EmailStatus.PENDING,
         )
-        
+
         error_message = "SMTP connection failed"
         log.mark_as_failed(error_message)
         self.assertEqual(log.status, EmailStatus.FAILED)
@@ -107,15 +106,15 @@ class EmailModelTests(TestCase):
             key="test_template",
             name="Test Template",
             subject="Test",
-            html_content="<p>Test</p>", 
+            html_content="<p>Test</p>",
             text_content="Test",
             language="en",
-            is_active=True
+            is_active=True,
         )
-        
+
         retrieved = EmailTemplate.get_template("test_template", "en")
         self.assertEqual(retrieved, template)
-        
+
         # Test non-existent template
         not_found = EmailTemplate.get_template("nonexistent", "en")
         self.assertIsNone(not_found)

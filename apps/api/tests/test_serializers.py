@@ -21,7 +21,7 @@ class TestAPIKeySerializer(TestCase):
             permissions="read",
             user=self.user,
         )
-        
+
         # Create a request factory for context
         self.factory = APIRequestFactory()
 
@@ -29,12 +29,19 @@ class TestAPIKeySerializer(TestCase):
         """Test serializer has expected fields"""
         serializer = APIKeySerializer(instance=self.api_key)
         data = serializer.data
-        
+
         expected_fields = [
-            "id", "name", "key", "permissions", "is_active", 
-            "user", "last_used", "created_at", "updated_at"
+            "id",
+            "name",
+            "key",
+            "permissions",
+            "is_active",
+            "user",
+            "last_used",
+            "created_at",
+            "updated_at",
         ]
-        
+
         for field in expected_fields:
             self.assertIn(field, data)
 
@@ -42,7 +49,7 @@ class TestAPIKeySerializer(TestCase):
         """Test serializer data output"""
         serializer = APIKeySerializer(instance=self.api_key)
         data = serializer.data
-        
+
         self.assertEqual(data["name"], "Test API Key")
         self.assertEqual(data["permissions"], "read")
         self.assertTrue(data["is_active"])
@@ -54,20 +61,17 @@ class TestAPIKeySerializer(TestCase):
         # Create a mock request with user
         request = self.factory.post("/")
         request.user = self.user
-        
+
         data = {
             "name": "New API Key",
             "permissions": "write",
             "is_active": True,
         }
-        
+
         # Use the raw request object directly instead of wrapping it
-        serializer = APIKeyCreateSerializer(
-            data=data, 
-            context={"request": request}
-        )
+        serializer = APIKeyCreateSerializer(data=data, context={"request": request})
         self.assertTrue(serializer.is_valid())
-        
+
         api_key = serializer.save()
         self.assertEqual(api_key.name, "New API Key")
         self.assertEqual(api_key.permissions, "write")
@@ -78,9 +82,9 @@ class TestAPIKeySerializer(TestCase):
     def test_serializer_readonly_fields(self):
         """Test that read-only fields cannot be updated"""
         serializer = APIKeySerializer(instance=self.api_key)
-        
+
         readonly_fields = ["id", "key", "user", "last_used", "created_at", "updated_at"]
-        
+
         for field in readonly_fields:
             self.assertIn(field, serializer.fields)
             self.assertTrue(serializer.fields[field].read_only)
@@ -92,16 +96,15 @@ class TestAPIKeySerializer(TestCase):
             "permissions": "read",
             "is_active": True,
         }
-        
+
         request = self.factory.post("/")
         request.user = self.user
-        
+
         serializer = APIKeyCreateSerializer(
-            data=data,
-            context={"request": Request(request)}
+            data=data, context={"request": Request(request)}
         )
-        
+
         expected_fields = ["name", "permissions", "is_active"]
-        
+
         for field in expected_fields:
             self.assertIn(field, serializer.fields)

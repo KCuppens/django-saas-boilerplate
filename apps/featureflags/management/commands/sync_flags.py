@@ -44,9 +44,7 @@ class Command(BaseCommand):
 
             if created:
                 created_flags += 1
-                self.stdout.write(
-                    self.style.SUCCESS(f"Created flag: {flag_name}")
-                )
+                self.stdout.write(self.style.SUCCESS(f"Created flag: {flag_name}"))
             elif force:
                 updated_flags += 1
                 if not dry_run:
@@ -54,14 +52,11 @@ class Command(BaseCommand):
                     flag.note = flag_config.get("description", "")
                     flag.save()
 
-                self.stdout.write(
-                    self.style.WARNING(f"Updated flag: {flag_name}")
-                )
+                self.stdout.write(self.style.WARNING(f"Updated flag: {flag_name}"))
             else:
                 self.stdout.write(
                     self.style.NOTICE(
-                        f"Flag {flag_name} already exists (use --force to "
-                        f"update)"
+                        f"Flag {flag_name} already exists (use --force to " f"update)"
                     )
                 )
 
@@ -88,17 +83,13 @@ class Command(BaseCommand):
 
             if created:
                 created_flags += 1
-                self.stdout.write(
-                    self.style.SUCCESS(f"Created switch: {switch_name}")
-                )
+                self.stdout.write(self.style.SUCCESS(f"Created switch: {switch_name}"))
             elif force and not dry_run:
                 switch.active = switch_config["active"]
                 switch.note = switch_config["note"]
                 switch.save()
                 updated_flags += 1
-                self.stdout.write(
-                    self.style.WARNING(f"Updated switch: {switch_name}")
-                )
+                self.stdout.write(self.style.WARNING(f"Updated switch: {switch_name}"))
 
         # Summary
         if not dry_run:

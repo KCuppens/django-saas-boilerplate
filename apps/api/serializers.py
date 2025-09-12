@@ -65,7 +65,15 @@ class NoteCreateUpdateSerializer(NoteSerializer):
     """Serializer for creating/updating notes"""
 
     class Meta(NoteSerializer.Meta):
-        fields = ["id", "title", "content", "is_public", "tag_list", "created_at", "updated_at"]
+        fields = [
+            "id",
+            "title",
+            "content",
+            "is_public",
+            "tag_list",
+            "created_at",
+            "updated_at",
+        ]
         read_only_fields = ["id", "created_at", "updated_at"]
 
 
@@ -96,7 +104,7 @@ class APIKeySerializer(serializers.ModelSerializer):
         model = APIKey
         fields = [
             "id",
-            "name", 
+            "name",
             "key",
             "permissions",
             "is_active",
@@ -107,10 +115,10 @@ class APIKeySerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [
             "id",
-            "key", 
+            "key",
             "user",
             "last_used",
-            "created_at", 
+            "created_at",
             "updated_at",
         ]
 
@@ -125,5 +133,5 @@ class APIKeyCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         """Create API key with current user"""
-        validated_data['user'] = self.context['request'].user
+        validated_data["user"] = self.context["request"].user
         return super().create(validated_data)

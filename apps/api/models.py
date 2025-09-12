@@ -48,26 +48,30 @@ class APIKey(TimestampMixin):
     """API Key model for API authentication"""
 
     PERMISSION_CHOICES = [
-        ('read', 'Read Only'),
-        ('write', 'Read and Write'),
-        ('admin', 'Admin Access'),
+        ("read", "Read Only"),
+        ("write", "Read and Write"),
+        ("admin", "Admin Access"),
     ]
 
-    name = models.CharField("Name", max_length=100, help_text="Human-readable name for this API key")
+    name = models.CharField(
+        "Name", max_length=100, help_text="Human-readable name for this API key"
+    )
     key = models.CharField("API Key", max_length=64, unique=True, editable=False)
     permissions = models.CharField(
-        "Permissions", 
-        max_length=10, 
-        choices=PERMISSION_CHOICES, 
-        default='read',
-        help_text="Permission level for this API key"
+        "Permissions",
+        max_length=10,
+        choices=PERMISSION_CHOICES,
+        default="read",
+        help_text="Permission level for this API key",
     )
-    is_active = models.BooleanField("Active", default=True, help_text="Whether this API key is active")
+    is_active = models.BooleanField(
+        "Active", default=True, help_text="Whether this API key is active"
+    )
     user = models.ForeignKey(
-        User, 
-        on_delete=models.CASCADE, 
-        related_name='api_keys',
-        help_text="User who owns this API key"
+        User,
+        on_delete=models.CASCADE,
+        related_name="api_keys",
+        help_text="User who owns this API key",
     )
     last_used = models.DateTimeField("Last Used", null=True, blank=True)
 
@@ -98,11 +102,11 @@ class APIKey(TimestampMixin):
         """Check if API key has the required permission"""
         if not self.is_active:
             return False
-        
+
         permission_levels = {
-            'read': ['read'],
-            'write': ['read', 'write'],
-            'admin': ['read', 'write', 'admin'],
+            "read": ["read"],
+            "write": ["read", "write"],
+            "admin": ["read", "write", "admin"],
         }
-        
+
         return permission in permission_levels.get(self.permissions, [])

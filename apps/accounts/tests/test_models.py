@@ -1,11 +1,8 @@
-import pytest
 from django.contrib.auth import get_user_model
-from django.urls import reverse
-from rest_framework import status
 from rest_framework.test import APITestCase
 
 from apps.accounts.models import UserProfile
-from apps.accounts.serializers import UserSerializer, UserProfileSerializer
+from apps.accounts.serializers import UserProfileSerializer, UserSerializer
 
 User = get_user_model()
 
@@ -49,6 +46,7 @@ class AccountsTestCase(APITestCase):
         """Test user profile string representation"""
         # Create profile manually since it's not auto-created
         from apps.accounts.models import UserProfile
+
         profile, _ = UserProfile.objects.get_or_create(user=self.user)
         expected = f"{self.user.email} Profile"
         self.assertEqual(str(profile), expected)
@@ -57,9 +55,9 @@ class AccountsTestCase(APITestCase):
         """Test UserSerializer basic functionality"""
         serializer = UserSerializer(instance=self.user)
         data = serializer.data
-        self.assertEqual(data['email'], 'test@example.com')
-        self.assertEqual(data['name'], 'Test User')
-        self.assertEqual(data['full_name'], 'Test User')
+        self.assertEqual(data["email"], "test@example.com")
+        self.assertEqual(data["name"], "Test User")
+        self.assertEqual(data["full_name"], "Test User")
 
     def test_user_profile_serializer(self):
         """Test UserProfileSerializer functionality"""
@@ -72,9 +70,7 @@ class AccountsTestCase(APITestCase):
     def test_user_manager_create_user(self):
         """Test custom user manager create_user method"""
         user = User.objects.create_user(
-            email="test2@example.com",
-            password="testpass123",
-            name="Test User 2"
+            email="test2@example.com", password="testpass123", name="Test User 2"
         )
         self.assertEqual(user.email, "test2@example.com")
         self.assertFalse(user.is_staff)
@@ -83,9 +79,7 @@ class AccountsTestCase(APITestCase):
     def test_user_manager_create_superuser(self):
         """Test custom user manager create_superuser method"""
         admin = User.objects.create_superuser(
-            email="admin@example.com",
-            password="adminpass123",
-            name="Admin User"
+            email="admin@example.com", password="adminpass123", name="Admin User"
         )
         self.assertTrue(admin.is_staff)
         self.assertTrue(admin.is_superuser)
@@ -94,23 +88,21 @@ class AccountsTestCase(APITestCase):
         """Test user group checking methods"""
         # These methods should exist even if user doesn't have groups
         self.assertFalse(self.user.is_admin())
-        self.assertFalse(self.user.is_manager()) 
+        self.assertFalse(self.user.is_manager())
         self.assertFalse(self.user.is_member())
-        self.assertTrue(hasattr(self.user, 'has_group'))
+        self.assertTrue(hasattr(self.user, "has_group"))
 
     def test_user_email_normalization(self):
         """Test user email is normalized"""
         user = User.objects.create_user(
-            email="Test.Email@EXAMPLE.COM",
-            password="testpass123"
+            email="Test.Email@EXAMPLE.COM", password="testpass123"
         )
         self.assertEqual(user.email, "Test.Email@example.com")
 
     def test_user_without_name_methods(self):
         """Test user methods when name is empty"""
         user = User.objects.create_user(
-            email="noname@example.com",
-            password="testpass123"
+            email="noname@example.com", password="testpass123"
         )
         # When no name is provided
         self.assertEqual(user.get_full_name(), "noname@example.com")
@@ -125,16 +117,14 @@ class AccountsTestCase(APITestCase):
         """Test creating superuser without is_staff raises error"""
         with self.assertRaises(ValueError):
             User.objects.create_superuser(
-                email="admin@example.com",
-                password="adminpass123",
-                is_staff=False
+                email="admin@example.com", password="adminpass123", is_staff=False
             )
 
     def test_user_avatar_field(self):
         """Test user avatar field"""
         # Test that avatar field exists and can be set
         self.assertIsNone(self.user.avatar.name)
-        self.assertTrue(hasattr(self.user, 'avatar'))
+        self.assertTrue(hasattr(self.user, "avatar"))
 
     def test_user_last_seen_default(self):
         """Test user last_seen field has default"""
@@ -148,12 +138,13 @@ class AccountsTestCase(APITestCase):
     def test_user_profile_fields(self):
         """Test UserProfile model fields"""
         from apps.accounts.models import UserProfile
+
         profile = UserProfile.objects.create(user=self.user)
-        
+
         # Test default values
         self.assertEqual(profile.bio, "")
         self.assertEqual(profile.location, "")
         self.assertEqual(profile.website, "")
-        
+
         # Test string representation
         self.assertEqual(str(profile), f"{self.user.email} Profile")

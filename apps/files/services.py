@@ -2,7 +2,7 @@ import hashlib
 import logging
 import os
 import uuid
-from typing import Any, Optional
+from typing import Any
 
 from django.conf import settings
 from django.core.files.base import ContentFile
@@ -28,8 +28,7 @@ class FileService:
         "application/pdf": FileType.DOCUMENT,
         "application/msword": FileType.DOCUMENT,
         (
-            "application/vnd.openxmlformats-officedocument."
-            "wordprocessingml.document"
+            "application/vnd.openxmlformats-officedocument." "wordprocessingml.document"
         ): FileType.DOCUMENT,
         "text/plain": FileType.DOCUMENT,
         "text/csv": FileType.DOCUMENT,
@@ -72,9 +71,7 @@ class FileService:
         file_type = cls.FILE_TYPE_MAP.get(mime_type, FileType.OTHER)
 
         # Store file
-        stored_path = default_storage.save(
-            storage_path, ContentFile(file_content)
-        )
+        stored_path = default_storage.save(storage_path, ContentFile(file_content))
 
         # Create FileUpload record
         file_upload = FileUpload.objects.create(
@@ -93,16 +90,12 @@ class FileService:
             updated_by=user,
         )
 
-        logger.info(
-            f"File uploaded: {file.name} -> {stored_path} by user {user.id}"
-        )
+        logger.info(f"File uploaded: {file.name} -> {stored_path} by user {user.id}")
 
         return file_upload
 
     @classmethod
-    def get_download_url(
-        cls, file_upload: FileUpload, expires_in: int = 3600
-    ) -> str:
+    def get_download_url(cls, file_upload: FileUpload, expires_in: int = 3600) -> str:
         """Get signed download URL for file"""
 
         # For public files, return direct URL
@@ -111,8 +104,7 @@ class FileService:
                 return default_storage.url(file_upload.storage_path)
             except Exception as e:
                 logger.warning(
-                    f"Failed to generate direct URL for file "
-                    f"{file_upload.id}: {e}"
+                    f"Failed to generate direct URL for file " f"{file_upload.id}: {e}"
                 )
 
         # For private files or S3, generate signed URL
@@ -136,8 +128,8 @@ class FileService:
         cls,
         storage_path: str,
         expires_in: int = 3600,
-        content_type: Optional[str] = None,
-        max_size: Optional[int] = None,
+        content_type: str | None = None,
+        max_size: int | None = None,
     ) -> dict[str, Any]:
         """Get signed upload URL and required fields"""
 
@@ -147,17 +139,13 @@ class FileService:
                 if content_type:
                     conditions.append(["eq", "$Content-Type", content_type])
                 if max_size:
-                    conditions.append(
-                        ["content-length-range", "0", str(max_size)]
-                    )
+                    conditions.append(["content-length-range", "0", str(max_size)])
 
                 return default_storage.generate_presigned_post(
                     storage_path, expires_in=expires_in, conditions=conditions
                 )
             except Exception as e:
-                logger.error(
-                    f"Failed to generate presigned upload URL: {str(e)}"
-                )
+                logger.error(f"Failed to generate presigned upload URL: {str(e)}")
 
         # Fallback for local development
         from django.urls import reverse
@@ -180,9 +168,7 @@ class FileService:
             return True
 
         except Exception as e:
-            logger.error(
-                f"Failed to delete file {file_upload.storage_path}: {str(e)}"
-            )
+            logger.error(f"Failed to delete file {file_upload.storage_path}: {str(e)}")
             return False
 
     @classmethod

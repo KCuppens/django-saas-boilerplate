@@ -28,15 +28,13 @@ logger = logging.getLogger(__name__)
     list=extend_schema(
         summary="List files",
         description=(
-            "Get a list of files. Users can see their own files and "
-            "public files."
+            "Get a list of files. Users can see their own files and " "public files."
         ),
     ),
     create=extend_schema(
         summary="Upload file",
         description=(
-            "Upload a new file. The authenticated user will be set as "
-            "the owner."
+            "Upload a new file. The authenticated user will be set as " "the owner."
         ),
     ),
     retrieve=extend_schema(
@@ -60,9 +58,7 @@ class FileUploadViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Get files based on user permissions"""
-        queryset = FileUpload.objects.select_related(
-            "created_by", "updated_by"
-        )
+        queryset = FileUpload.objects.select_related("created_by", "updated_by")
 
         # Users can see their own files and public files
         if not self.request.user.is_admin():
@@ -176,9 +172,7 @@ class FileUploadViewSet(viewsets.ModelViewSet):
 
     @extend_schema(
         summary="Get signed upload URL",
-        description=(
-            "Get a signed URL for direct upload to storage (S3/MinIO)."
-        ),
+        description=("Get a signed URL for direct upload to storage (S3/MinIO)."),
     )
     @action(detail=False, methods=["post"])
     def signed_upload_url(self, request):
@@ -188,9 +182,7 @@ class FileUploadViewSet(viewsets.ModelViewSet):
 
         filename = serializer.validated_data["filename"]
         content_type = serializer.validated_data.get("content_type")
-        max_size = serializer.validated_data.get(
-            "max_size", 10 * 1024 * 1024
-        )  # 10MB
+        max_size = serializer.validated_data.get("max_size", 10 * 1024 * 1024)  # 10MB
 
         # Generate storage path
         import os

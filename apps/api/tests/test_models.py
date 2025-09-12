@@ -55,8 +55,8 @@ class NoteModelTest(APITestCase):
         )
         serializer = NoteSerializer(instance=note)
         data = serializer.data
-        self.assertEqual(data['title'], 'Test Note')
-        self.assertEqual(data['content'], 'Test content')
+        self.assertEqual(data["title"], "Test Note")
+        self.assertEqual(data["content"], "Test content")
 
 
 class NoteAPITest(APITestCase):
@@ -103,9 +103,12 @@ class NoteAPITest(APITestCase):
         url = reverse("note-list")
 
         response = self.client.get(url)
-        
+
         # Might be 401 or 403 depending on permissions setup
-        self.assertIn(response.status_code, [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN])
+        self.assertIn(
+            response.status_code,
+            [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN],
+        )
 
 
 class HealthCheckAPITest(APITestCase):
@@ -117,9 +120,17 @@ class HealthCheckAPITest(APITestCase):
 
         response = self.client.get(url)
 
-        # Health check might require auth or be publicly accessible, or return 503 if services unavailable
-        self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN, status.HTTP_503_SERVICE_UNAVAILABLE])
-        
+        # Health check might require auth/be public, or return 503 if unavailable
+        self.assertIn(
+            response.status_code,
+            [
+                status.HTTP_200_OK,
+                status.HTTP_401_UNAUTHORIZED,
+                status.HTTP_403_FORBIDDEN,
+                status.HTTP_503_SERVICE_UNAVAILABLE,
+            ],
+        )
+
     def test_health_check_with_auth(self):
         """Test health check endpoint with authentication"""
         user = User.objects.create_user(email="health@example.com", password="test123")
@@ -128,8 +139,11 @@ class HealthCheckAPITest(APITestCase):
 
         response = self.client.get(url)
 
-        # With auth, health check should work, but might return 503 if services unavailable
-        self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_503_SERVICE_UNAVAILABLE])
+        # With auth, health check should work, might return 503 if unavailable
+        self.assertIn(
+            response.status_code,
+            [status.HTTP_200_OK, status.HTTP_503_SERVICE_UNAVAILABLE],
+        )
 
 
 class NoteModelExtendedTests(APITestCase):
@@ -146,7 +160,7 @@ class NoteModelExtendedTests(APITestCase):
             title="Default Test",
             content="Test content",
             created_by=self.user,
-            updated_by=self.user
+            updated_by=self.user,
         )
         self.assertFalse(note.is_public)
         self.assertEqual(note.tags, "")
@@ -155,11 +169,11 @@ class NoteModelExtendedTests(APITestCase):
         """Test note tag_list setter"""
         note = Note.objects.create(
             title="Tag Test",
-            content="Test content", 
+            content="Test content",
             created_by=self.user,
-            updated_by=self.user
+            updated_by=self.user,
         )
-        
+
         # Set tags using tag_list property
         note.tag_list = ["python", "django", "testing"]
         self.assertEqual(note.tags, "python, django, testing")
@@ -171,7 +185,7 @@ class NoteModelExtendedTests(APITestCase):
             content="Test content",
             created_by=self.user,
             updated_by=self.user,
-            tags="  tag1  ,  tag2,tag3  , "
+            tags="  tag1  ,  tag2,tag3  , ",
         )
         # Should handle extra whitespace
         expected_tags = ["tag1", "tag2", "tag3"]
@@ -183,16 +197,16 @@ class NoteModelExtendedTests(APITestCase):
             title="First Note",
             content="First content",
             created_by=self.user,
-            updated_by=self.user
+            updated_by=self.user,
         )
-        
+
         note2 = Note.objects.create(
-            title="Second Note", 
+            title="Second Note",
             content="Second content",
             created_by=self.user,
-            updated_by=self.user
+            updated_by=self.user,
         )
-        
+
         # Should be ordered by created_at descending (newest first)
         notes = list(Note.objects.all())
         self.assertEqual(notes[0], note2)  # Newest first
@@ -206,7 +220,7 @@ class NoteModelExtendedTests(APITestCase):
 
 class NoteSerializerExtendedTests(APITestCase):
     """Extended serializer tests"""
-    
+
     def setUp(self):
         self.user = User.objects.create_user(
             email="serializer@example.com", password="serpass123"
@@ -216,38 +230,50 @@ class NoteSerializerExtendedTests(APITestCase):
             content="Test content",
             tags="test, serializer",
             created_by=self.user,
-            updated_by=self.user
+            updated_by=self.user,
         )
 
     def test_note_serializer_all_fields(self):
         """Test NoteSerializer includes all expected fields"""
         serializer = NoteSerializer(instance=self.note)
         data = serializer.data
-        
+
         expected_fields = [
-            'id', 'title', 'content', 'tags', 'tag_list', 
-            'is_public', 'created_at', 'updated_at', 
-            'created_by', 'updated_by'
+            "id",
+            "title",
+            "content",
+            "tags",
+            "tag_list",
+            "is_public",
+            "created_at",
+            "updated_at",
+            "created_by",
+            "updated_by",
         ]
-        
+
         for field in expected_fields:
             self.assertIn(field, data)
 
     def test_note_serializer_read_only_fields(self):
         """Test NoteSerializer read-only fields"""
         serializer = NoteSerializer()
-        read_only_fields = getattr(serializer.Meta, 'read_only_fields', [])
-        
+
         # These should be read-only
-        expected_read_only = ['id', 'created_at', 'updated_at', 'created_by', 'updated_by']
-        for field in expected_read_only:
-            if hasattr(serializer.Meta, 'read_only_fields'):
+        expected_read_only = [
+            "id",
+            "created_at",
+            "updated_at",
+            "created_by",
+            "updated_by",
+        ]
+        for _field in expected_read_only:
+            if hasattr(serializer.Meta, "read_only_fields"):
                 pass  # Would need to check the actual implementation
 
 
 class NoteAPIExtendedTests(APITestCase):
     """Extended API tests for comprehensive coverage"""
-    
+
     def setUp(self):
         self.user1 = User.objects.create_user(
             email="user1@example.com", password="pass123"
@@ -255,28 +281,28 @@ class NoteAPIExtendedTests(APITestCase):
         self.user2 = User.objects.create_user(
             email="user2@example.com", password="pass123"
         )
-        
+
         self.private_note = Note.objects.create(
             title="Private Note",
             content="Private content",
             is_public=False,
             created_by=self.user1,
-            updated_by=self.user1
+            updated_by=self.user1,
         )
-        
+
         self.public_note = Note.objects.create(
-            title="Public Note", 
+            title="Public Note",
             content="Public content",
             is_public=True,
             created_by=self.user1,
-            updated_by=self.user1
+            updated_by=self.user1,
         )
 
     def test_note_list_filtering(self):
         """Test note list filtering"""
         self.client.force_authenticate(user=self.user2)
         url = reverse("note-list")
-        
+
         # User2 should only see public notes and their own notes
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -284,24 +310,23 @@ class NoteAPIExtendedTests(APITestCase):
     def test_note_permissions(self):
         """Test note permission restrictions"""
         self.client.force_authenticate(user=self.user2)
-        
+
         # User2 should not be able to edit user1's private note
         url = reverse("note-detail", args=[self.private_note.pk])
         response = self.client.patch(url, {"title": "Hacked"})
-        
+
         # Should be forbidden
-        self.assertIn(response.status_code, [status.HTTP_403_FORBIDDEN, status.HTTP_404_NOT_FOUND])
+        self.assertIn(
+            response.status_code, [status.HTTP_403_FORBIDDEN, status.HTTP_404_NOT_FOUND]
+        )
 
     def test_note_create_sets_user(self):
         """Test note creation sets created_by and updated_by"""
         self.client.force_authenticate(user=self.user1)
         url = reverse("note-list")
-        
-        data = {
-            "title": "New Note",
-            "content": "New content"
-        }
-        
+
+        data = {"title": "New Note", "content": "New content"}
+
         response = self.client.post(url, data)
         if response.status_code == status.HTTP_201_CREATED:
             note = Note.objects.get(title="New Note")
@@ -312,7 +337,7 @@ class NoteAPIExtendedTests(APITestCase):
         """Test note update changes updated_by"""
         self.client.force_authenticate(user=self.user1)
         url = reverse("note-detail", args=[self.private_note.pk])
-        
+
         response = self.client.patch(url, {"title": "Updated Title"})
         if response.status_code == status.HTTP_200_OK:
             self.private_note.refresh_from_db()
@@ -348,7 +373,7 @@ class TestAPIKey(APITestCase):
             name="Test API Key",
             user=self.user,
         )
-        
+
         expected_str = f"Test API Key ({api_key.key[:8]}...)"
         self.assertEqual(str(api_key), expected_str)
 
@@ -410,10 +435,10 @@ class TestAPIKey(APITestCase):
             name="Auto Generated Key",
             user=self.user,
         )
-        
+
         self.assertIsNotNone(api_key.key)
         self.assertEqual(len(api_key.key), 64)
-        
+
         # Test that a custom key is not overridden
         custom_key = APIKey(
             name="Custom Key",
@@ -421,5 +446,5 @@ class TestAPIKey(APITestCase):
             user=self.user,
         )
         custom_key.save()
-        
+
         self.assertEqual(custom_key.key, "custom_key_value")
