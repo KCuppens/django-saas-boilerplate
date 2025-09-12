@@ -2,6 +2,7 @@ from unittest.mock import Mock, patch
 
 from django.contrib.auth import get_user_model
 from django.urls import reverse
+
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
@@ -297,7 +298,6 @@ class HealthCheckViewSetTestCase(APITestCase):
             patch("psutil.virtual_memory") as mock_memory,
             patch("psutil.cpu_percent", return_value=45.0),
         ):
-
             mock_memory.return_value.percent = 75.0
 
             response = self.client.get(url)

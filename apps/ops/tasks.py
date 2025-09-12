@@ -3,9 +3,10 @@ import logging
 import os
 import subprocess  # nosec B404
 
-from celery import shared_task
 from django.conf import settings
 from django.core.management import call_command
+
+from celery import shared_task
 
 logger = logging.getLogger(__name__)
 

@@ -81,6 +81,14 @@ ignore = [
     "C901",  # too complex
 ]
 
+[tool.ruff.lint.isort]
+known-first-party = ["apps"]
+combine-as-imports = true
+section-order = ["future", "standard-library", "django", "third-party", "first-party", "local-folder"]
+
+[tool.ruff.lint.isort.sections]
+"django" = ["django"]
+
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
 "*/settings/*.py" = ["F405", "F403"]

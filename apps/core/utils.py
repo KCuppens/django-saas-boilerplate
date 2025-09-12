@@ -1,7 +1,7 @@
 import hashlib
 import secrets
 import uuid
-from typing import Any
+from typing import Any, Dict, List, Optional
 
 from django.conf import settings
 from django.core.mail import send_mail
@@ -39,7 +39,7 @@ def create_slug(text: str, max_length: int = 50) -> str:
 
 
 def safe_get_dict_value(
-    dictionary: dict[str, Any], key: str, default: Any = None
+    dictionary: Dict[str, Any], key: str, default: Any = None
 ) -> Any:
     """Safely get value from dictionary with default"""
     try:
@@ -106,7 +106,7 @@ def send_notification_email(
     subject: str,
     message: str,
     recipient_list: list,
-    from_email: str | None = None,
+    from_email: Optional[str] = None,
     fail_silently: bool = False,
 ) -> bool:
     """Send notification email"""
@@ -140,8 +140,8 @@ def mask_email(email: str) -> str:
 
 
 def validate_json_structure(
-    data: dict[str, Any], required_fields: list
-) -> dict[str, Any]:
+    data: Dict[str, Any], required_fields: list
+) -> Dict[str, Any]:
     """Validate JSON data has required fields"""
     errors = {}
     for field in required_fields:

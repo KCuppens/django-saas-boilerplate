@@ -1,4 +1,5 @@
 from django.core.management.base import BaseCommand
+
 from waffle.models import Flag, Switch
 
 from apps.featureflags.helpers import FeatureFlags
@@ -56,7 +57,7 @@ class Command(BaseCommand):
             else:
                 self.stdout.write(
                     self.style.NOTICE(
-                        f"Flag {flag_name} already exists (use --force to " f"update)"
+                        f"Flag {flag_name} already exists (use --force to update)"
                     )
                 )
 

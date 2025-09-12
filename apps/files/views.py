@@ -3,6 +3,7 @@ import logging
 from django.core.files.storage import default_storage
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
+
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
@@ -28,20 +29,19 @@ logger = logging.getLogger(__name__)
     list=extend_schema(
         summary="List files",
         description=(
-            "Get a list of files. Users can see their own files and " "public files."
+            "Get a list of files. Users can see their own files and public files."
         ),
     ),
     create=extend_schema(
         summary="Upload file",
         description=(
-            "Upload a new file. The authenticated user will be set as " "the owner."
+            "Upload a new file. The authenticated user will be set as the owner."
         ),
     ),
     retrieve=extend_schema(
         summary="Get file details",
         description=(
-            "Get file metadata. Users can only access their own files "
-            "or public files."
+            "Get file metadata. Users can only access their own files or public files."
         ),
     ),
     destroy=extend_schema(

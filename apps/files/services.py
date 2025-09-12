@@ -2,7 +2,7 @@ import hashlib
 import logging
 import os
 import uuid
-from typing import Any
+from typing import Any, Dict, Optional
 
 from django.conf import settings
 from django.core.files.base import ContentFile
@@ -28,7 +28,7 @@ class FileService:
         "application/pdf": FileType.DOCUMENT,
         "application/msword": FileType.DOCUMENT,
         (
-            "application/vnd.openxmlformats-officedocument." "wordprocessingml.document"
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         ): FileType.DOCUMENT,
         "text/plain": FileType.DOCUMENT,
         "text/csv": FileType.DOCUMENT,
@@ -104,7 +104,7 @@ class FileService:
                 return default_storage.url(file_upload.storage_path)
             except Exception as e:
                 logger.warning(
-                    f"Failed to generate direct URL for file " f"{file_upload.id}: {e}"
+                    f"Failed to generate direct URL for file {file_upload.id}: {e}"
                 )
 
         # For private files or S3, generate signed URL
@@ -128,9 +128,9 @@ class FileService:
         cls,
         storage_path: str,
         expires_in: int = 3600,
-        content_type: str | None = None,
-        max_size: int | None = None,
-    ) -> dict[str, Any]:
+        content_type: Optional[str] = None,
+        max_size: Optional[int] = None,
+    ) -> Dict[str, Any]:
         """Get signed upload URL and required fields"""
 
         if hasattr(default_storage, "generate_presigned_post"):
@@ -172,7 +172,7 @@ class FileService:
             return False
 
     @classmethod
-    def validate_file(cls, file, max_size_mb: int = 10) -> dict[str, Any]:
+    def validate_file(cls, file, max_size_mb: int = 10) -> Dict[str, Any]:
         """Validate uploaded file"""
 
         errors = []
@@ -241,7 +241,7 @@ class FileService:
         }
 
     @classmethod
-    def cleanup_expired_files(cls) -> dict[str, int]:
+    def cleanup_expired_files(cls) -> Dict[str, int]:
         """Clean up expired files"""
 
         from django.utils import timezone
