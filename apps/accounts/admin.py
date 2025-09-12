@@ -26,7 +26,14 @@ class UserAdmin(BaseUserAdmin):
         ),
         (
             _("Important dates"),
-            {"fields": ("last_login", "date_joined", "created_at", "updated_at")},
+            {
+                "fields": (
+                    "last_login",
+                    "date_joined",
+                    "created_at",
+                    "updated_at",
+                )
+            },
         ),
     )
     add_fieldsets = (
@@ -38,8 +45,21 @@ class UserAdmin(BaseUserAdmin):
             },
         ),
     )
-    list_display = ("email", "name", "is_staff", "is_active", "last_seen", "created_at")
-    list_filter = ("is_staff", "is_superuser", "is_active", "groups", "date_joined")
+    list_display = (
+        "email",
+        "name",
+        "is_staff",
+        "is_active",
+        "last_seen",
+        "created_at",
+    )
+    list_filter = (
+        "is_staff",
+        "is_superuser",
+        "is_active",
+        "groups",
+        "date_joined",
+    )
     search_fields = ("email", "name")
     ordering = ("-created_at",)
     filter_horizontal = ("groups", "user_permissions")
@@ -82,7 +102,10 @@ class UserProfileAdmin(admin.ModelAdmin):
 
     fieldsets = (
         (None, {"fields": ("user",)}),
-        (_("Profile Information"), {"fields": ("bio", "location", "website", "phone")}),
+        (
+            _("Profile Information"),
+            {"fields": ("bio", "location", "website", "phone")},
+        ),
         (
             _("Preferences"),
             {

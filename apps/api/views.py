@@ -24,7 +24,8 @@ from .serializers import (
     list=extend_schema(
         summary="List notes",
         description=(
-            "Get a list of notes. Users can see their own notes and public notes."
+            "Get a list of notes. Users can see their own notes and public "
+            "notes."
         ),
         parameters=[
             OpenApiParameter(
@@ -47,13 +48,15 @@ from .serializers import (
     create=extend_schema(
         summary="Create note",
         description=(
-            "Create a new note. The authenticated user will be set as the creator."
+            "Create a new note. The authenticated user will be set as the "
+            "creator."
         ),
     ),
     retrieve=extend_schema(
         summary="Get note",
         description=(
-            "Get a specific note. Users can only access their own notes or public notes."
+            "Get a specific note. Users can only access their own notes or "
+            "public notes."
         ),
     ),
     update=extend_schema(

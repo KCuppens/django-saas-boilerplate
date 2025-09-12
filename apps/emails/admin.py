@@ -36,7 +36,10 @@ class EmailTemplateAdmin(admin.ModelAdmin):
                 )
             },
         ),
-        (_("Email Content"), {"fields": ("subject", "html_content", "text_content")}),
+        (
+            _("Email Content"),
+            {"fields": ("subject", "html_content", "text_content")},
+        ),
         (
             _("Template Configuration"),
             {"fields": ("template_variables",), "classes": ("collapse",)},

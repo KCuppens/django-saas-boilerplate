@@ -29,7 +29,12 @@ class NoteAdmin(admin.ModelAdmin):
         (
             "Metadata",
             {
-                "fields": ("created_by", "updated_by", "created_at", "updated_at"),
+                "fields": (
+                    "created_by",
+                    "updated_by",
+                    "created_at",
+                    "updated_at",
+                ),
                 "classes": ("collapse",),
             },
         ),
