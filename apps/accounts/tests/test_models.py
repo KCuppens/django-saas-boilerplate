@@ -28,11 +28,10 @@ class AccountsTestCase(APITestCase):
         self.assertTrue(self.user.check_password("testpass123"))
 
     def test_user_profile_creation(self):
-        """Test user profile can be created."""
-        # Create profile manually since it's not auto-created in this setup
-        profile, created = UserProfile.objects.get_or_create(user=self.user)
-        self.assertTrue(created)
-        self.assertIsInstance(profile, UserProfile)
+        """Test user profile is automatically created via signal."""
+        # Profile should already exist due to signal
+        self.assertTrue(hasattr(self.user, "profile"))
+        self.assertIsInstance(self.user.profile, UserProfile)
 
     def test_user_str(self):
         """Test user string representation."""

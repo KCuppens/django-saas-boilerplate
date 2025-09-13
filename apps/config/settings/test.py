@@ -77,9 +77,13 @@ REST_FRAMEWORK = {
         "apps.core.authentication.CustomSessionAuthentication",
     ],
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
-    # Completely disable throttling for tests
+    # Completely disable throttling for tests but keep rates for throttle class tests
     "DEFAULT_THROTTLE_CLASSES": [],
-    "DEFAULT_THROTTLE_RATES": {},
+    "DEFAULT_THROTTLE_RATES": {
+        "user": "1000/hour",  # Keep this for testing throttle classes
+        "anon": "100/hour",
+        "auth": "5/min",
+    },
 }
 
 # Testing flag

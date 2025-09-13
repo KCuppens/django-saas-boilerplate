@@ -10,7 +10,7 @@ from django.contrib.auth.models import Group
 from django.test import RequestFactory, TestCase
 from django.utils import timezone
 
-from .enums import (
+from apps.core.enums import (
     EmailStatus,
     FileType,
     NotificationType,
@@ -19,8 +19,8 @@ from .enums import (
     TaskStatus,
     UserRole,
 )
-from .permissions import HasGroup, IsAdminOrReadOnly, IsOwnerOrAdmin
-from .utils import (
+from apps.core.permissions import HasGroup, IsAdminOrReadOnly, IsOwnerOrAdmin
+from apps.core.utils import (
     create_slug,
     format_file_size,
     generate_hash,

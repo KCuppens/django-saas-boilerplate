@@ -12,4 +12,4 @@ class AccountsConfig(AppConfig):
 
     def ready(self):
         """Initialize the app when Django starts."""
-        pass
+        import apps.accounts.signals  # noqa: F401

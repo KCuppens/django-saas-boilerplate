@@ -9,6 +9,7 @@ from django.test import RequestFactory, TestCase
 from django.utils import timezone
 
 from rest_framework.test import APIClient, APITestCase
+from waffle.testutils import override_flag
 
 from apps.core.enums import FileType
 from apps.files.models import FileUpload
@@ -340,6 +341,11 @@ class FileViewsTestCase(APITestCase):
             email="test@example.com", name="Test User", password="testpass123"
         )
 
+        # Enable FILES feature flag for all tests
+        self.feature_patcher = patch("apps.featureflags.helpers.is_feature_enabled")
+        self.mock_is_feature_enabled = self.feature_patcher.start()
+        self.mock_is_feature_enabled.return_value = True
+
         self.file_upload = FileUpload.objects.create(
             original_filename="test.jpg",
             filename="test_unique.jpg",
@@ -351,6 +357,10 @@ class FileViewsTestCase(APITestCase):
             created_by=self.user,
             updated_by=self.user,
         )
+
+    def tearDown(self):
+        """Clean up test data."""
+        self.feature_patcher.stop()
 
     def test_file_serializer_integration(self):
         """Test file serializer with actual model data."""

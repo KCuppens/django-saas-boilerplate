@@ -838,6 +838,9 @@ class CoreIntegrationTestCase(TestCase):
         mock_obj.created_by = self.user
         mock_obj.is_public = False
 
+        # Ensure the mock doesn't have user attribute to force checking created_by
+        del mock_obj.user
+
         # Test owner permission
         owner_permission = IsOwnerOrAdmin()
         factory = APIRequestFactory()

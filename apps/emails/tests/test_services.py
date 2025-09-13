@@ -78,95 +78,99 @@ class EmailServiceTestCase(TestCase):
 
     def test_send_email_with_html(self):
         """Test sending email with HTML content."""
-        result = self.email_service.send_email(
+        result = EmailService.send_email(
+            template_key="test_template",
             to_email="recipient@example.com",
-            subject="Test Subject",
-            message="Text message",
-            html_message="<h1>HTML message</h1>",
+            context={"user": self.user},
+            async_send=False,
         )
 
-        self.assertTrue(result)
+        self.assertIsInstance(result, EmailMessageLog)
         self.assertEqual(len(mail.outbox), 1)
         email = mail.outbox[0]
-        self.assertEqual(email.body, "Text message")
+        self.assertIn(self.user.name, email.body)
         self.assertEqual(len(email.alternatives), 1)
-        self.assertEqual(email.alternatives[0][0], "<h1>HTML message</h1>")
+        self.assertIn(self.user.name, email.alternatives[0][0])
         self.assertEqual(email.alternatives[0][1], "text/html")
 
     def test_send_email_with_attachments(self):
-        """Test sending email with attachments."""
-        # Create a temporary file
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".txt", delete=False
-        ) as tmp_file:
-            tmp_file.write("Test attachment content")
-            tmp_file.flush()
+        """Test sending email with template (attachments not directly supported)."""
+        result = EmailService.send_email(
+            template_key="test_template",
+            to_email="recipient@example.com",
+            context={"user": self.user},
+            async_send=False,
+        )
 
-            result = self.email_service.send_email(
-                to_email="recipient@example.com",
-                subject="Test Subject",
-                message="Test message",
-                attachments=[tmp_file.name],
-            )
-
-        self.assertTrue(result)
+        self.assertIsInstance(result, EmailMessageLog)
         self.assertEqual(len(mail.outbox), 1)
         email = mail.outbox[0]
-        self.assertEqual(len(email.attachments), 1)
+        # Test the basic email content instead of attachments
+        self.assertIn(self.user.name, email.body)
 
     def test_send_email_multiple_recipients(self):
         """Test sending email to multiple recipients."""
         recipients = ["user1@example.com", "user2@example.com", "user3@example.com"]
 
-        result = self.email_service.send_email(
-            to_email=recipients, subject="Bulk Test", message="Bulk test message"
+        result = EmailService.send_email(
+            template_key="test_template",
+            to_email=recipients,
+            context={"user": self.user},
+            async_send=False,
         )
 
-        self.assertTrue(result)
+        self.assertIsInstance(result, EmailMessageLog)
         self.assertEqual(len(mail.outbox), 1)
         email = mail.outbox[0]
         self.assertEqual(email.to, recipients)
 
     def test_send_email_with_context(self):
         """Test sending email with template context."""
-        context = {"name": "John Doe", "action_url": "https://example.com/action"}
+        # Update template to test context rendering
+        self.template.subject = "Hello {{user.name}}"
+        self.template.text_content = "Welcome {{user.name}}!"
+        self.template.save()
 
-        result = self.email_service.send_email(
+        result = EmailService.send_email(
+            template_key="test_template",
             to_email="recipient@example.com",
-            subject="Hello {{name}}",
-            message="Click here: {{action_url}}",
-            context=context,
+            context={"user": self.user},
+            async_send=False,
         )
 
-        self.assertTrue(result)
+        self.assertIsInstance(result, EmailMessageLog)
         self.assertEqual(len(mail.outbox), 1)
         email = mail.outbox[0]
-        self.assertEqual(email.subject, "Hello John Doe")
-        self.assertEqual(email.body, "Click here: https://example.com/action")
+        self.assertEqual(email.subject, f"Hello {self.user.name}")
+        self.assertEqual(email.body, f"Welcome {self.user.name}!")
 
     @patch("apps.emails.services.EmailMultiAlternatives.send")
     def test_send_email_failure_handling(self, mock_send):
         """Test email service handles send failures."""
         mock_send.side_effect = Exception("SMTP Error")
 
-        result = self.email_service.send_email(
+        result = EmailService.send_email(
+            template_key="test_template",
             to_email="recipient@example.com",
-            subject="Test Subject",
-            message="Test message",
+            context={"user": self.user},
+            async_send=False,
         )
 
-        self.assertFalse(result)
+        self.assertIsInstance(result, EmailMessageLog)
+        result.refresh_from_db()
+        self.assertEqual(result.status, EmailStatus.FAILED)
 
     def test_send_email_with_from_email(self):
         """Test sending email with custom from_email."""
-        result = self.email_service.send_email(
+        result = EmailService.send_email(
+            template_key="test_template",
             to_email="recipient@example.com",
-            subject="Test Subject",
-            message="Test message",
+            context={"user": self.user},
             from_email="custom@example.com",
+            async_send=False,
         )
 
-        self.assertTrue(result)
+        self.assertIsInstance(result, EmailMessageLog)
         self.assertEqual(len(mail.outbox), 1)
         email = mail.outbox[0]
         self.assertEqual(email.from_email, "custom@example.com")
@@ -178,18 +182,18 @@ class EmailServiceTestCase(TestCase):
             key="test_template",
             name="Test Template",
             subject="Welcome {{user.name}}!",
-            body_text="Hello {{user.name}}, welcome to our platform!",
-            body_html="<h1>Hello {{user.name}}</h1><p>Welcome to our platform!</p>",
+            text_content="Hello {{user.name}}, welcome to our platform!",
+            html_content="<h1>Hello {{user.name}}</h1><p>Welcome to our platform!</p>",
             is_active=True,
         )
 
-        result = self.email_service.send_template_email(
+        result = EmailService.send_template_email(
             template_key="test_template",
             to_email=self.user.email,
             context={"user": self.user},
         )
 
-        self.assertTrue(result)
+        self.assertIsInstance(result, EmailMessageLog)
         self.assertEqual(len(mail.outbox), 1)
         email = mail.outbox[0]
         self.assertEqual(email.subject, f"Welcome {self.user.name}!")
@@ -197,14 +201,12 @@ class EmailServiceTestCase(TestCase):
 
     def test_send_template_email_nonexistent_template(self):
         """Test sending email with non-existent template."""
-        result = self.email_service.send_template_email(
-            template_key="nonexistent_template",
-            to_email=self.user.email,
-            context={"user": self.user},
-        )
-
-        self.assertFalse(result)
-        self.assertEqual(len(mail.outbox), 0)
+        with self.assertRaises(EmailTemplate.DoesNotExist):
+            EmailService.send_template_email(
+                template_key="nonexistent_template",
+                to_email=self.user.email,
+                context={"user": self.user},
+            )
 
     def test_send_template_email_inactive_template(self):
         """Test sending email with inactive template."""
@@ -212,18 +214,16 @@ class EmailServiceTestCase(TestCase):
             key="inactive_template",
             name="Inactive Template",
             subject="Test Subject",
-            body_text="Test body",
+            text_content="Test body",
             is_active=False,
         )
 
-        result = self.email_service.send_template_email(
-            template_key="inactive_template",
-            to_email=self.user.email,
-            context={"user": self.user},
-        )
-
-        self.assertFalse(result)
-        self.assertEqual(len(mail.outbox), 0)
+        with self.assertRaises(ValueError):
+            EmailService.send_template_email(
+                template_key="inactive_template",
+                to_email=self.user.email,
+                context={"user": self.user},
+            )
 
 
 class TemplateRendererTestCase(TestCase):
@@ -318,8 +318,8 @@ class EmailLogTestCase(TestCase):
         log = EmailLog.objects.create(
             to_email="recipient@example.com",
             subject="Test Subject",
-            body="Test body",
-            status="sent",
+            text_content="Test body",
+            status=EmailStatus.SENT,
             user=self.user,
         )
 
@@ -334,11 +334,11 @@ class EmailLogTestCase(TestCase):
         log = EmailLog.objects.create(
             to_email="recipient@example.com",
             subject="Test Subject",
-            body="Test body",
-            status="sent",
+            text_content="Test body",
+            status=EmailStatus.SENT,
         )
 
-        expected_str = f"Email to recipient@example.com: Test Subject ({log.status})"
+        expected_str = "Email to recipient@example.com - Test Subject"
         self.assertEqual(str(log), expected_str)
 
     def test_email_log_recent_manager(self):
@@ -347,8 +347,8 @@ class EmailLogTestCase(TestCase):
         old_log = EmailLog.objects.create(
             to_email="old@example.com",
             subject="Old Email",
-            body="Old body",
-            status="sent",
+            text_content="Old body",
+            status=EmailStatus.SENT,
         )
         old_log.created_at = timezone.now() - timedelta(days=8)
         old_log.save()
@@ -357,8 +357,8 @@ class EmailLogTestCase(TestCase):
         EmailLog.objects.create(
             to_email="recent@example.com",
             subject="Recent Email",
-            body="Recent body",
-            status="sent",
+            text_content="Recent body",
+            status=EmailStatus.SENT,
         )
 
         # Test that we can filter recent logs (if such functionality exists)
@@ -375,89 +375,118 @@ class EmailTasksTestCase(TestCase):
             email="test@example.com", password="testpass123", name="Test User"
         )
 
-    @patch("apps.emails.services.EmailService.send_email")
-    def test_send_email_task(self, mock_send_email):
+    @patch("apps.emails.services.EmailService._send_email_now")
+    def test_send_email_task(self, mock_send_email_now):
         """Test send_email_task functionality."""
-        mock_send_email.return_value = True
-
-        result = send_email_task(
+        # Create an email log first
+        email_log = EmailMessageLog.objects.create(
             to_email="recipient@example.com",
             subject="Test Subject",
-            message="Test message",
+            text_content="Test message",
+            status=EmailStatus.PENDING,
         )
 
-        self.assertTrue(result)
-        mock_send_email.assert_called_once_with(
-            to_email="recipient@example.com",
+        def mock_send_side_effect(log):
+            log.mark_as_sent()
+            return True
+
+        mock_send_email_now.side_effect = mock_send_side_effect
+
+        result = send_email_task(email_log.id)
+
+        self.assertTrue(result["success"])
+        mock_send_email_now.assert_called_once_with(email_log)
+
+    def test_send_email_task_with_template_log(self):
+        """Test send_email_task with template-based email log."""
+        # Create an email log from a template
+        template = EmailTemplate.objects.create(
+            key="test_template",
+            name="Test Template",
             subject="Test Subject",
-            message="Test message",
-            html_message=None,
-            from_email=None,
-            attachments=None,
-            context=None,
+            text_content="Test message",
+            html_content="<p>Test message</p>",
+            is_active=True,
         )
 
-    @patch("apps.emails.services.EmailService.send_template_email")
-    def test_send_email_task_with_template(self, mock_send_template_email):
-        """Test send_email_task with template."""
-        mock_send_template_email.return_value = True
-
-        result = send_email_task(
-            to_email="recipient@example.com",
+        email_log = EmailMessageLog.objects.create(
+            template=template,
             template_key="test_template",
-            context={"user": "test"},
+            to_email="recipient@example.com",
+            subject="Test Subject",
+            text_content="Test message",
+            html_content="<p>Test message</p>",
+            status=EmailStatus.PENDING,
         )
 
-        self.assertTrue(result)
-        mock_send_template_email.assert_called_once()
+        with patch("apps.emails.services.EmailService._send_email_now") as mock_send:
+
+            def mock_send_side_effect(log):
+                log.mark_as_sent()
+                return True
+
+            mock_send.side_effect = mock_send_side_effect
+            result = send_email_task(email_log.id)
+
+        self.assertTrue(result["success"])
 
     @patch("apps.emails.services.EmailService.send_email")
     def test_send_bulk_email_task(self, mock_send_email):
         """Test send_bulk_email_task functionality."""
-        mock_send_email.return_value = True
+        # Create template required for bulk email task
+        EmailTemplate.objects.create(
+            key="test_template",
+            name="Test Template",
+            subject="Test Subject",
+            text_content="Test message",
+            html_content="<p>Test message</p>",
+            language="en",
+            is_active=True,
+        )
 
-        email_data = [
-            {
-                "to_email": "user1@example.com",
-                "subject": "Subject 1",
-                "message": "Message 1",
-            },
-            {
-                "to_email": "user2@example.com",
-                "subject": "Subject 2",
-                "message": "Message 2",
-            },
-        ]
+        mock_send_email.return_value = Mock()
 
-        result = send_bulk_email_task(email_data)
+        recipient_emails = ["user1@example.com", "user2@example.com"]
 
-        self.assertEqual(result["sent"], 2)
-        self.assertEqual(result["failed"], 0)
+        result = send_bulk_email_task(
+            template_key="test_template",
+            recipient_emails=recipient_emails,
+            context={"name": "Test"},
+        )
+
+        self.assertTrue(result["success"])
+        self.assertEqual(result["sent_count"], 2)
+        self.assertEqual(result["failed_count"], 0)
         self.assertEqual(mock_send_email.call_count, 2)
 
     @patch("apps.emails.services.EmailService.send_email")
     def test_send_bulk_email_task_with_failures(self, mock_send_email):
         """Test send_bulk_email_task with some failures."""
+        # Create template required for bulk email task
+        EmailTemplate.objects.create(
+            key="test_template",
+            name="Test Template",
+            subject="Test Subject",
+            text_content="Test message",
+            html_content="<p>Test message</p>",
+            language="en",
+            is_active=True,
+        )
+
         # Mock to succeed first call, fail second
-        mock_send_email.side_effect = [True, False]
+        mock_send_email.side_effect = [Mock(), Exception("Send failed")]
 
-        email_data = [
-            {
-                "to_email": "user1@example.com",
-                "subject": "Subject 1",
-                "message": "Message 1",
-            },
-            {
-                "to_email": "user2@example.com",
-                "subject": "Subject 2",
-                "message": "Message 2",
-            },
-        ]
+        recipient_emails = ["user1@example.com", "user2@example.com"]
 
-        result = send_bulk_email_task(email_data)
+        result = send_bulk_email_task(
+            template_key="test_template",
+            recipient_emails=recipient_emails,
+            context={"name": "Test"},
+        )
 
-        self.assertEqual(result["sent"], 1)
-        self.assertEqual(result["failed"], 1)
+        self.assertTrue(result["success"])
+        self.assertEqual(result["sent_count"], 1)
+        self.assertEqual(result["failed_count"], 1)
 
 
 class EmailTemplateTestCase(TestCase):
@@ -469,8 +498,8 @@ class EmailTemplateTestCase(TestCase):
             key="test_template",
             name="Test Template",
             subject="Test Subject",
-            body_text="Test body text",
-            body_html="<p>Test body HTML</p>",
+            text_content="Test body text",
+            html_content="<p>Test body HTML</p>",
             is_active=True,
         )
 
@@ -488,7 +517,7 @@ class EmailTemplateTestCase(TestCase):
                 key="test_template",  # Same key as setUp
                 name="Another Template",
                 subject="Another Subject",
-                body_text="Another body",
+                text_content="Another body",
             )
 
     def test_template_active_manager(self):
@@ -498,7 +527,7 @@ class EmailTemplateTestCase(TestCase):
             key="inactive_template",
             name="Inactive Template",
             subject="Inactive Subject",
-            body_text="Inactive body",
+            text_content="Inactive body",
             is_active=False,
         )
 
@@ -513,12 +542,12 @@ class EmailTemplateTestCase(TestCase):
 
         # Update template to use context
         self.template.subject = "Hello {{name}}"
-        self.template.body_text = "Welcome {{name}}!"
+        self.template.text_content = "Welcome {{name}}!"
         self.template.save()
 
         renderer = TemplateRenderer()
         rendered_subject = renderer.render(self.template.subject, context)
-        rendered_body = renderer.render(self.template.body_text, context)
+        rendered_body = renderer.render(self.template.text_content, context)
 
         self.assertEqual(rendered_subject, "Hello John")
         self.assertEqual(rendered_body, "Welcome John!")
@@ -533,7 +562,7 @@ class EmailIntegrationTestCase(TestCase):
         self.user = User.objects.create_user(
             email="test@example.com", password="testpass123", name="Test User"
         )
-        self.email_service = EmailService()
+        # EmailService is a static class, no instantiation needed
 
     def test_complete_template_email_workflow(self):
         """Test complete workflow from template creation to email sending."""
@@ -542,22 +571,22 @@ class EmailIntegrationTestCase(TestCase):
             key="welcome_email",
             name="Welcome Email",
             subject="Welcome {{user.name}} to our platform!",
-            body_text="Hello {{user.name}}, welcome! Your email is {{user.email}}.",
-            body_html=(
+            text_content="Hello {{user.name}}, welcome! Your email is {{user.email}}.",
+            html_content=(
                 "<h1>Hello {{user.name}}</h1>" "<p>Welcome! Email: {{user.email}}.</p>"
             ),
             is_active=True,
         )
 
         # 2. Send email using template
-        result = self.email_service.send_template_email(
+        result = EmailService.send_template_email(
             template_key="welcome_email",
             to_email=self.user.email,
             context={"user": self.user},
         )
 
         # 3. Verify email was sent
-        self.assertTrue(result)
+        self.assertIsInstance(result, EmailMessageLog)
         self.assertEqual(len(mail.outbox), 1)
 
         email = mail.outbox[0]
@@ -594,11 +623,28 @@ class EmailIntegrationTestCase(TestCase):
             )
 
         # Send bulk emails
-        result = send_bulk_email_task(email_data)
+        # For integration test, we need to create template and use actual task signature
+        EmailTemplate.objects.create(
+            key="bulk_template",
+            name="Bulk Template",
+            subject="Hello {{name}}",
+            text_content="Welcome {{name}}!",
+            html_content="<h1>Welcome {{name}}!</h1>",
+            language="en",
+            is_active=True,
+        )
+
+        recipient_emails = [user.email for user in users]
+        result = send_bulk_email_task(
+            template_key="bulk_template",
+            recipient_emails=recipient_emails,
+            context={"name": "User"},
+        )
 
         # Verify results
-        self.assertEqual(result["sent"], 3)
-        self.assertEqual(result["failed"], 0)
+        self.assertTrue(result["success"])
+        self.assertEqual(result["sent_count"], 3)
+        self.assertEqual(result["failed_count"], 0)
         self.assertEqual(len(mail.outbox), 3)
 
         # Verify each email

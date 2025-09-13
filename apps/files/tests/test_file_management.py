@@ -15,6 +15,7 @@ from django.utils import timezone
 
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
+from waffle.testutils import override_flag
 
 from apps.core.enums import FileType
 from apps.files.models import FileUpload
@@ -468,6 +469,131 @@ class FileServiceTestCase(TestCase):
         self.assertIn("fields", upload_data)
         self.assertEqual(upload_data["fields"], {})
 
+    @patch("apps.files.services.default_storage")
+    def test_get_download_url_public_file_exception(self, mock_storage):
+        """Test getting download URL for public file with exception."""
+        # Mock storage.url to raise an exception
+        mock_storage.url.side_effect = Exception("Storage error")
+
+        file_upload = FileUpload.objects.create(
+            original_filename="public.pdf",
+            filename="public.pdf",
+            file_type=FileType.DOCUMENT,
+            mime_type="application/pdf",
+            file_size=1024,
+            storage_path="uploads/test/public.pdf",
+            is_public=True,
+            created_by=self.user,
+            updated_by=self.user,
+        )
+
+        # Mock hasattr to return True for url method
+        with patch("builtins.hasattr", return_value=True):
+            # Should fallback to presigned URL or local serving
+            download_url = FileService.get_download_url(file_upload)
+
+            # Should return the fallback URL (reverse for local serving)
+            self.assertIn(str(file_upload.id), download_url)
+            mock_storage.url.assert_called_once_with(file_upload.storage_path)
+
+    @patch("apps.files.services.default_storage")
+    def test_get_download_url_presigned_url_exception(self, mock_storage):
+        """Test getting download URL with presigned URL exception."""
+        # Mock generate_presigned_url to raise an exception
+        mock_storage.generate_presigned_url.side_effect = Exception("S3 error")
+
+        file_upload = FileUpload.objects.create(
+            original_filename="private.pdf",
+            filename="private.pdf",
+            file_type=FileType.DOCUMENT,
+            mime_type="application/pdf",
+            file_size=1024,
+            storage_path="uploads/test/private.pdf",
+            is_public=False,
+            created_by=self.user,
+            updated_by=self.user,
+        )
+
+        # Mock hasattr to return True for generate_presigned_url method
+        with patch("builtins.hasattr", return_value=True):
+            # Should fallback to local file serving
+            download_url = FileService.get_download_url(file_upload)
+
+            # Should return the fallback URL (reverse for local serving)
+            self.assertIn(str(file_upload.id), download_url)
+            mock_storage.generate_presigned_url.assert_called_once()
+
+    @patch("apps.files.services.default_storage")
+    def test_get_upload_url_with_conditions(self, mock_storage):
+        """Test getting upload URL with content type and max size conditions."""
+        mock_storage.generate_presigned_post.return_value = {
+            "url": "https://s3.amazonaws.com/test-bucket",
+            "fields": {"key": "uploads/test.pdf", "policy": "encoded-policy"},
+        }
+
+        storage_path = "uploads/test/new_file.pdf"
+        content_type = "application/pdf"
+        max_size = 1024000
+
+        # Mock hasattr to return True for generate_presigned_post method
+        with patch("builtins.hasattr", return_value=True):
+            upload_data = FileService.get_upload_url(
+                storage_path, content_type=content_type, max_size=max_size
+            )
+
+            self.assertIn("url", upload_data)
+            self.assertIn("fields", upload_data)
+            mock_storage.generate_presigned_post.assert_called_once()
+
+            # Check that conditions were passed
+            call_args = mock_storage.generate_presigned_post.call_args
+            conditions = call_args[1]["conditions"]
+            self.assertIn(["eq", "$Content-Type", content_type], conditions)
+            self.assertIn(["content-length-range", "0", str(max_size)], conditions)
+
+    @patch("apps.files.services.default_storage")
+    def test_get_upload_url_exception(self, mock_storage):
+        """Test getting upload URL with exception."""
+        # Mock generate_presigned_post to raise an exception
+        mock_storage.generate_presigned_post.side_effect = Exception("S3 error")
+
+        storage_path = "uploads/test/new_file.pdf"
+
+        # Mock hasattr to return True for generate_presigned_post method
+        with patch("builtins.hasattr", return_value=True):
+            # Should fallback to local upload URL
+            upload_data = FileService.get_upload_url(storage_path)
+
+            self.assertIn("url", upload_data)
+            self.assertIn("fields", upload_data)
+            self.assertEqual(upload_data["fields"], {})
+            mock_storage.generate_presigned_post.assert_called_once()
+
+    def test_cleanup_expired_files_with_delete_errors(self):
+        """Test cleanup of expired files with delete errors."""
+        # Create expired file
+        expired_file = FileUpload.objects.create(
+            original_filename="expired.pdf",
+            filename="expired.pdf",
+            file_type=FileType.DOCUMENT,
+            mime_type="application/pdf",
+            file_size=1024,
+            storage_path="uploads/test/expired.pdf",
+            expires_at=timezone.now() - timedelta(hours=1),
+            created_by=self.user,
+            updated_by=self.user,
+        )
+
+        # Mock delete_file to return False (failure)
+        with patch.object(
+            FileService, "delete_file", return_value=False
+        ) as mock_delete:
+            result = FileService.cleanup_expired_files()
+
+            self.assertEqual(result["deleted"], 0)
+            self.assertEqual(result["errors"], 1)
+            mock_delete.assert_called_once_with(expired_file)
+
 
 class FileUploadAPITestCase(APITestCase):
     """Test FileUpload API endpoints."""
@@ -481,6 +607,11 @@ class FileUploadAPITestCase(APITestCase):
         self.other_user = User.objects.create_user(
             email="other@example.com", password="otherpass123", name="Other User"
         )
+
+        # Enable FILES feature flag for all tests
+        self.feature_patcher = patch("apps.featureflags.helpers.is_feature_enabled")
+        self.mock_is_feature_enabled = self.feature_patcher.start()
+        self.mock_is_feature_enabled.return_value = True
 
         # Create test files
         self.private_file = FileUpload.objects.create(
@@ -507,10 +638,14 @@ class FileUploadAPITestCase(APITestCase):
             updated_by=self.user,
         )
 
+    def tearDown(self):
+        """Clean up test data."""
+        self.feature_patcher.stop()
+
     def test_list_files_authenticated(self):
         """Test listing files when authenticated."""
         self.client.force_authenticate(user=self.user)
-        url = reverse("fileupload-list")
+        url = reverse("file-list")
 
         response = self.client.get(url)
 
@@ -523,7 +658,7 @@ class FileUploadAPITestCase(APITestCase):
     def test_list_files_other_user(self):
         """Test listing files as different user."""
         self.client.force_authenticate(user=self.other_user)
-        url = reverse("fileupload-list")
+        url = reverse("file-list")
 
         response = self.client.get(url)
 
@@ -535,7 +670,7 @@ class FileUploadAPITestCase(APITestCase):
 
     def test_list_files_unauthenticated(self):
         """Test listing files when not authenticated."""
-        url = reverse("fileupload-list")
+        url = reverse("file-list")
 
         response = self.client.get(url)
 
@@ -550,7 +685,7 @@ class FileUploadAPITestCase(APITestCase):
         mock_upload.return_value = self.private_file
 
         self.client.force_authenticate(user=self.user)
-        url = reverse("fileupload-list")
+        url = reverse("file-list")
 
         file_content = b"Test PDF content"
         test_file = SimpleUploadedFile(
@@ -576,7 +711,7 @@ class FileUploadAPITestCase(APITestCase):
         }
 
         self.client.force_authenticate(user=self.user)
-        url = reverse("fileupload-list")
+        url = reverse("file-list")
 
         file_content = b"Large file content"
         test_file = SimpleUploadedFile(
@@ -593,7 +728,7 @@ class FileUploadAPITestCase(APITestCase):
     def test_retrieve_file_owner(self):
         """Test retrieving file as owner."""
         self.client.force_authenticate(user=self.user)
-        url = reverse("fileupload-detail", kwargs={"pk": self.private_file.id})
+        url = reverse("file-detail", kwargs={"pk": self.private_file.id})
 
         response = self.client.get(url)
 
@@ -603,7 +738,7 @@ class FileUploadAPITestCase(APITestCase):
     def test_retrieve_file_other_user_private(self):
         """Test retrieving private file as different user."""
         self.client.force_authenticate(user=self.other_user)
-        url = reverse("fileupload-detail", kwargs={"pk": self.private_file.id})
+        url = reverse("file-detail", kwargs={"pk": self.private_file.id})
 
         response = self.client.get(url)
 
@@ -612,7 +747,7 @@ class FileUploadAPITestCase(APITestCase):
     def test_retrieve_file_other_user_public(self):
         """Test retrieving public file as different user."""
         self.client.force_authenticate(user=self.other_user)
-        url = reverse("fileupload-detail", kwargs={"pk": self.public_file.id})
+        url = reverse("file-detail", kwargs={"pk": self.public_file.id})
 
         response = self.client.get(url)
 
@@ -622,7 +757,7 @@ class FileUploadAPITestCase(APITestCase):
     def test_delete_file_owner(self):
         """Test deleting file as owner."""
         self.client.force_authenticate(user=self.user)
-        url = reverse("fileupload-detail", kwargs={"pk": self.private_file.id})
+        url = reverse("file-detail", kwargs={"pk": self.private_file.id})
 
         response = self.client.delete(url)
 
@@ -631,7 +766,7 @@ class FileUploadAPITestCase(APITestCase):
     def test_delete_file_other_user(self):
         """Test deleting file as different user."""
         self.client.force_authenticate(user=self.other_user)
-        url = reverse("fileupload-detail", kwargs={"pk": self.private_file.id})
+        url = reverse("file-detail", kwargs={"pk": self.private_file.id})
 
         response = self.client.delete(url)
 
@@ -640,7 +775,7 @@ class FileUploadAPITestCase(APITestCase):
     def test_download_url_endpoint(self):
         """Test getting download URL endpoint."""
         self.client.force_authenticate(user=self.user)
-        url = reverse("fileupload-download-url", kwargs={"pk": self.private_file.id})
+        url = reverse("file-download-url", kwargs={"pk": self.private_file.id})
 
         with patch.object(
             self.private_file,
@@ -657,7 +792,7 @@ class FileUploadAPITestCase(APITestCase):
     def test_download_url_access_denied(self):
         """Test download URL endpoint with access denied."""
         self.client.force_authenticate(user=self.other_user)
-        url = reverse("fileupload-download-url", kwargs={"pk": self.private_file.id})
+        url = reverse("file-download-url", kwargs={"pk": self.private_file.id})
 
         response = self.client.get(url)
 
@@ -666,7 +801,7 @@ class FileUploadAPITestCase(APITestCase):
     def test_my_files_endpoint(self):
         """Test my files endpoint."""
         self.client.force_authenticate(user=self.user)
-        url = reverse("fileupload-my-files")
+        url = reverse("file-my-files")
 
         response = self.client.get(url)
 
@@ -679,7 +814,7 @@ class FileUploadAPITestCase(APITestCase):
     def test_public_files_endpoint(self):
         """Test public files endpoint."""
         self.client.force_authenticate(user=self.other_user)
-        url = reverse("fileupload-public")
+        url = reverse("file-public")
 
         response = self.client.get(url)
 
@@ -692,7 +827,7 @@ class FileUploadAPITestCase(APITestCase):
     def test_signed_upload_url_endpoint(self):
         """Test signed upload URL endpoint."""
         self.client.force_authenticate(user=self.user)
-        url = reverse("fileupload-signed-upload-url")
+        url = reverse("file-signed-upload-url")
 
         data = {
             "filename": "test.pdf",
@@ -705,7 +840,7 @@ class FileUploadAPITestCase(APITestCase):
             "get_upload_url",
             return_value={"url": "https://example.com/upload", "fields": {}},
         ):
-            response = self.client.post(url, data)
+            response = self.client.post(url, data, format="json")
 
             self.assertEqual(response.status_code, status.HTTP_200_OK)
             self.assertIn("upload_url", response.data)
@@ -728,7 +863,7 @@ class FileUploadAPITestCase(APITestCase):
         )
 
         self.client.force_authenticate(user=self.user)
-        url = reverse("fileupload-list")
+        url = reverse("file-list")
 
         # Filter by image type
         response = self.client.get(url, {"file_type": FileType.IMAGE})
@@ -741,7 +876,7 @@ class FileUploadAPITestCase(APITestCase):
     def test_file_filtering_by_public_status(self):
         """Test file filtering by public status."""
         self.client.force_authenticate(user=self.user)
-        url = reverse("fileupload-list")
+        url = reverse("file-list")
 
         # Filter by public files only
         response = self.client.get(url, {"is_public": "true"})

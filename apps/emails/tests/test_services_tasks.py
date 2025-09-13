@@ -538,3 +538,251 @@ class EmailServicePrivateMethodsTestCase(TestCase):
         self.assertEqual(email_log.cc, '["cc@example.com"]')
         self.assertEqual(email_log.bcc, '["bcc@example.com"]')
         self.assertEqual(email_log.subject, "Test Subject")
+
+    def test_send_email_fallback_to_english_template(self):
+        """Test sending email with fallback to English when lang unavailable."""
+        # Create only English template
+        template = EmailTemplate.objects.create(
+            key="fallback_test",
+            name="Fallback Test",
+            subject="Test {{ name }}",
+            html_content="<p>Hello {{ name }}</p>",
+            text_content="Hello {{ name }}",
+            language="en",
+            is_active=True,
+        )
+
+        with patch("apps.emails.services.send_email_task.delay") as mock_task:
+            mock_task.return_value.id = "task-123"
+
+            # Try to send with French language, should fallback to English
+            email_log = EmailService.send_email(
+                template_key="fallback_test",
+                to_email="test@example.com",
+                context={"name": "John"},
+                language="fr",  # French not available, should fallback to English
+                user=self.user,
+            )
+
+        self.assertEqual(email_log.template, template)
+        self.assertEqual(email_log.subject, "Test John")
+
+    def test_send_email_template_render_failure(self):
+        """Test email template rendering failure."""
+        # Create template with invalid syntax
+        template = EmailTemplate.objects.create(
+            key="invalid_template",
+            name="Invalid Template",
+            subject="Test {{ invalid_syntax",  # Invalid template syntax
+            html_content="<p>Hello {{ name }}</p>",
+            text_content="Hello {{ name }}",
+            language="en",
+            is_active=True,
+        )
+
+        # Mock template render_all to raise an exception
+        with patch.object(template, "render_all") as mock_render:
+            mock_render.side_effect = Exception("Template syntax error")
+
+            with patch("apps.emails.models.EmailTemplate.objects.get") as mock_get:
+                mock_get.return_value = template
+
+                with self.assertRaises(ValueError) as cm:
+                    EmailService.send_email(
+                        template_key="invalid_template",
+                        to_email="test@example.com",
+                        context={"name": "John"},
+                        user=self.user,
+                    )
+
+        self.assertIn("Failed to render email template", str(cm.exception))
+
+    def test_send_bulk_email_with_exception(self):
+        """Test bulk email sending when template raises exception."""
+        with patch("apps.emails.services.EmailService.send_email") as mock_send:
+            mock_send.side_effect = Exception("Template error")
+
+            results = EmailService.send_bulk_email(
+                template_key="welcome",
+                recipients=["user1@example.com", "user2@example.com"],
+                context={"name": "Users"},
+                user=self.user,
+            )
+
+        self.assertEqual(results["total_sent"], 0)
+        self.assertEqual(results["total_failed"], 2)
+        self.assertEqual(len(results["failed_emails"]), 2)
+        self.assertIn("user1@example.com", results["failed_emails"])
+        self.assertIn("user2@example.com", results["failed_emails"])
+
+    def test_preview_email_template_not_found(self):
+        """Test email preview with template not found."""
+        with patch("apps.emails.models.EmailTemplate.get_template") as mock_get:
+            mock_get.return_value = None
+
+            with self.assertRaises(ValueError) as cm:
+                EmailService.preview_email(
+                    template_key="nonexistent",
+                    context={"name": "John"},
+                )
+
+            self.assertIn("Email template 'nonexistent' not found", str(cm.exception))
+
+    def test_validate_template_context_non_dict(self):
+        """Test template context validation with non-dictionary."""
+        with self.assertRaises(ValueError) as cm:
+            EmailService._validate_template_context("not a dict")
+
+        self.assertIn("Template context must be a dictionary", str(cm.exception))
+
+    def test_validate_template_context_non_serializable_object(self):
+        """Test template context validation with non-serializable object."""
+
+        class NonSerializableObject:
+            def __init__(self):
+                self.data = "test"
+
+        invalid_context = {
+            "name": "John",
+            "invalid_object": NonSerializableObject(),
+        }
+
+        with self.assertRaises(ValueError) as cm:
+            EmailService._validate_template_context(invalid_context)
+
+        self.assertIn("Non-serializable object", str(cm.exception))
+
+    def test_normalize_recipients_invalid_type(self):
+        """Test normalizing recipients with invalid type."""
+        with self.assertRaises(ValueError) as cm:
+            EmailService._normalize_recipients(123)  # Invalid type
+
+        self.assertIn(
+            "Recipients must be a string or list of strings", str(cm.exception)
+        )
+
+
+class EmailConvenienceFunctionsTestCase(TestCase):
+    """Test email convenience functions."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.user = User.objects.create_user(
+            email="test@example.com", name="Test User", password="testpass123"
+        )
+
+        # Create templates for convenience functions
+        EmailTemplate.objects.create(
+            key="welcome",
+            name="Welcome Email",
+            subject="Welcome {{ user_name }}!",
+            html_content="<p>Welcome {{ user_name }}!</p>",
+            text_content="Welcome {{ user_name }}!",
+            language="en",
+            is_active=True,
+        )
+
+        EmailTemplate.objects.create(
+            key="password_reset",
+            name="Password Reset",
+            subject="Reset your password",
+            html_content="<p>Reset link: {{ reset_link }}</p>",
+            text_content="Reset link: {{ reset_link }}",
+            language="en",
+            is_active=True,
+        )
+
+        EmailTemplate.objects.create(
+            key="notification",
+            name="Notification",
+            subject="{{ title }}",
+            html_content="<p>{{ message }}</p>",
+            text_content="{{ message }}",
+            language="en",
+            is_active=True,
+        )
+
+    @patch("apps.emails.services.EmailService.send_email")
+    def test_send_welcome_email(self, mock_send):
+        """Test send_welcome_email convenience function."""
+        from apps.emails.services import send_welcome_email
+
+        mock_email_log = Mock()
+        mock_send.return_value = mock_email_log
+
+        result = send_welcome_email(self.user, {"extra": "data"})
+
+        mock_send.assert_called_once()
+        args, kwargs = mock_send.call_args
+
+        self.assertEqual(kwargs["template_key"], "welcome")
+        self.assertEqual(kwargs["to_email"], self.user.email)
+        self.assertEqual(kwargs["user"], self.user)
+        self.assertIn("user", kwargs["context"])
+        self.assertIn("user_name", kwargs["context"])
+        self.assertIn("login_url", kwargs["context"])
+        self.assertIn("extra", kwargs["context"])
+        self.assertEqual(kwargs["context"]["extra"], "data")
+
+        self.assertEqual(result, mock_email_log)
+
+    @patch("apps.emails.services.EmailService.send_email")
+    def test_send_password_reset_email(self, mock_send):
+        """Test send_password_reset_email convenience function."""
+        from apps.emails.services import send_password_reset_email
+
+        mock_email_log = Mock()
+        mock_send.return_value = mock_email_log
+
+        reset_link = "https://example.com/reset/token123"
+        result = send_password_reset_email(self.user, reset_link, {"extra": "data"})
+
+        mock_send.assert_called_once()
+        args, kwargs = mock_send.call_args
+
+        self.assertEqual(kwargs["template_key"], "password_reset")
+        self.assertEqual(kwargs["to_email"], self.user.email)
+        self.assertEqual(kwargs["user"], self.user)
+        self.assertIn("user", kwargs["context"])
+        self.assertIn("user_name", kwargs["context"])
+        self.assertIn("reset_link", kwargs["context"])
+        self.assertEqual(kwargs["context"]["reset_link"], reset_link)
+        self.assertIn("extra", kwargs["context"])
+        self.assertEqual(kwargs["context"]["extra"], "data")
+
+        self.assertEqual(result, mock_email_log)
+
+    @patch("apps.emails.services.EmailService.send_email")
+    def test_send_notification_email(self, mock_send):
+        """Test send_notification_email convenience function."""
+        from apps.emails.services import send_notification_email
+
+        mock_email_log = Mock()
+        mock_send.return_value = mock_email_log
+
+        title = "Important Notification"
+        message = "This is a test notification"
+        action_url = "https://example.com/action"
+
+        result = send_notification_email(
+            self.user, title, message, action_url, {"extra": "data"}
+        )
+
+        mock_send.assert_called_once()
+        args, kwargs = mock_send.call_args
+
+        self.assertEqual(kwargs["template_key"], "notification")
+        self.assertEqual(kwargs["to_email"], self.user.email)
+        self.assertEqual(kwargs["user"], self.user)
+        self.assertIn("user", kwargs["context"])
+        self.assertIn("user_name", kwargs["context"])
+        self.assertIn("title", kwargs["context"])
+        self.assertIn("message", kwargs["context"])
+        self.assertIn("action_url", kwargs["context"])
+        self.assertEqual(kwargs["context"]["title"], title)
+        self.assertEqual(kwargs["context"]["message"], message)
+        self.assertEqual(kwargs["context"]["action_url"], action_url)
+        self.assertIn("extra", kwargs["context"])
+        self.assertEqual(kwargs["context"]["extra"], "data")
+
+        self.assertEqual(result, mock_email_log)

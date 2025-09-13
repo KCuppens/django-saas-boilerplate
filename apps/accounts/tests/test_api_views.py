@@ -25,8 +25,8 @@ class UserViewSetTestCase(APITestCase):
         self.user = User.objects.create_user(
             email="test@example.com", password="testpass123", name="Test User"
         )
-        # Create profile explicitly for tests
-        self.profile = UserProfile.objects.create(user=self.user)
+        # Profile is automatically created by signal
+        self.profile = self.user.profile
 
     def test_retrieve_user_profile_authenticated(self):
         """Test retrieving user profile when authenticated."""

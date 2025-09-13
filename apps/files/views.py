@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 
 from apps.core.permissions import IsOwnerOrAdmin
@@ -56,7 +56,7 @@ class FileUploadViewSet(viewsets.ModelViewSet):
 
     serializer_class = FileUploadSerializer
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdmin]
-    parser_classes = [MultiPartParser, FormParser]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_queryset(self):
         """Get files based on user permissions."""
