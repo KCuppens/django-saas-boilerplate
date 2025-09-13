@@ -1,3 +1,5 @@
+"""URL configuration for the emails application."""
+
 from django.urls import path
 
 from .views import (

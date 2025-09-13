@@ -1,3 +1,5 @@
+"""URL configuration for the operations application."""
+
 from django.urls import path
 
 from .metrics import health_metrics, prometheus_metrics
