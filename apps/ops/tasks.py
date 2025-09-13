@@ -1,3 +1,5 @@
+"""Operations and maintenance Celery tasks for system administration."""
+
 import datetime
 import logging
 import os
@@ -13,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 @shared_task(name="apps.ops.tasks.backup_database")
 def backup_database():
-    """Backup database to file"""
+    """Backup database to file."""
     try:
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         backup_filename = f"backup_{timestamp}.sql"
@@ -51,7 +53,7 @@ def backup_database():
             )  # nosec B603
 
             if result.returncode == 0:
-                logger.info(f"Database backup created successfully: {backup_path}")
+                logger.info("Database backup created successfully: %s", backup_path)
                 return {
                     "success": True,
                     "backup_file": backup_filename,
@@ -59,7 +61,7 @@ def backup_database():
                     "timestamp": timestamp,
                 }
             else:
-                logger.error(f"Database backup failed: {result.stderr}")
+                logger.error("Database backup failed: %s", result.stderr)
                 return {"success": False, "error": result.stderr}
 
         else:
@@ -76,13 +78,13 @@ def backup_database():
             }
 
     except Exception as e:
-        logger.error(f"Database backup failed: {str(e)}")
+        logger.error("Database backup failed: %s", str(e))
         return {"success": False, "error": str(e)}
 
 
 @shared_task(name="apps.ops.tasks.cleanup_old_backups")
 def cleanup_old_backups(days_to_keep=7):
-    """Clean up old backup files"""
+    """Clean up old backup files."""
     try:
         import glob
 
@@ -108,9 +110,9 @@ def cleanup_old_backups(days_to_keep=7):
             if file_time < cutoff_time:
                 os.remove(backup_file)
                 cleaned_count += 1
-                logger.info(f"Removed old backup: {backup_file}")
+                logger.info("Removed old backup: %s", backup_file)
 
-        logger.info(f"Cleaned up {cleaned_count} old backup files")
+        logger.info("Cleaned up %d old backup files", cleaned_count)
 
         return {
             "success": True,
@@ -119,13 +121,13 @@ def cleanup_old_backups(days_to_keep=7):
         }
 
     except Exception as e:
-        logger.error(f"Backup cleanup failed: {str(e)}")
+        logger.error("Backup cleanup failed: %s", str(e))
         return {"success": False, "error": str(e)}
 
 
 @shared_task(name="apps.ops.tasks.system_maintenance")
 def system_maintenance():
-    """Perform system maintenance tasks"""
+    """Perform system maintenance tasks."""
     try:
         results = {}
 
@@ -162,13 +164,13 @@ def system_maintenance():
         }
 
     except Exception as e:
-        logger.error(f"System maintenance failed: {str(e)}")
+        logger.error("System maintenance failed: %s", str(e))
         return {"success": False, "error": str(e)}
 
 
 @shared_task(name="apps.ops.tasks.health_check_task")
 def health_check_task():
-    """Periodic health check task"""
+    """Periodic health check task."""
     try:
         results = {
             "timestamp": datetime.datetime.now().isoformat(),
@@ -223,10 +225,10 @@ def health_check_task():
         if all_healthy:
             logger.info("Health check passed")
         else:
-            logger.warning(f"Health check failed: {results}")
+            logger.warning("Health check failed: %s", results)
 
         return {"success": True, "health_results": results}
 
     except Exception as e:
-        logger.error(f"Health check task failed: {str(e)}")
+        logger.error("Health check task failed: %s", str(e))
         return {"success": False, "error": str(e)}

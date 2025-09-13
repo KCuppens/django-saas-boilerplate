@@ -1,3 +1,5 @@
+"""Tests for file serializers and views."""
+
 from datetime import timedelta
 from unittest.mock import patch
 
@@ -21,10 +23,10 @@ User = get_user_model()
 
 
 class FileUploadSerializerTestCase(TestCase):
-    """Test FileUploadSerializer"""
+    """Test FileUploadSerializer."""
 
     def setUp(self):
-        """Set up test data"""
+        """Set up test data."""
         self.factory = RequestFactory()
         self.user = User.objects.create_user(
             email="test@example.com", name="Test User", password="testpass123"
@@ -43,7 +45,7 @@ class FileUploadSerializerTestCase(TestCase):
         )
 
     def test_serializer_fields(self):
-        """Test serializer includes all expected fields"""
+        """Test serializer includes all expected fields."""
         request = self.factory.get("/")
         request.user = self.user
 
@@ -79,7 +81,7 @@ class FileUploadSerializerTestCase(TestCase):
             self.assertIn(field, serializer.data)
 
     def test_created_by_name_field(self):
-        """Test created_by_name field"""
+        """Test created_by_name field."""
         request = self.factory.get("/")
         request.user = self.user
 
@@ -90,7 +92,7 @@ class FileUploadSerializerTestCase(TestCase):
         self.assertEqual(serializer.data["created_by_name"], self.user.get_full_name())
 
     def test_file_size_human_field(self):
-        """Test file_size_human field"""
+        """Test file_size_human field."""
         request = self.factory.get("/")
         request.user = self.user
 
@@ -101,7 +103,7 @@ class FileUploadSerializerTestCase(TestCase):
         self.assertEqual(serializer.data["file_size_human"], "1.0 KB")
 
     def test_is_expired_field(self):
-        """Test is_expired field"""
+        """Test is_expired field."""
         request = self.factory.get("/")
         request.user = self.user
 
@@ -121,7 +123,7 @@ class FileUploadSerializerTestCase(TestCase):
         self.assertTrue(serializer.data["is_expired"])
 
     def test_get_download_url_with_access(self):
-        """Test get_download_url when user has access"""
+        """Test get_download_url when user has access."""
         request = self.factory.get("/")
         request.user = self.user
 
@@ -134,7 +136,7 @@ class FileUploadSerializerTestCase(TestCase):
             self.assertIn(str(self.file_upload.id), serializer.data["download_url"])
 
     def test_get_download_url_without_access(self):
-        """Test get_download_url when user has no access"""
+        """Test get_download_url when user has no access."""
         request = self.factory.get("/")
         request.user = self.user
 
@@ -146,13 +148,13 @@ class FileUploadSerializerTestCase(TestCase):
             self.assertIsNone(serializer.data["download_url"])
 
     def test_get_download_url_no_request(self):
-        """Test get_download_url with no request in context"""
+        """Test get_download_url with no request in context."""
         serializer = FileUploadSerializer(self.file_upload)
 
         self.assertIsNone(serializer.data["download_url"])
 
     def test_read_only_fields(self):
-        """Test that read-only fields cannot be updated"""
+        """Test that read-only fields cannot be updated."""
         request = self.factory.get("/")
         request.user = self.user
 
@@ -181,16 +183,16 @@ class FileUploadSerializerTestCase(TestCase):
 
 
 class FileUploadCreateSerializerTestCase(TestCase):
-    """Test FileUploadCreateSerializer"""
+    """Test FileUploadCreateSerializer."""
 
     def setUp(self):
-        """Set up test data"""
+        """Set up test data."""
         self.user = User.objects.create_user(
             email="test@example.com", name="Test User", password="testpass123"
         )
 
     def test_serializer_fields(self):
-        """Test serializer has expected fields"""
+        """Test serializer has expected fields."""
         serializer = FileUploadCreateSerializer()
 
         expected_fields = ["file", "description", "tags", "is_public", "expires_at"]
@@ -199,13 +201,13 @@ class FileUploadCreateSerializerTestCase(TestCase):
             self.assertIn(field, serializer.fields)
 
     def test_file_field_write_only(self):
-        """Test file field is write-only"""
+        """Test file field is write-only."""
         serializer = FileUploadCreateSerializer()
 
         self.assertTrue(serializer.fields["file"].write_only)
 
     def test_valid_data(self):
-        """Test serializer with valid data"""
+        """Test serializer with valid data."""
         file_content = b"test file content"
         test_file = SimpleUploadedFile(
             "test.txt", file_content, content_type="text/plain"
@@ -223,7 +225,7 @@ class FileUploadCreateSerializerTestCase(TestCase):
         self.assertTrue(serializer.is_valid())
 
     def test_invalid_data(self):
-        """Test serializer with invalid data"""
+        """Test serializer with invalid data."""
         data = {"description": "Test file without file field"}
 
         serializer = FileUploadCreateSerializer(data=data)
@@ -233,10 +235,10 @@ class FileUploadCreateSerializerTestCase(TestCase):
 
 
 class SignedUrlSerializerTestCase(TestCase):
-    """Test SignedUrlSerializer"""
+    """Test SignedUrlSerializer."""
 
     def test_valid_filename(self):
-        """Test serializer with valid filename"""
+        """Test serializer with valid filename."""
         data = {
             "filename": "test_file.pdf",
             "content_type": "application/pdf",
@@ -248,7 +250,7 @@ class SignedUrlSerializerTestCase(TestCase):
         self.assertTrue(serializer.is_valid())
 
     def test_filename_without_extension(self):
-        """Test filename without extension"""
+        """Test filename without extension."""
         data = {"filename": "test_file_no_extension"}
 
         serializer = SignedUrlSerializer(data=data)
@@ -257,7 +259,7 @@ class SignedUrlSerializerTestCase(TestCase):
         self.assertIn("filename", serializer.errors)
 
     def test_dangerous_filename_characters(self):
-        """Test filename with dangerous characters"""
+        """Test filename with dangerous characters."""
         dangerous_filenames = [
             "file../test.pdf",
             "file/test.pdf",
@@ -280,7 +282,7 @@ class SignedUrlSerializerTestCase(TestCase):
                 self.assertIn("filename", serializer.errors)
 
     def test_max_size_validation(self):
-        """Test max_size field validation"""
+        """Test max_size field validation."""
         # Test valid size
         data = {"filename": "test.pdf", "max_size": 1024}
         serializer = SignedUrlSerializer(data=data)
@@ -297,7 +299,7 @@ class SignedUrlSerializerTestCase(TestCase):
         self.assertFalse(serializer.is_valid())
 
     def test_optional_fields(self):
-        """Test optional fields"""
+        """Test optional fields."""
         data = {"filename": "test.pdf"}
 
         serializer = SignedUrlSerializer(data=data)
@@ -308,10 +310,10 @@ class SignedUrlSerializerTestCase(TestCase):
 
 
 class FileStatsSerializerTestCase(TestCase):
-    """Test FileStatsSerializer"""
+    """Test FileStatsSerializer."""
 
     def test_serializer_fields(self):
-        """Test serializer has expected fields"""
+        """Test serializer has expected fields."""
         data = {
             "total_files": 10,
             "total_size": 1048576,
@@ -329,10 +331,10 @@ class FileStatsSerializerTestCase(TestCase):
 
 
 class FileViewsTestCase(APITestCase):
-    """Test file views (simplified since full views aren't provided)"""
+    """Test file views (simplified since full views aren't provided)."""
 
     def setUp(self):
-        """Set up test data"""
+        """Set up test data."""
         self.client = APIClient()
         self.user = User.objects.create_user(
             email="test@example.com", name="Test User", password="testpass123"
@@ -351,7 +353,7 @@ class FileViewsTestCase(APITestCase):
         )
 
     def test_file_serializer_integration(self):
-        """Test file serializer with actual model data"""
+        """Test file serializer with actual model data."""
         self.client.force_authenticate(user=self.user)
 
         # Create a proper request object for the serializer context
@@ -376,7 +378,7 @@ class FileViewsTestCase(APITestCase):
 
     @patch("apps.files.services.FileService.upload_file")
     def test_file_upload_serializer_integration(self, mock_upload):
-        """Test file upload serializer integration"""
+        """Test file upload serializer integration."""
         mock_upload.return_value = self.file_upload
 
         file_content = b"test file content"
@@ -404,7 +406,7 @@ class FileViewsTestCase(APITestCase):
         self.assertEqual(validated_data["file"].name, "upload_test.txt")
 
     def test_signed_url_serializer_integration(self):
-        """Test signed URL serializer with various inputs"""
+        """Test signed URL serializer with various inputs."""
         test_cases = [
             {
                 "data": {"filename": "document.pdf", "content_type": "application/pdf"},
@@ -425,7 +427,8 @@ class FileViewsTestCase(APITestCase):
                 if case["should_be_valid"]:
                     self.assertTrue(
                         serializer.is_valid(),
-                        f"Expected valid data: {case['data']}, errors: {serializer.errors}",
+                        f"Expected valid data: {case['data']}, "
+                        f"errors: {serializer.errors}",
                     )
                 else:
                     self.assertFalse(
@@ -433,7 +436,7 @@ class FileViewsTestCase(APITestCase):
                     )
 
     def test_file_stats_serializer_integration(self):
-        """Test file stats serializer with realistic data"""
+        """Test file stats serializer with realistic data."""
         # Simulate stats data that might come from a view
         stats_data = {
             "total_files": 25,
@@ -465,7 +468,7 @@ class FileViewsTestCase(APITestCase):
         self.assertEqual(len(validated["recent_uploads"]), 2)
 
     def test_serializer_performance_with_multiple_files(self):
-        """Test serializer performance with multiple files"""
+        """Test serializer performance with multiple files."""
         # Create multiple file uploads
         files = []
         for i in range(10):

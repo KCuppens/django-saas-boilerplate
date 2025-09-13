@@ -1,4 +1,7 @@
-from .base import *
+"""Local development Django settings."""
+
+# pylint: disable=wildcard-import,unused-wildcard-import
+from .base import *  # noqa: F401,F403
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True

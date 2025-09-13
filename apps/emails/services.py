@@ -1,11 +1,16 @@
+"""Email services for the Django SaaS boilerplate."""
+
+import json
 import logging
-from typing import Any, Optional, Union, List, Dict
+from typing import Any, Optional, Union
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.mail import EmailMultiAlternatives
+from django.db import models
 
 from apps.core.enums import EmailStatus
+
 from .models import EmailMessageLog, EmailTemplate
 from .tasks import send_email_task
 
@@ -14,23 +19,23 @@ User = get_user_model()
 
 
 class EmailService:
-    """Service for sending emails using templates"""
+    """Service for sending emails using templates."""
 
     @staticmethod
     def send_email(
         template_key: str,
-        to_email: Union[str, List[str]],
-        context: Optional[Dict[str, Any]] = None,
+        to_email: Union[str, list[str]],
+        context: Optional[dict[str, Any]] = None,
         from_email: Optional[str] = None,
-        cc: Optional[List[str]] = None,
-        bcc: Optional[List[str]] = None,
+        cc: Optional[list[str]] = None,
+        bcc: Optional[list[str]] = None,
         language: str = "en",
         user: Optional[User] = None,
         async_send: bool = True,
         **kwargs,
     ) -> EmailMessageLog:
         """
-        Send email using template
+        Send email using template.
 
         Args:
             template_key: Email template key
@@ -49,8 +54,9 @@ class EmailService:
         """
         # Normalize recipients and format for storage
         normalized_recipients = EmailService._normalize_recipients(to_email)
-        recipient_string = EmailService._format_recipients_for_storage(normalized_recipients)
-        primary_recipient = normalized_recipients[0]  # Use first recipient as primary
+        recipient_string = EmailService._format_recipients_for_storage(
+            normalized_recipients
+        )
 
         # Get template (first check if it exists, then if it's active)
         try:
@@ -59,23 +65,27 @@ class EmailService:
             # Try to get default language template
             if language != "en":
                 try:
-                    template = EmailTemplate.objects.get(key=template_key, language="en")
+                    template = EmailTemplate.objects.get(
+                        key=template_key, language="en"
+                    )
                 except EmailTemplate.DoesNotExist:
                     raise EmailTemplate.DoesNotExist(
-                        f"Email template '{template_key}' not found for language '{language}'"
+                        f"Email template '{template_key}' not found for "
+                        f"language '{language}'"
                     )
             else:
                 raise EmailTemplate.DoesNotExist(
-                    f"Email template '{template_key}' not found for language '{language}'"
+                    f"Email template '{template_key}' not found for "
+                    f"language '{language}'"
                 )
-        
+
         # Check if template is active
         if not template.is_active:
             raise ValueError(f"Email template '{template_key}' is not active")
 
         # Prepare context
         email_context = EmailService._get_template_context(template, context, user)
-        
+
         # Validate context
         EmailService._validate_template_context(email_context)
 
@@ -83,7 +93,7 @@ class EmailService:
         try:
             rendered_content = template.render_all(email_context)
         except Exception as e:
-            logger.error(f"Failed to render email template {template_key}: {str(e)}")
+            logger.error("Failed to render email template %s: %s", template_key, str(e))
             raise ValueError(f"Failed to render email template: {str(e)}")
 
         # Create email log
@@ -101,10 +111,9 @@ class EmailService:
         # Store context_data without Django model instances (for JSON serialization)
         storable_context = {}
         for key, value in email_context.items():
-            from django.db import models
             if not isinstance(value, models.Model):
                 storable_context[key] = value
-        
+
         email_log.context_data = storable_context
         email_log.save(update_fields=["context_data"])
 
@@ -116,7 +125,7 @@ class EmailService:
             email_log.save(update_fields=["celery_task_id"])
         else:
             # Send synchronously
-            success = EmailService._send_email_now(email_log)
+            EmailService._send_email_now(email_log)
             # Refresh from database to get updated status
             email_log.refresh_from_db()
 
@@ -124,7 +133,7 @@ class EmailService:
 
     @staticmethod
     def _send_email_now(email_log: EmailMessageLog) -> bool:
-        """Send email immediately (synchronous)"""
+        """Send email immediately (synchronous)."""
         try:
             # Prepare recipients
             to_emails = [email_log.to_email]
@@ -151,13 +160,13 @@ class EmailService:
             # Mark as sent
             email_log.mark_as_sent()
 
-            logger.info(f"Email sent successfully to {email_log.to_email}")
+            logger.info("Email sent successfully to %s", email_log.to_email)
             return True
 
         except Exception as e:
             error_message = str(e)
             logger.error(
-                f"Failed to send email to {email_log.to_email}: {error_message}"
+                "Failed to send email to %s: %s", email_log.to_email, error_message
             )
 
             # Mark as failed
@@ -168,10 +177,10 @@ class EmailService:
     def send_template_email(
         template_key: str,
         to_email: str,
-        context: Optional[Dict[str, Any]] = None,
+        context: Optional[dict[str, Any]] = None,
         **kwargs,
     ) -> EmailMessageLog:
-        """Convenience method for sending template emails"""
+        """Send template emails using a convenience method."""
         return EmailService.send_email(
             template_key=template_key,
             to_email=to_email,
@@ -182,11 +191,11 @@ class EmailService:
     @staticmethod
     def send_bulk_email(
         template_key: str,
-        recipients: List[str],
-        context: Optional[Dict[str, Any]] = None,
+        recipients: list[str],
+        context: Optional[dict[str, Any]] = None,
         **kwargs,
-    ) -> Dict[str, Any]:
-        """Send email to multiple recipients"""
+    ) -> dict[str, Any]:
+        """Send email to multiple recipients."""
         email_logs = []
         failed_emails = []
         total_sent = 0
@@ -202,7 +211,7 @@ class EmailService:
                     **kwargs,
                 )
                 email_logs.append(email_log)
-                
+
                 # Check the status after sending
                 email_log.refresh_from_db()
                 if email_log.status == EmailStatus.SENT:
@@ -210,9 +219,9 @@ class EmailService:
                 else:
                     total_failed += 1
                     failed_emails.append(recipient)
-                    
+
             except Exception as e:
-                logger.error(f"Failed to send email to {recipient}: {str(e)}")
+                logger.error("Failed to send email to %s: %s", recipient, str(e))
                 total_failed += 1
                 failed_emails.append(recipient)
 
@@ -225,10 +234,10 @@ class EmailService:
     @staticmethod
     def preview_email(
         template_key: str,
-        context: Optional[Dict[str, Any]] = None,
+        context: Optional[dict[str, Any]] = None,
         language: str = "en",
-    ) -> Dict[str, str]:
-        """Preview email content without sending"""
+    ) -> dict[str, str]:
+        """Preview email content without sending."""
         template = EmailTemplate.get_template(template_key, language)
         if not template:
             raise ValueError(f"Email template '{template_key}' not found")
@@ -237,58 +246,58 @@ class EmailService:
 
     @staticmethod
     def _get_template_context(
-        template: EmailTemplate, 
-        context: Optional[Dict[str, Any]] = None, 
-        user: Optional[User] = None
-    ) -> Dict[str, Any]:
-        """Get template context with default values"""
+        template: EmailTemplate,
+        context: Optional[dict[str, Any]] = None,
+        user: Optional[User] = None,
+    ) -> dict[str, Any]:
+        """Get template context with default values."""
         email_context = {
             "site_name": getattr(settings, "SITE_NAME", "Your Site"),
             "site_url": getattr(settings, "SITE_URL", "http://localhost:8000"),
         }
-        
+
         # Add user context if provided
         if user:
             email_context["user"] = user
-        
+
         # Add custom context
         if context:
             email_context.update(context)
-            
+
         return email_context
 
     @staticmethod
-    def _validate_template_context(context: Dict[str, Any]) -> None:
-        """Validate template context data"""
+    def _validate_template_context(context: dict[str, Any]) -> None:
+        """Validate template context data."""
         if not isinstance(context, dict):
             raise ValueError("Template context must be a dictionary")
-        
-        # Check for non-serializable values (excluding Django models and special objects)
+
+        # Check for non-serializable values (excluding Django models and
+        # special objects)
         try:
-            import json
-            from django.db import models
-            
             # Create a copy without Django model instances for testing
             test_context = {}
             for key, value in context.items():
                 if isinstance(value, models.Model):
                     # Skip Django model instances - they're fine in templates
                     continue
-                elif hasattr(value, '__dict__') and not hasattr(value, '__json__'):
+                elif hasattr(value, "__dict__") and not hasattr(value, "__json__"):
                     # This is likely an object() or similar
                     raise ValueError(f"Non-serializable object: {type(value)}")
                 else:
                     test_context[key] = value
-            
+
             # Test serialization of remaining values
             json.dumps(test_context)
-            
+
         except (TypeError, ValueError) as e:
-            raise ValueError(f"Template context contains non-serializable values: {str(e)}")
+            raise ValueError(
+                f"Template context contains non-serializable values: {str(e)}"
+            )
 
     @staticmethod
-    def _normalize_recipients(to_email: Union[str, List[str]]) -> List[str]:
-        """Normalize recipients to a list"""
+    def _normalize_recipients(to_email: Union[str, list[str]]) -> list[str]:
+        """Normalize recipients to a list."""
         if isinstance(to_email, str):
             return [to_email]
         elif isinstance(to_email, list):
@@ -297,8 +306,8 @@ class EmailService:
             raise ValueError("Recipients must be a string or list of strings")
 
     @staticmethod
-    def _format_recipients_for_storage(recipients: List[str]) -> str:
-        """Format recipients list for database storage"""
+    def _format_recipients_for_storage(recipients: list[str]) -> str:
+        """Format recipients list for database storage."""
         return ", ".join(recipients)
 
     @staticmethod
@@ -306,16 +315,14 @@ class EmailService:
         template: EmailTemplate,
         to_email: str,
         from_email: str,
-        cc: Optional[List[str]] = None,
-        bcc: Optional[List[str]] = None,
+        cc: Optional[list[str]] = None,
+        bcc: Optional[list[str]] = None,
         subject: str = "",
         html_body: str = "",
         text_body: str = "",
         user: Optional[User] = None,
     ) -> EmailMessageLog:
-        """Create email log entry"""
-        import json
-        
+        """Create email log entry."""
         email_log = EmailMessageLog.objects.create(
             template=template,
             template_key=template.key,
@@ -327,20 +334,20 @@ class EmailService:
             user=user,
             status=EmailStatus.PENDING,
         )
-        
+
         # Set CC and BCC using the property setters
         email_log.cc_list = cc or []
         email_log.bcc_list = bcc or []
         email_log.save(update_fields=["cc", "bcc"])
-        
+
         return email_log
 
 
 # Convenience functions for common email types
 def send_welcome_email(
-    user: User, context: Optional[Dict[str, Any]] = None
+    user: User, context: Optional[dict[str, Any]] = None
 ) -> EmailMessageLog:
-    """Send welcome email to new user"""
+    """Send welcome email to new user."""
     email_context = {
         "user": user,
         "user_name": user.get_full_name(),
@@ -359,9 +366,9 @@ def send_welcome_email(
 
 
 def send_password_reset_email(
-    user: User, reset_link: str, context: Optional[Dict[str, Any]] = None
+    user: User, reset_link: str, context: Optional[dict[str, Any]] = None
 ) -> EmailMessageLog:
-    """Send password reset email"""
+    """Send password reset email."""
     email_context = {
         "user": user,
         "user_name": user.get_full_name(),
@@ -382,9 +389,9 @@ def send_notification_email(
     title: str,
     message: str,
     action_url: Optional[str] = None,
-    context: Optional[Dict[str, Any]] = None,
+    context: Optional[dict[str, Any]] = None,
 ) -> EmailMessageLog:
-    """Send notification email"""
+    """Send notification email."""
     email_context = {
         "user": user,
         "user_name": user.get_full_name(),

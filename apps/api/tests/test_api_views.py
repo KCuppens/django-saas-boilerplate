@@ -1,3 +1,5 @@
+"""Tests for API views."""
+
 from unittest.mock import Mock, patch
 
 from django.contrib.auth import get_user_model
@@ -12,10 +14,10 @@ User = get_user_model()
 
 
 class NoteViewSetTestCase(APITestCase):
-    """Test NoteViewSet"""
+    """Test NoteViewSet."""
 
     def setUp(self):
-        """Set up test data"""
+        """Set up test data."""
         self.client = APIClient()
 
         # Create test users
@@ -55,7 +57,7 @@ class NoteViewSetTestCase(APITestCase):
         )
 
     def test_list_notes_authenticated_user(self):
-        """Test listing notes as authenticated user"""
+        """Test listing notes as authenticated user."""
         self.client.force_authenticate(user=self.user)
         url = reverse("note-list")
 
@@ -70,7 +72,7 @@ class NoteViewSetTestCase(APITestCase):
         self.assertNotIn("Other's Private Note", note_titles)
 
     def test_list_notes_admin_user(self):
-        """Test listing notes as admin user"""
+        """Test listing notes as admin user."""
         self.client.force_authenticate(user=self.admin_user)
 
         # Mock the is_admin method
@@ -84,7 +86,7 @@ class NoteViewSetTestCase(APITestCase):
         self.assertEqual(len(response.data["results"]), 3)
 
     def test_list_notes_unauthenticated(self):
-        """Test listing notes as unauthenticated user"""
+        """Test listing notes as unauthenticated user."""
         url = reverse("note-list")
 
         response = self.client.get(url)
@@ -92,7 +94,7 @@ class NoteViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_list_notes_with_search(self):
-        """Test listing notes with search parameter"""
+        """Test listing notes with search parameter."""
         self.client.force_authenticate(user=self.user)
         url = reverse("note-list")
 
@@ -103,7 +105,7 @@ class NoteViewSetTestCase(APITestCase):
         self.assertEqual(response.data["results"][0]["title"], "Public Note")
 
     def test_list_notes_with_tags_filter(self):
-        """Test listing notes with tags filter"""
+        """Test listing notes with tags filter."""
         # Add tags to a note
         self.user_note.tags = "django,testing"
         self.user_note.save()
@@ -118,7 +120,7 @@ class NoteViewSetTestCase(APITestCase):
         self.assertEqual(response.data["results"][0]["title"], "User's Note")
 
     def test_list_notes_with_public_filter(self):
-        """Test listing notes with is_public filter"""
+        """Test listing notes with is_public filter."""
         self.client.force_authenticate(user=self.user)
         url = reverse("note-list")
 
@@ -129,7 +131,7 @@ class NoteViewSetTestCase(APITestCase):
         self.assertEqual(response.data["results"][0]["title"], "Public Note")
 
     def test_create_note(self):
-        """Test creating a new note"""
+        """Test creating a new note."""
         self.client.force_authenticate(user=self.user)
         url = reverse("note-list")
 
@@ -147,7 +149,7 @@ class NoteViewSetTestCase(APITestCase):
         self.assertEqual(response.data["created_by_name"], self.user.get_full_name())
 
     def test_retrieve_own_note(self):
-        """Test retrieving user's own note"""
+        """Test retrieving user's own note."""
         self.client.force_authenticate(user=self.user)
         url = reverse("note-detail", kwargs={"pk": self.user_note.pk})
 
@@ -157,7 +159,7 @@ class NoteViewSetTestCase(APITestCase):
         self.assertEqual(response.data["title"], "User's Note")
 
     def test_retrieve_public_note(self):
-        """Test retrieving public note"""
+        """Test retrieving public note."""
         self.client.force_authenticate(user=self.user)
         url = reverse("note-detail", kwargs={"pk": self.public_note.pk})
 
@@ -167,7 +169,7 @@ class NoteViewSetTestCase(APITestCase):
         self.assertEqual(response.data["title"], "Public Note")
 
     def test_retrieve_other_private_note_denied(self):
-        """Test retrieving other user's private note is denied"""
+        """Test retrieving other user's private note is denied."""
         self.client.force_authenticate(user=self.user)
         url = reverse("note-detail", kwargs={"pk": self.other_private_note.pk})
 
@@ -176,7 +178,7 @@ class NoteViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_update_own_note(self):
-        """Test updating user's own note"""
+        """Test updating user's own note."""
         self.client.force_authenticate(user=self.user)
         url = reverse("note-detail", kwargs={"pk": self.user_note.pk})
 
@@ -188,7 +190,7 @@ class NoteViewSetTestCase(APITestCase):
         self.assertEqual(response.data["title"], "Updated Note")
 
     def test_update_other_note_denied(self):
-        """Test updating other user's note is denied"""
+        """Test updating other user's note is denied."""
         self.client.force_authenticate(user=self.user)
         url = reverse("note-detail", kwargs={"pk": self.public_note.pk})
 
@@ -199,7 +201,7 @@ class NoteViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_delete_own_note(self):
-        """Test deleting user's own note"""
+        """Test deleting user's own note."""
         self.client.force_authenticate(user=self.user)
         url = reverse("note-detail", kwargs={"pk": self.user_note.pk})
 
@@ -209,7 +211,7 @@ class NoteViewSetTestCase(APITestCase):
         self.assertFalse(Note.objects.filter(pk=self.user_note.pk).exists())
 
     def test_my_notes_action(self):
-        """Test my_notes custom action"""
+        """Test my_notes custom action."""
         self.client.force_authenticate(user=self.user)
         url = reverse("note-my-notes")
 
@@ -220,7 +222,7 @@ class NoteViewSetTestCase(APITestCase):
         self.assertEqual(response.data["results"][0]["title"], "User's Note")
 
     def test_public_notes_action(self):
-        """Test public custom action"""
+        """Test public custom action."""
         self.client.force_authenticate(user=self.user)
         url = reverse("note-public")
 
@@ -231,7 +233,7 @@ class NoteViewSetTestCase(APITestCase):
         self.assertEqual(response.data["results"][0]["title"], "Public Note")
 
     def test_toggle_visibility_action(self):
-        """Test toggle_visibility custom action"""
+        """Test toggle_visibility custom action."""
         self.client.force_authenticate(user=self.user)
         url = reverse("note-toggle-visibility", kwargs={"pk": self.user_note.pk})
 
@@ -248,7 +250,7 @@ class NoteViewSetTestCase(APITestCase):
         self.assertTrue(self.user_note.is_public)
 
     def test_get_serializer_class_for_create(self):
-        """Test that create action uses NoteCreateUpdateSerializer"""
+        """Test that create action uses NoteCreateUpdateSerializer."""
         self.client.force_authenticate(user=self.user)
 
         # Test via actual API call
@@ -261,10 +263,10 @@ class NoteViewSetTestCase(APITestCase):
 
 
 class HealthCheckViewSetTestCase(APITestCase):
-    """Test HealthCheckViewSet"""
+    """Test HealthCheckViewSet."""
 
     def setUp(self):
-        """Set up test data"""
+        """Set up test data."""
         self.client = APIClient()
         self.user = User.objects.create_user(
             email="test@example.com", name="Test User", password="testpass123"
@@ -276,8 +278,11 @@ class HealthCheckViewSetTestCase(APITestCase):
             is_staff=True,
         )
 
-    def test_health_check_unauthenticated(self):
-        """Test health check without authentication"""
+    @patch("apps.api.views.HealthCheckViewSet._check_cache")
+    def test_health_check_unauthenticated(self, mock_cache):
+        """Test health check without authentication."""
+        mock_cache.return_value = True
+
         url = reverse("healthcheck-list")
 
         response = self.client.get(url)
@@ -289,11 +294,12 @@ class HealthCheckViewSetTestCase(APITestCase):
         self.assertIn("cache", response.data)
 
     def test_health_check_with_staff_user(self):
-        """Test health check with staff user gets system metrics"""
+        """Test health check with staff user gets system metrics."""
         self.client.force_authenticate(user=self.staff_user)
         url = reverse("healthcheck-list")
 
         with (
+            patch("apps.api.views.HealthCheckViewSet._check_cache", return_value=True),
             patch("psutil.boot_time", return_value=1640995200),
             patch("psutil.virtual_memory") as mock_memory,
             patch("psutil.cpu_percent", return_value=45.0),
@@ -311,7 +317,7 @@ class HealthCheckViewSetTestCase(APITestCase):
     @patch("apps.api.views.HealthCheckViewSet._check_database")
     @patch("apps.api.views.HealthCheckViewSet._check_cache")
     def test_health_check_unhealthy(self, mock_cache, mock_db):
-        """Test health check when services are unhealthy"""
+        """Test health check when services are unhealthy."""
         mock_db.return_value = False
         mock_cache.return_value = True
 
@@ -323,8 +329,11 @@ class HealthCheckViewSetTestCase(APITestCase):
         self.assertEqual(response.data["status"], "unhealthy")
         self.assertFalse(response.data["database"])
 
-    def test_ready_check_success(self):
-        """Test readiness check when all services are ready"""
+    @patch("apps.api.views.HealthCheckViewSet._check_cache")
+    def test_ready_check_success(self, mock_cache):
+        """Test readiness check when all services are ready."""
+        mock_cache.return_value = True
+
         url = reverse("healthcheck-ready")
 
         response = self.client.get(url)
@@ -334,7 +343,7 @@ class HealthCheckViewSetTestCase(APITestCase):
 
     @patch("apps.api.views.HealthCheckViewSet._check_database")
     def test_ready_check_database_failure(self, mock_db):
-        """Test readiness check when database is unavailable"""
+        """Test readiness check when database is unavailable."""
         mock_db.return_value = False
 
         url = reverse("healthcheck-ready")
@@ -344,9 +353,11 @@ class HealthCheckViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
         self.assertEqual(response.data["reason"], "database unavailable")
 
+    @patch("apps.api.views.HealthCheckViewSet._check_database")
     @patch("apps.api.views.HealthCheckViewSet._check_cache")
-    def test_ready_check_cache_failure(self, mock_cache):
-        """Test readiness check when cache is unavailable"""
+    def test_ready_check_cache_failure(self, mock_cache, mock_db):
+        """Test readiness check when cache is unavailable."""
+        mock_db.return_value = True
         mock_cache.return_value = False
 
         url = reverse("healthcheck-ready")
@@ -357,7 +368,7 @@ class HealthCheckViewSetTestCase(APITestCase):
         self.assertEqual(response.data["reason"], "cache unavailable")
 
     def test_live_check(self):
-        """Test liveness check"""
+        """Test liveness check."""
         url = reverse("healthcheck-live")
 
         response = self.client.get(url)
@@ -367,14 +378,14 @@ class HealthCheckViewSetTestCase(APITestCase):
         self.assertIn("timestamp", response.data)
 
     def test_check_database_success(self):
-        """Test database check method directly"""
+        """Test database check method directly."""
         viewset = self.get_viewset_instance()
         result = viewset._check_database()
         self.assertTrue(result)
 
     @patch("django.db.connection")
     def test_check_database_failure(self, mock_connection):
-        """Test database check failure"""
+        """Test database check failure."""
         mock_cursor = Mock()
         mock_cursor.execute.side_effect = Exception("Database error")
         mock_connection.cursor.return_value.__enter__.return_value = mock_cursor
@@ -383,15 +394,19 @@ class HealthCheckViewSetTestCase(APITestCase):
         result = viewset._check_database()
         self.assertFalse(result)
 
-    def test_check_cache_success(self):
-        """Test cache check method directly"""
+    @patch("django.core.cache.cache")
+    def test_check_cache_success(self, mock_cache):
+        """Test cache check method directly."""
+        mock_cache.set.return_value = None
+        mock_cache.get.return_value = "ok"
+
         viewset = self.get_viewset_instance()
         result = viewset._check_cache()
         self.assertTrue(result)
 
     @patch("django.core.cache.cache")
     def test_check_cache_failure(self, mock_cache):
-        """Test cache check failure"""
+        """Test cache check failure."""
         mock_cache.set.side_effect = Exception("Cache error")
 
         viewset = self.get_viewset_instance()
@@ -400,7 +415,7 @@ class HealthCheckViewSetTestCase(APITestCase):
 
     @patch("celery.current_app")
     def test_check_celery_success(self, mock_app):
-        """Test Celery check success"""
+        """Test Celery check success."""
         mock_inspect = Mock()
         mock_inspect.stats.return_value = {"worker1": {}}
         mock_app.control.inspect.return_value = mock_inspect
@@ -411,7 +426,7 @@ class HealthCheckViewSetTestCase(APITestCase):
 
     @patch("celery.current_app")
     def test_check_celery_failure(self, mock_app):
-        """Test Celery check failure"""
+        """Test Celery check failure."""
         mock_app.control.inspect.side_effect = Exception("Celery error")
 
         viewset = self.get_viewset_instance()
@@ -419,34 +434,35 @@ class HealthCheckViewSetTestCase(APITestCase):
         self.assertIsNone(result)
 
     def test_get_version(self):
-        """Test version retrieval"""
+        """Test version retrieval."""
         viewset = self.get_viewset_instance()
         version = viewset._get_version()
         self.assertEqual(version, "1.0.0")
 
     def test_get_system_metrics_no_psutil(self):
-        """Test system metrics when psutil is not available"""
+        """Test system metrics when psutil is not available."""
         viewset = self.get_viewset_instance()
-        
+
         # Remove psutil from sys.modules if it exists
         import sys
-        psutil_backup = sys.modules.pop('psutil', None)
-        
+
+        psutil_backup = sys.modules.pop("psutil", None)
+
         # Make sure importing psutil raises ImportError
-        sys.modules['psutil'] = None
-        
+        sys.modules["psutil"] = None
+
         try:
             metrics = viewset._get_system_metrics()
             self.assertEqual(metrics, {})
         finally:
             # Restore psutil
             if psutil_backup is not None:
-                sys.modules['psutil'] = psutil_backup
-            elif 'psutil' in sys.modules:
-                del sys.modules['psutil']
+                sys.modules["psutil"] = psutil_backup
+            elif "psutil" in sys.modules:
+                del sys.modules["psutil"]
 
     def get_viewset_instance(self):
-        """Get HealthCheckViewSet instance"""
+        """Get HealthCheckViewSet instance."""
         from django.test import RequestFactory
 
         from apps.api.views import HealthCheckViewSet
@@ -459,10 +475,10 @@ class HealthCheckViewSetTestCase(APITestCase):
 
 
 class APIKeyViewSetTestCase(APITestCase):
-    """Test APIKeyViewSet"""
+    """Test APIKeyViewSet."""
 
     def setUp(self):
-        """Set up test data"""
+        """Set up test data."""
         self.client = APIClient()
 
         self.user = User.objects.create_user(
@@ -481,7 +497,7 @@ class APIKeyViewSetTestCase(APITestCase):
         )
 
     def test_list_api_keys_authenticated(self):
-        """Test listing API keys for authenticated user"""
+        """Test listing API keys for authenticated user."""
         self.client.force_authenticate(user=self.user)
         url = reverse("apikey-list")
 
@@ -492,7 +508,7 @@ class APIKeyViewSetTestCase(APITestCase):
         self.assertEqual(response.data["results"][0]["name"], "Test Key")
 
     def test_list_api_keys_unauthenticated(self):
-        """Test listing API keys without authentication"""
+        """Test listing API keys without authentication."""
         url = reverse("apikey-list")
 
         response = self.client.get(url)
@@ -500,7 +516,7 @@ class APIKeyViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_create_api_key(self):
-        """Test creating new API key"""
+        """Test creating new API key."""
         self.client.force_authenticate(user=self.user)
         url = reverse("apikey-list")
 
@@ -517,7 +533,7 @@ class APIKeyViewSetTestCase(APITestCase):
         self.assertIn("key", response.data)
 
     def test_retrieve_own_api_key(self):
-        """Test retrieving user's own API key"""
+        """Test retrieving user's own API key."""
         self.client.force_authenticate(user=self.user)
         url = reverse("apikey-detail", kwargs={"pk": self.api_key.pk})
 
@@ -527,7 +543,7 @@ class APIKeyViewSetTestCase(APITestCase):
         self.assertEqual(response.data["name"], "Test Key")
 
     def test_retrieve_other_api_key_denied(self):
-        """Test retrieving other user's API key is denied"""
+        """Test retrieving other user's API key is denied."""
         self.client.force_authenticate(user=self.user)
         url = reverse("apikey-detail", kwargs={"pk": self.other_api_key.pk})
 
@@ -536,7 +552,7 @@ class APIKeyViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_update_api_key(self):
-        """Test updating API key"""
+        """Test updating API key."""
         self.client.force_authenticate(user=self.user)
         url = reverse("apikey-detail", kwargs={"pk": self.api_key.pk})
 
@@ -549,7 +565,7 @@ class APIKeyViewSetTestCase(APITestCase):
         self.assertFalse(response.data["is_active"])
 
     def test_delete_api_key(self):
-        """Test deleting API key"""
+        """Test deleting API key."""
         self.client.force_authenticate(user=self.user)
         url = reverse("apikey-detail", kwargs={"pk": self.api_key.pk})
 
@@ -559,7 +575,7 @@ class APIKeyViewSetTestCase(APITestCase):
         self.assertFalse(APIKey.objects.filter(pk=self.api_key.pk).exists())
 
     def test_get_serializer_class_for_create(self):
-        """Test that create action uses APIKeyCreateSerializer"""
+        """Test that create action uses APIKeyCreateSerializer."""
         self.client.force_authenticate(user=self.user)
         url = reverse("apikey-list")
 

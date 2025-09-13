@@ -1,3 +1,5 @@
+"""User models for the accounts application."""
+
 from typing import Any, Optional
 
 from django.contrib.auth.models import AbstractUser, BaseUserManager
@@ -7,7 +9,7 @@ from django.utils import timezone
 
 
 class CustomUserManager(BaseUserManager["User"]):
-    """Custom user manager for email-based authentication"""
+    """Custom user manager for email-based authentication."""
 
     def create_user(
         self, email: str, password: Optional[str] = None, **extra_fields: Any
@@ -37,7 +39,7 @@ class CustomUserManager(BaseUserManager["User"]):
 
 
 class User(AbstractUser):
-    """Custom user model with email as username"""
+    """Custom user model with email as username."""
 
     username = None  # type: ignore  # Remove username field
     email = models.EmailField("Email address", unique=True)
@@ -63,11 +65,14 @@ class User(AbstractUser):
     objects = CustomUserManager()
 
     class Meta:
+        """Meta configuration for User model."""
+
         verbose_name = "User"
         verbose_name_plural = "Users"
         ordering = ["-created_at"]
 
     def __str__(self):
+        """Return string representation of the user."""
         return self.email
 
     def get_full_name(self):
@@ -79,29 +84,29 @@ class User(AbstractUser):
         return self.name.split(" ")[0] if self.name else self.email.split("@")[0]
 
     def update_last_seen(self):
-        """Update the last_seen timestamp"""
+        """Update the last_seen timestamp."""
         self.last_seen = timezone.now()
         self.save(update_fields=["last_seen"])
 
     def has_group(self, group_name):
-        """Check if user belongs to a specific group"""
+        """Check if user belongs to a specific group."""
         return self.groups.filter(name=group_name).exists()
 
     def is_admin(self):
-        """Check if user is an admin"""
+        """Check if user is an admin."""
         return self.has_group("Admin") or self.is_superuser
 
     def is_manager(self):
-        """Check if user is a manager or admin"""
+        """Check if user is a manager or admin."""
         return self.has_group("Manager") or self.is_admin()
 
     def is_member(self):
-        """Check if user is a member, manager, or admin"""
+        """Check if user is a member, manager, or admin."""
         return self.has_group("Member") or self.is_manager()
 
 
 class UserProfile(models.Model):
-    """Extended user profile information"""
+    """Extended user profile information."""
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
 
@@ -124,8 +129,11 @@ class UserProfile(models.Model):
     updated_at = models.DateTimeField("Updated", auto_now=True)
 
     class Meta:
+        """Meta configuration for UserProfile model."""
+
         verbose_name = "User Profile"
         verbose_name_plural = "User Profiles"
 
     def __str__(self):
+        """Return string representation of the user profile."""
         return f"{self.user.email} Profile"

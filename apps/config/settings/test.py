@@ -1,7 +1,10 @@
+"""Test settings for the Django SaaS boilerplate application."""
+
 import tempfile
 from pathlib import Path
 
-from .base import *
+# pylint: disable=wildcard-import,unused-wildcard-import
+from .base import *  # noqa: F401,F403
 
 # Database configuration - use DATABASE_URL if provided (for CI),
 # otherwise SQLite
@@ -19,10 +22,14 @@ else:
 
     # Disable migrations for local tests only
     class DisableMigrations:
+        """Helper class to disable migrations during tests."""
+
         def __contains__(self, item):
+            """Check if item is in migrations."""
             return True
 
         def __getitem__(self, item):
+            """Get migration for item."""
             return None
 
     MIGRATION_MODULES = DisableMigrations()

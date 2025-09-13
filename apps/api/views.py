@@ -1,17 +1,15 @@
+"""API views for the Django SaaS boilerplate application."""
+
 from django.db.models import Q
 from django.utils import timezone
 
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import (
-    OpenApiParameter,
-    extend_schema,
-    extend_schema_view,
-)
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from apps.core.permissions import IsOwnerOrAdmin, IsOwnerOrPublic
+from apps.core.permissions import IsOwnerOrPublic
 
 from .models import APIKey, Note
 from .serializers import (
@@ -74,13 +72,13 @@ from .serializers import (
     ),
 )
 class NoteViewSet(viewsets.ModelViewSet):
-    """ViewSet for managing notes"""
+    """ViewSet for managing notes."""
 
     serializer_class = NoteSerializer
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrPublic]
 
     def get_queryset(self):
-        """Get notes based on user permissions"""
+        """Get notes based on user permissions."""
         queryset = Note.objects.select_related("created_by", "updated_by")
 
         # Users can see their own notes and public notes
@@ -109,46 +107,47 @@ class NoteViewSet(viewsets.ModelViewSet):
         return queryset
 
     def get_object(self):
-        """Get object and handle 404 vs 403"""
-        # For modify operations (update, destroy), we want to return 404 
+        """Get object and handle 404 vs 403."""
+        # For modify operations (update, destroy), we want to return 404
         # if the user can't modify the note (instead of 403)
-        if self.action in ['update', 'partial_update', 'destroy', 'toggle_visibility']:
+        if self.action in ["update", "partial_update", "destroy", "toggle_visibility"]:
             try:
                 # For modify operations, only include notes the user owns
                 obj = Note.objects.select_related("created_by", "updated_by").get(
-                    pk=self.kwargs['pk'], 
-                    created_by=self.request.user
+                    pk=self.kwargs["pk"], created_by=self.request.user
                 )
                 return obj
             except Note.DoesNotExist:
                 # Return 404 instead of 403 for privacy
                 from rest_framework.exceptions import NotFound
+
                 raise NotFound()
-        
+
         # For read operations, use the normal filtered queryset
-        if self.action == 'retrieve':
+        if self.action == "retrieve":
             try:
-                obj = self.get_queryset().get(pk=self.kwargs['pk'])
+                obj = self.get_queryset().get(pk=self.kwargs["pk"])
                 self.check_object_permissions(self.request, obj)
                 return obj
             except Note.DoesNotExist:
                 from rest_framework.exceptions import NotFound
+
                 raise NotFound()
-        
+
         return super().get_object()
 
     def get_serializer_class(self):
-        """Return appropriate serializer class"""
+        """Return appropriate serializer class."""
         if self.action in ["create", "update", "partial_update"]:
             return NoteCreateUpdateSerializer
         return NoteSerializer
 
     def perform_create(self, serializer):
-        """Set the creator when creating a note"""
+        """Set the creator when creating a note."""
         serializer.save(created_by=self.request.user, updated_by=self.request.user)
 
     def perform_update(self, serializer):
-        """Set the updater when updating a note"""
+        """Set the updater when updating a note."""
         serializer.save(updated_by=self.request.user)
 
     @extend_schema(
@@ -157,7 +156,7 @@ class NoteViewSet(viewsets.ModelViewSet):
     )
     @action(detail=False, methods=["get"])
     def my_notes(self, request):
-        """Get notes created by the current user"""
+        """Get notes created by the current user."""
         queryset = self.get_queryset().filter(created_by=request.user)
 
         page = self.paginate_queryset(queryset)
@@ -174,7 +173,7 @@ class NoteViewSet(viewsets.ModelViewSet):
     )
     @action(detail=False, methods=["get"])
     def public(self, request):
-        """Get public notes"""
+        """Get public notes."""
         queryset = self.get_queryset().filter(is_public=True)
 
         page = self.paginate_queryset(queryset)
@@ -191,7 +190,7 @@ class NoteViewSet(viewsets.ModelViewSet):
     )
     @action(detail=True, methods=["post"])
     def toggle_visibility(self, request, pk=None):
-        """Toggle note visibility between public and private"""
+        """Toggle note visibility between public and private."""
         note = self.get_object()
         note.is_public = not note.is_public
         note.updated_by = request.user
@@ -208,13 +207,13 @@ class NoteViewSet(viewsets.ModelViewSet):
     ),
 )
 class HealthCheckViewSet(viewsets.ViewSet):
-    """ViewSet for health checks and system status"""
+    """ViewSet for health checks and system status."""
 
     permission_classes = [permissions.AllowAny]
 
     @extend_schema(responses={200: HealthCheckSerializer})
     def list(self, request):
-        """Comprehensive health check"""
+        """Comprehensive health check."""
         health_data = {
             "status": "healthy",
             "timestamp": timezone.now(),
@@ -249,7 +248,7 @@ class HealthCheckViewSet(viewsets.ViewSet):
         return Response(serializer.data)
 
     def _check_database(self):
-        """Check database connectivity"""
+        """Check database connectivity."""
         try:
             from django.db import connection
 
@@ -260,7 +259,7 @@ class HealthCheckViewSet(viewsets.ViewSet):
             return False
 
     def _check_cache(self):
-        """Check cache connectivity"""
+        """Check cache connectivity."""
         try:
             from django.core.cache import cache
 
@@ -271,7 +270,7 @@ class HealthCheckViewSet(viewsets.ViewSet):
             return False
 
     def _check_celery(self):
-        """Check Celery worker availability"""
+        """Check Celery worker availability."""
         try:
             from celery import current_app
 
@@ -282,7 +281,7 @@ class HealthCheckViewSet(viewsets.ViewSet):
             return None  # Celery not available or configured
 
     def _get_version(self):
-        """Get application version"""
+        """Get application version."""
         try:
             # You can implement version detection here
             # For example, read from a VERSION file or git tag
@@ -291,9 +290,10 @@ class HealthCheckViewSet(viewsets.ViewSet):
             return "unknown"
 
     def _get_system_metrics(self):
-        """Get system metrics (for staff users only)"""
+        """Get system metrics (for staff users only)."""
         try:
             import time
+
             import psutil
 
             # Get uptime (approximate)
@@ -306,7 +306,7 @@ class HealthCheckViewSet(viewsets.ViewSet):
                 "memory_usage": psutil.virtual_memory().percent,
                 "cpu_usage": psutil.cpu_percent(),
             }
-        except (ImportError, Exception):
+        except Exception:
             # psutil not available or other error
             return {}
 
@@ -316,7 +316,7 @@ class HealthCheckViewSet(viewsets.ViewSet):
     )
     @action(detail=False, methods=["get"])
     def ready(self, request):
-        """Readiness check (for Kubernetes probes)"""
+        """Readiness check (for Kubernetes probes)."""
         # Check essential services
         if not self._check_database():
             return Response(
@@ -337,7 +337,7 @@ class HealthCheckViewSet(viewsets.ViewSet):
     )
     @action(detail=False, methods=["get"])
     def live(self, request):
-        """Liveness check (for Kubernetes probes)"""
+        """Liveness check (for Kubernetes probes)."""
         return Response({"status": "alive", "timestamp": timezone.now()})
 
 
@@ -368,21 +368,21 @@ class HealthCheckViewSet(viewsets.ViewSet):
     ),
 )
 class APIKeyViewSet(viewsets.ModelViewSet):
-    """ViewSet for managing API keys"""
+    """ViewSet for managing API keys."""
 
     serializer_class = APIKeySerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        """Get API keys for the current user"""
+        """Get API keys for the current user."""
         return APIKey.objects.filter(user=self.request.user)
 
     def get_serializer_class(self):
-        """Return appropriate serializer class"""
+        """Return appropriate serializer class."""
         if self.action == "create":
             return APIKeyCreateSerializer
         return APIKeySerializer
 
     def perform_create(self, serializer):
-        """Set the user when creating an API key"""
+        """Set the user when creating an API key."""
         serializer.save(user=self.request.user)

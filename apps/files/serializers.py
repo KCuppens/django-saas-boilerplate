@@ -1,10 +1,12 @@
+"""Serializers for file upload and management API endpoints."""
+
 from rest_framework import serializers
 
 from .models import FileUpload
 
 
 class FileUploadSerializer(serializers.ModelSerializer):
-    """Serializer for FileUpload model"""
+    """Serializer for FileUpload model."""
 
     created_by_name = serializers.CharField(
         source="created_by.get_full_name", read_only=True
@@ -17,6 +19,8 @@ class FileUploadSerializer(serializers.ModelSerializer):
     download_url = serializers.SerializerMethodField()
 
     class Meta:
+        """Meta configuration for FileUploadSerializer."""
+
         model = FileUpload
         fields = [
             "id",
@@ -61,7 +65,7 @@ class FileUploadSerializer(serializers.ModelSerializer):
         ]
 
     def get_download_url(self, obj):
-        """Get download URL if user has access"""
+        """Get download URL if user has access."""
         request = self.context.get("request")
         if request and obj.can_access(request.user):
             return request.build_absolute_uri(f"/api/v1/files/{obj.id}/download/")
@@ -69,17 +73,19 @@ class FileUploadSerializer(serializers.ModelSerializer):
 
 
 class FileUploadCreateSerializer(serializers.ModelSerializer):
-    """Serializer for creating FileUpload"""
+    """Serializer for creating FileUpload."""
 
     file = serializers.FileField(write_only=True)
 
     class Meta:
+        """Meta configuration for FileUploadCreateSerializer."""
+
         model = FileUpload
         fields = ["file", "description", "tags", "is_public", "expires_at"]
 
 
 class SignedUrlSerializer(serializers.Serializer):
-    """Serializer for signed upload URL request"""
+    """Serializer for signed upload URL request."""
 
     filename = serializers.CharField(max_length=255)
     content_type = serializers.CharField(max_length=100, required=False)
@@ -91,7 +97,7 @@ class SignedUrlSerializer(serializers.Serializer):
     )
 
     def validate_filename(self, value):
-        """Validate filename"""
+        """Validate filename."""
         import os
 
         # Check for dangerous characters
@@ -111,7 +117,7 @@ class SignedUrlSerializer(serializers.Serializer):
 
 
 class FileStatsSerializer(serializers.Serializer):
-    """Serializer for file statistics"""
+    """Serializer for file statistics."""
 
     total_files = serializers.IntegerField()
     total_size = serializers.IntegerField()

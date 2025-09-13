@@ -1,10 +1,12 @@
+"""Serializers for the API app."""
+
 from rest_framework import serializers
 
 from .models import APIKey, Note
 
 
 class NoteSerializer(serializers.ModelSerializer):
-    """Serializer for Note model"""
+    """Serializer for Note model."""
 
     created_by_name = serializers.CharField(
         source="created_by.get_full_name", read_only=True
@@ -19,6 +21,8 @@ class NoteSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
+        """Meta class for NoteSerializer."""
+
         model = Note
         fields = [
             "id",
@@ -45,14 +49,14 @@ class NoteSerializer(serializers.ModelSerializer):
         ]
 
     def to_internal_value(self, data):
-        """Convert tag_list to tags field"""
+        """Convert tag_list to tags field."""
         if "tag_list" in data and isinstance(data["tag_list"], list):
             data = data.copy()
             data["tags"] = ", ".join(data["tag_list"])
         return super().to_internal_value(data)
 
     def to_representation(self, instance):
-        """Convert tags field to tag_list"""
+        """Convert tags field to tag_list."""
         data = super().to_representation(instance)
         if instance.tags:
             data["tag_list"] = instance.tag_list
@@ -62,9 +66,11 @@ class NoteSerializer(serializers.ModelSerializer):
 
 
 class NoteCreateUpdateSerializer(NoteSerializer):
-    """Serializer for creating/updating notes"""
+    """Serializer for creating/updating notes."""
 
     class Meta(NoteSerializer.Meta):
+        """Meta class for NoteCreateUpdateSerializer."""
+
         fields = [
             "id",
             "title",
@@ -79,7 +85,7 @@ class NoteCreateUpdateSerializer(NoteSerializer):
 
 
 class HealthCheckSerializer(serializers.Serializer):
-    """Serializer for health check response"""
+    """Serializer for health check response."""
 
     status = serializers.CharField()
     timestamp = serializers.DateTimeField()
@@ -99,16 +105,18 @@ class HealthCheckSerializer(serializers.Serializer):
 
 
 class APIKeySerializer(serializers.ModelSerializer):
-    """Serializer for APIKey model"""
-    
+    """Serializer for APIKey model."""
+
     permissions = serializers.ListField(
-        child=serializers.ChoiceField(choices=['read', 'write', 'admin']),
+        child=serializers.ChoiceField(choices=["read", "write", "admin"]),
         required=False,
         default=list,
-        help_text="List of permissions for this API key"
+        help_text="List of permissions for this API key",
     )
 
     class Meta:
+        """Meta class for APIKeySerializer."""
+
         model = APIKey
         fields = [
             "id",
@@ -132,21 +140,23 @@ class APIKeySerializer(serializers.ModelSerializer):
 
 
 class APIKeyCreateSerializer(serializers.ModelSerializer):
-    """Serializer for creating API keys"""
-    
+    """Serializer for creating API keys."""
+
     permissions = serializers.ListField(
-        child=serializers.ChoiceField(choices=['read', 'write', 'admin']),
+        child=serializers.ChoiceField(choices=["read", "write", "admin"]),
         required=False,
         default=list,
-        help_text="List of permissions for this API key"
+        help_text="List of permissions for this API key",
     )
 
     class Meta:
+        """Meta class for APIKeyCreateSerializer."""
+
         model = APIKey
         fields = ["id", "name", "key", "permissions", "is_active", "created_at"]
         read_only_fields = ["id", "key", "created_at"]
 
     def create(self, validated_data):
-        """Create API key with current user"""
+        """Create API key with current user."""
         validated_data["user"] = self.context["request"].user
         return super().create(validated_data)

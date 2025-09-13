@@ -1,3 +1,5 @@
+"""API models for the Django SaaS boilerplate application."""
+
 import secrets
 
 from django.contrib.auth import get_user_model
@@ -9,7 +11,7 @@ User = get_user_model()
 
 
 class Note(TimestampMixin, UserTrackingMixin):
-    """Example model for API demonstration"""
+    """Example model for API demonstration."""
 
     title = models.CharField("Title", max_length=200)
     content = models.TextField("Content")
@@ -19,6 +21,8 @@ class Note(TimestampMixin, UserTrackingMixin):
     )
 
     class Meta:
+        """Meta class for Note model."""
+
         verbose_name = "Note"
         verbose_name_plural = "Notes"
         ordering = ["-created_at"]
@@ -28,16 +32,17 @@ class Note(TimestampMixin, UserTrackingMixin):
         ]
 
     def __str__(self):
+        """Return string representation of the note."""
         return self.title
 
     @property
     def tag_list(self):
-        """Get tags as a list"""
+        """Get tags as a list."""
         return [tag.strip() for tag in self.tags.split(",") if tag.strip()]
 
     @tag_list.setter
     def tag_list(self, value):
-        """Set tags from a list"""
+        """Set tags from a list."""
         if isinstance(value, list):
             self.tags = ", ".join(value)
         else:
@@ -45,7 +50,7 @@ class Note(TimestampMixin, UserTrackingMixin):
 
 
 class APIKey(TimestampMixin):
-    """API Key model for API authentication"""
+    """API Key model for API authentication."""
 
     PERMISSION_CHOICES = [
         ("read", "Read Only"),
@@ -74,6 +79,8 @@ class APIKey(TimestampMixin):
     last_used = models.DateTimeField("Last Used", null=True, blank=True)
 
     class Meta:
+        """Meta class for APIKey model."""
+
         verbose_name = "API Key"
         verbose_name_plural = "API Keys"
         ordering = ["-created_at"]
@@ -83,28 +90,29 @@ class APIKey(TimestampMixin):
         ]
 
     def __str__(self):
+        """Return string representation of the API key."""
         return f"{self.name} ({self.key[:8]}...)"
 
     def save(self, *args, **kwargs):
-        """Generate API key if not provided"""
+        """Generate API key if not provided."""
         if not self.key:
             self.key = self.generate_key()
         super().save(*args, **kwargs)
 
     @staticmethod
     def generate_key():
-        """Generate a secure API key"""
+        """Generate a secure API key."""
         return secrets.token_urlsafe(48)
 
     def has_permission(self, permission):
-        """Check if API key has the required permission"""
+        """Check if API key has the required permission."""
         if not self.is_active:
             return False
 
         # Handle both array-style permissions and old string-style permissions
         if isinstance(self.permissions, list):
             return permission in self.permissions
-        
+
         # Fallback for old string-style permissions
         permission_levels = {
             "read": ["read"],

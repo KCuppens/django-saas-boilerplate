@@ -1,3 +1,5 @@
+"""Management command to seed demo data for development and testing."""
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.management.base import BaseCommand
@@ -9,11 +11,12 @@ User = get_user_model()
 
 
 class Command(BaseCommand):
-    """Management command to seed demo data"""
+    """Management command to seed demo data."""
 
     help = "Create demo users, groups, and sample data for development/testing"
 
     def add_arguments(self, parser):
+        """Add command-line arguments."""
         parser.add_argument(
             "--reset",
             action="store_true",
@@ -42,6 +45,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        """Execute the management command."""
         reset = options["reset"]
         password = options["password"]
         skip_users = options["skip_users"]
@@ -72,7 +76,7 @@ class Command(BaseCommand):
         self._show_summary()
 
     def _reset_demo_data(self):
-        """Delete existing demo data"""
+        """Delete existing demo data."""
         # Delete demo users (except superusers)
         demo_emails = [
             "admin@example.com",
@@ -95,7 +99,7 @@ class Command(BaseCommand):
             self.stdout.write(f"Deleted {deleted_notes} demo notes")
 
     def _create_demo_users(self, password):
-        """Create demo users with different roles"""
+        """Create demo users with different roles."""
         demo_users = [
             {
                 "email": "admin@example.com",
@@ -166,7 +170,7 @@ class Command(BaseCommand):
             self.stdout.write(f"Demo user password: {password}")
 
     def _create_email_templates(self):
-        """Create demo email templates"""
+        """Create demo email templates."""
         templates = [
             {
                 "key": "welcome",
@@ -312,7 +316,7 @@ The {{ site_name }} Team
             )
 
     def _create_demo_notes(self):
-        """Create demo notes"""
+        """Create demo notes."""
         try:
             demo_user = User.objects.get(email="member@example.com")
         except User.DoesNotExist:
@@ -379,7 +383,7 @@ The {{ site_name }} Team
             self.stdout.write(self.style.SUCCESS(f"Created {created_count} demo notes"))
 
     def _show_summary(self):
-        """Show summary of created data"""
+        """Show summary of created data."""
         self.stdout.write("\n" + "=" * 50)
         self.stdout.write("DEMO DATA SUMMARY")
         self.stdout.write("=" * 50)

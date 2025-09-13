@@ -1,3 +1,5 @@
+"""Core middleware for the Django application."""
+
 import ipaddress
 
 from django.conf import settings
@@ -6,11 +8,10 @@ from django.utils.deprecation import MiddlewareMixin
 
 
 class SecurityHeadersMiddleware(MiddlewareMixin):
-    """Middleware to add security headers"""
+    """Middleware to add security headers."""
 
     def process_response(self, request, response):
-        """Add security headers to all responses"""
-
+        """Add security headers to all responses."""
         # HSTS (HTTP Strict Transport Security)
         if getattr(settings, "SECURE_SSL_REDIRECT", False):
             max_age = getattr(settings, "SECURE_HSTS_SECONDS", 31536000)
@@ -80,11 +81,10 @@ class SecurityHeadersMiddleware(MiddlewareMixin):
 
 
 class AdminIPAllowlistMiddleware(MiddlewareMixin):
-    """Middleware to restrict admin access by IP address"""
+    """Middleware to restrict admin access by IP address."""
 
     def process_request(self, request):
-        """Check IP allowlist for admin URLs"""
-
+        """Check IP allowlist for admin URLs."""
         # Only check admin URLs
         if not request.path.startswith("/admin"):
             return None
@@ -106,8 +106,8 @@ class AdminIPAllowlistMiddleware(MiddlewareMixin):
         return None
 
     def _get_client_ip(self, request):
-        """Get the real client IP address"""
-        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+        """Get the real client IP address."""
+        x_forwarded_for = request.headers.get("x-forwarded-for")
         if x_forwarded_for:
             ip = x_forwarded_for.split(",")[0].strip()
         else:
@@ -115,7 +115,7 @@ class AdminIPAllowlistMiddleware(MiddlewareMixin):
         return ip
 
     def _ip_in_allowlist(self, client_ip, allowed_ips):
-        """Check if client IP is in the allowlist (supports CIDR notation)"""
+        """Check if client IP is in the allowlist (supports CIDR notation)."""
         try:
             client_ip_obj = ipaddress.ip_address(client_ip)
 
@@ -142,11 +142,10 @@ class AdminIPAllowlistMiddleware(MiddlewareMixin):
 
 
 class DemoModeMiddleware(MiddlewareMixin):
-    """Middleware to add demo mode banner"""
+    """Middleware to add demo mode banner."""
 
     def process_response(self, request, response):
-        """Add demo mode banner to HTML responses"""
-
+        """Add demo mode banner to HTML responses."""
         # Only add banner if DEMO_MODE is enabled
         if not getattr(settings, "DEMO_MODE", False):
             return response

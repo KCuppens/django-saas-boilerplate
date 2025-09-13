@@ -1,4 +1,4 @@
-"""Prometheus metrics for the application"""
+"""Prometheus metrics for the application."""
 
 import logging
 import time
@@ -17,8 +17,7 @@ User = get_user_model()
 
 
 def prometheus_metrics(request):
-    """Prometheus metrics endpoint"""
-
+    """Prometheus metrics endpoint."""
     metrics = []
 
     # Add application metrics
@@ -58,7 +57,7 @@ def prometheus_metrics(request):
                 ]
             )
         except Exception as e:
-            logger.warning(f"Failed to collect notes metrics: {e}")
+            logger.warning("Failed to collect notes metrics: %s", e)
 
         # Email metrics
         try:
@@ -83,7 +82,7 @@ def prometheus_metrics(request):
                 ]
             )
         except Exception as e:
-            logger.warning(f"Failed to collect notes metrics: {e}")
+            logger.warning("Failed to collect notes metrics: %s", e)
 
         # FileUpload metrics
         try:
@@ -113,7 +112,7 @@ def prometheus_metrics(request):
                 ]
             )
         except Exception as e:
-            logger.warning(f"Failed to collect file metrics: {e}")
+            logger.warning("Failed to collect file metrics: %s", e)
 
         # Database connection metrics
         try:
@@ -132,7 +131,7 @@ def prometheus_metrics(request):
                 ]
             )
         except Exception as e:
-            logger.warning(f"Failed to collect notes metrics: {e}")
+            logger.warning("Failed to collect notes metrics: %s", e)
 
         # Cache metrics (if Redis/cache available)
         try:
@@ -158,7 +157,7 @@ def prometheus_metrics(request):
                 ]
             )
         except Exception as e:
-            logger.warning(f"Failed to collect notes metrics: {e}")
+            logger.warning("Failed to collect notes metrics: %s", e)
 
         # System uptime (approximate)
         try:
@@ -204,7 +203,7 @@ def prometheus_metrics(request):
             # psutil not available
             pass
         except Exception as e:
-            logger.warning(f"Failed to collect notes metrics: {e}")
+            logger.warning("Failed to collect notes metrics: %s", e)
 
     except Exception as e:
         # Fallback metrics if database is unavailable
@@ -232,8 +231,7 @@ def prometheus_metrics(request):
 
 
 def health_metrics(request):
-    """Simple health metrics for monitoring"""
-
+    """Return health metrics for monitoring."""
     metrics = {
         "status": "healthy",
         "timestamp": int(time.time()),

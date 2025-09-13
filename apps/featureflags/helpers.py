@@ -1,3 +1,5 @@
+"""Feature flag helper functions and classes."""
+
 from typing import TYPE_CHECKING, Optional
 
 from django.contrib.auth import get_user_model
@@ -11,7 +13,7 @@ else:
 
 
 class FeatureFlags:
-    """Helper class for feature flag operations"""
+    """Helper class for feature flag operations."""
 
     # Default flags configuration
     DEFAULT_FLAGS = {
@@ -46,9 +48,11 @@ class FeatureFlags:
     }
 
     @classmethod
-    def is_enabled(cls, flag_name: str, request=None, user: Optional[User] = None) -> bool:
+    def is_enabled(
+        cls, flag_name: str, request=None, user: Optional[User] = None
+    ) -> bool:
         """
-        Check if a feature flag is enabled
+        Check if a feature flag is enabled.
 
         Args:
             flag_name: Name of the flag
@@ -71,7 +75,7 @@ class FeatureFlags:
     @classmethod
     def is_switch_active(cls, switch_name: str) -> bool:
         """
-        Check if a feature switch is active
+        Check if a feature switch is active.
 
         Args:
             switch_name: Name of the switch
@@ -87,7 +91,7 @@ class FeatureFlags:
     @classmethod
     def is_sample_active(cls, sample_name: str) -> bool:
         """
-        Check if a feature sample is active
+        Check if a feature sample is active.
 
         Args:
             sample_name: Name of the sample
@@ -103,7 +107,7 @@ class FeatureFlags:
     @classmethod
     def get_enabled_flags(cls, request=None, user: Optional[User] = None) -> dict:
         """
-        Get all enabled flags
+        Get all enabled flags.
 
         Args:
             request: Django request object (optional)
@@ -122,7 +126,7 @@ class FeatureFlags:
         cls, flag_name: str, request=None, user: Optional[User] = None
     ) -> dict:
         """
-        Get detailed status of a feature flag
+        Get detailed status of a feature flag.
 
         Args:
             flag_name: Name of the flag
@@ -143,13 +147,15 @@ class FeatureFlags:
 
 
 # Convenience functions
-def is_feature_enabled(flag_name: str, request=None, user: Optional[User] = None) -> bool:
-    """Convenience function to check if a feature flag is enabled"""
+def is_feature_enabled(
+    flag_name: str, request=None, user: Optional[User] = None
+) -> bool:
+    """Check if a feature flag is enabled."""
     return FeatureFlags.is_enabled(flag_name, request, user)
 
 
 def require_feature_flag(flag_name: str):
-    """Decorator to require a feature flag to be enabled"""
+    """Require a feature flag to be enabled."""
 
     def decorator(func_or_class):
         if isinstance(func_or_class, type):
@@ -188,7 +194,7 @@ def require_feature_flag(flag_name: str):
 
 
 def get_feature_context(request=None, user: Optional[User] = None) -> dict:
-    """Get feature flags context for templates"""
+    """Get feature flags context for templates."""
     return {
         "features": FeatureFlags.get_enabled_flags(request, user),
         "feature_flags": FeatureFlags,

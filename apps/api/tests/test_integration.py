@@ -1,3 +1,5 @@
+"""Integration tests for API functionality."""
+
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 
@@ -10,10 +12,10 @@ User = get_user_model()
 
 
 class TestAPIIntegration(APITestCase):
-    """Integration tests for API functionality"""
+    """Integration tests for API functionality."""
 
     def setUp(self):
-        """Set up test data"""
+        """Set up test data."""
         self.user = User.objects.create_user(
             email="integration@example.com",
             password="integrationpass123",
@@ -26,7 +28,7 @@ class TestAPIIntegration(APITestCase):
         )
 
     def test_complete_user_flow(self):
-        """Test complete user workflow from registration to API usage"""
+        """Test complete user workflow from registration to API usage."""
         # Test user registration
         registration_data = {
             "email": "newuser@example.com",
@@ -56,7 +58,7 @@ class TestAPIIntegration(APITestCase):
 
         # Test API key creation
         api_key_url = reverse("apikey-list")
-        key_data = {"name": "Integration Test Key", "permissions": "write"}
+        key_data = {"name": "Integration Test Key", "permissions": ["write"]}
 
         response = self.client.post(api_key_url, key_data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -77,7 +79,7 @@ class TestAPIIntegration(APITestCase):
         self.assertEqual(response.data["title"], "Integration Test Note")
 
     def test_user_profile_flow(self):
-        """Test user profile retrieval and update flow"""
+        """Test user profile retrieval and update flow."""
         self.client.force_authenticate(user=self.user)
 
         # Test profile retrieval
@@ -105,7 +107,7 @@ class TestAPIIntegration(APITestCase):
         self.assertEqual(self.user.name, "Updated Integration User")
 
     def test_subscription_flow(self):
-        """Test subscription-related workflow (mocked, no subscription model)"""
+        """Test subscription-related workflow (mocked, no subscription model)."""
         self.client.force_authenticate(user=self.user)
 
         # Test user profile access (as a proxy for subscription info)
@@ -133,17 +135,16 @@ class TestAPIIntegration(APITestCase):
         api_key_url = reverse("apikey-list")
         api_key_data = {
             "name": "Subscription API Key",
-            "permissions": "admin",  # Admin permissions as premium feature
+            "permissions": ["admin"],  # Admin permissions as premium feature
         }
 
         response = self.client.post(api_key_url, api_key_data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIn("id", response.data)  # Check for id field
-        self.assertEqual(response.data["permissions"], "admin")
+        self.assertEqual(response.data["permissions"], ["admin"])
 
     def test_api_error_handling(self):
-        """Test API error responses and error handling"""
-
+        """Test API error responses and error handling."""
         # Test unauthenticated access
         note_url = reverse("note-list")
         response = self.client.get(note_url)
@@ -173,21 +174,21 @@ class TestAPIIntegration(APITestCase):
         api_key_url = reverse("apikey-list")
         invalid_key_data = {
             "name": "",  # Empty name should cause validation error
-            "permissions": "invalid_permission",
+            "permissions": ["invalid_permission"],
         }
 
         response = self.client.post(api_key_url, invalid_key_data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
         # Test valid API key creation to ensure we get id field
-        valid_key_data = {"name": "Valid Test Key", "permissions": "read"}
+        valid_key_data = {"name": "Valid Test Key", "permissions": ["read"]}
 
         response = self.client.post(api_key_url, valid_key_data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIn("id", response.data)  # Check for id field
 
         # Test health check endpoint
-        health_url = reverse("health-list")
+        health_url = reverse("healthcheck-list")
         response = self.client.get(health_url)
         # Health check might return 503 if services like Celery are unavailable
         self.assertIn(
@@ -198,7 +199,7 @@ class TestAPIIntegration(APITestCase):
         self.assertIn("status", response.data)
 
     def test_note_crud_operations(self):
-        """Test complete CRUD operations for notes"""
+        """Test complete CRUD operations for notes."""
         self.client.force_authenticate(user=self.user)
 
         # Create note
@@ -241,14 +242,14 @@ class TestAPIIntegration(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_api_key_management(self):
-        """Test API key management operations"""
+        """Test API key management operations."""
         self.client.force_authenticate(user=self.user)
 
         # Create API key
         api_key_url = reverse("apikey-list")
         key_data = {
             "name": "Management Test Key",
-            "permissions": "write",
+            "permissions": ["write"],
             "is_active": True,
         }
 

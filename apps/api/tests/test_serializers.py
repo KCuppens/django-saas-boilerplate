@@ -1,3 +1,5 @@
+"""Tests for API serializers."""
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
@@ -11,15 +13,16 @@ User = get_user_model()
 
 
 class TestAPIKeySerializer(TestCase):
-    """Test APIKey serializer functionality"""
+    """Test APIKey serializer functionality."""
 
     def setUp(self):
+        """Set up test data for APIKey serializer tests."""
         self.user = User.objects.create_user(
             email="test@example.com", password="testpass123"
         )
         self.api_key = APIKey.objects.create(
             name="Test API Key",
-            permissions="read",
+            permissions=["read"],
             user=self.user,
         )
 
@@ -27,7 +30,7 @@ class TestAPIKeySerializer(TestCase):
         self.factory = APIRequestFactory()
 
     def test_serializer_fields(self):
-        """Test serializer has expected fields"""
+        """Test serializer has expected fields."""
         serializer = APIKeySerializer(instance=self.api_key)
         data = serializer.data
 
@@ -47,25 +50,25 @@ class TestAPIKeySerializer(TestCase):
             self.assertIn(field, data)
 
     def test_serializer_data(self):
-        """Test serializer data output"""
+        """Test serializer data output."""
         serializer = APIKeySerializer(instance=self.api_key)
         data = serializer.data
 
         self.assertEqual(data["name"], "Test API Key")
-        self.assertEqual(data["permissions"], "read")
+        self.assertEqual(data["permissions"], ["read"])
         self.assertTrue(data["is_active"])
         self.assertEqual(data["user"], self.user.id)
         self.assertIsNotNone(data["key"])
 
     def test_create_api_key(self):
-        """Test creating API key via serializer"""
+        """Test creating API key via serializer."""
         # Create a mock request with user
         request = self.factory.post("/")
         request.user = self.user
 
         data = {
             "name": "New API Key",
-            "permissions": "write",
+            "permissions": ["read", "write"],
             "is_active": True,
         }
 
@@ -75,13 +78,13 @@ class TestAPIKeySerializer(TestCase):
 
         api_key = serializer.save()
         self.assertEqual(api_key.name, "New API Key")
-        self.assertEqual(api_key.permissions, "write")
+        self.assertEqual(api_key.permissions, ["read", "write"])
         self.assertTrue(api_key.is_active)
         self.assertEqual(api_key.user, self.user)
         self.assertIsNotNone(api_key.key)
 
     def test_serializer_readonly_fields(self):
-        """Test that read-only fields cannot be updated"""
+        """Test that read-only fields cannot be updated."""
         serializer = APIKeySerializer(instance=self.api_key)
 
         readonly_fields = ["id", "key", "user", "last_used", "created_at", "updated_at"]
@@ -91,10 +94,10 @@ class TestAPIKeySerializer(TestCase):
             self.assertTrue(serializer.fields[field].read_only)
 
     def test_create_serializer_fields(self):
-        """Test create serializer has correct fields"""
+        """Test create serializer has correct fields."""
         data = {
             "name": "Test Key",
-            "permissions": "read",
+            "permissions": ["read"],
             "is_active": True,
         }
 

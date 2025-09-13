@@ -1,3 +1,5 @@
+"""API views for file upload and management."""
+
 import logging
 
 from django.core.files.storage import default_storage
@@ -50,14 +52,14 @@ logger = logging.getLogger(__name__)
     ),
 )
 class FileUploadViewSet(viewsets.ModelViewSet):
-    """ViewSet for file upload management"""
+    """ViewSet for file upload management."""
 
     serializer_class = FileUploadSerializer
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdmin]
     parser_classes = [MultiPartParser, FormParser]
 
     def get_queryset(self):
-        """Get files based on user permissions"""
+        """Get files based on user permissions."""
         queryset = FileUpload.objects.select_related("created_by", "updated_by")
 
         # Users can see their own files and public files
@@ -81,13 +83,13 @@ class FileUploadViewSet(viewsets.ModelViewSet):
         return queryset
 
     def get_serializer_class(self):
-        """Return appropriate serializer class"""
+        """Return appropriate serializer class."""
         if self.action == "create":
             return FileUploadCreateSerializer
         return FileUploadSerializer
 
     def perform_create(self, serializer):
-        """Handle file upload"""
+        """Handle file upload."""
         file = self.request.FILES["file"]
 
         # Validate file
@@ -116,7 +118,7 @@ class FileUploadViewSet(viewsets.ModelViewSet):
     )
     @action(detail=True, methods=["get"])
     def download_url(self, request, pk=None):
-        """Get download URL for file"""
+        """Get download URL for file."""
         file_upload = self.get_object()
 
         # Check access permissions
@@ -139,7 +141,7 @@ class FileUploadViewSet(viewsets.ModelViewSet):
     @extend_schema(summary="Download file", description="Download the file directly.")
     @action(detail=True, methods=["get"])
     def download(self, request, pk=None):
-        """Download file directly"""
+        """Download file directly."""
         file_upload = self.get_object()
 
         # Check access permissions
@@ -167,7 +169,7 @@ class FileUploadViewSet(viewsets.ModelViewSet):
             return response
 
         except Exception as e:
-            logger.error(f"Error serving file {file_upload.id}: {str(e)}")
+            logger.error("Error serving file %s: %s", file_upload.id, str(e))
             raise Http404("Error accessing file")
 
     @extend_schema(
@@ -176,7 +178,7 @@ class FileUploadViewSet(viewsets.ModelViewSet):
     )
     @action(detail=False, methods=["post"])
     def signed_upload_url(self, request):
-        """Get signed upload URL"""
+        """Get signed upload URL."""
         serializer = SignedUrlSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -215,7 +217,7 @@ class FileUploadViewSet(viewsets.ModelViewSet):
     )
     @action(detail=False, methods=["get"])
     def my_files(self, request):
-        """Get files uploaded by current user"""
+        """Get files uploaded by current user."""
         queryset = self.get_queryset().filter(created_by=request.user)
 
         page = self.paginate_queryset(queryset)
@@ -229,7 +231,7 @@ class FileUploadViewSet(viewsets.ModelViewSet):
     @extend_schema(summary="Get public files", description="Get all public files.")
     @action(detail=False, methods=["get"])
     def public(self, request):
-        """Get public files"""
+        """Get public files."""
         queryset = self.get_queryset().filter(is_public=True)
 
         page = self.paginate_queryset(queryset)
@@ -243,7 +245,7 @@ class FileUploadViewSet(viewsets.ModelViewSet):
 
 # Standalone view for direct file downloads (used in fallback URLs)
 def file_download_view(request, file_id):
-    """Direct file download view"""
+    """Direct file download view."""
     file_upload = get_object_or_404(FileUpload, id=file_id)
 
     # Check access permissions

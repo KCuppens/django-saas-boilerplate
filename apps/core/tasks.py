@@ -1,3 +1,5 @@
+"""Celery tasks for core application maintenance and health checks."""
+
 import logging
 
 from django.contrib.sessions.models import Session
@@ -10,22 +12,22 @@ logger = logging.getLogger(__name__)
 
 @shared_task(name="apps.core.tasks.cleanup_expired_sessions")
 def cleanup_expired_sessions():
-    """Clean up expired sessions"""
+    """Clean up expired sessions."""
     try:
         expired_sessions = Session.objects.filter(expire_date__lt=timezone.now())
         count = expired_sessions.count()
         expired_sessions.delete()
 
-        logger.info(f"Cleaned up {count} expired sessions")
+        logger.info("Cleaned up %d expired sessions", count)
         return {"success": True, "cleaned_sessions": count}
     except Exception as e:
-        logger.error(f"Failed to cleanup expired sessions: {str(e)}")
+        logger.error("Failed to cleanup expired sessions: %s", str(e))
         return {"success": False, "error": str(e)}
 
 
 @shared_task(name="apps.core.tasks.health_check")
 def health_check():
-    """Periodic health check task"""
+    """Periodic health check task."""
     try:
         # Perform basic health checks
         from django.db import connection
@@ -45,21 +47,21 @@ def health_check():
         return {"success": True, "timestamp": timezone.now().isoformat()}
 
     except Exception as e:
-        logger.error(f"Health check failed: {str(e)}")
+        logger.error("Health check failed: %s", str(e))
         return {"success": False, "error": str(e)}
 
 
 @shared_task(name="apps.core.tasks.collect_garbage")
 def collect_garbage():
-    """Collect garbage and clean up temporary files"""
+    """Collect garbage and clean up temporary files."""
     try:
         import gc
 
         collected = gc.collect()
 
-        logger.info(f"Garbage collection completed, collected {collected} objects")
+        logger.info("Garbage collection completed, collected %d objects", collected)
         return {"success": True, "collected_objects": collected}
 
     except Exception as e:
-        logger.error(f"Garbage collection failed: {str(e)}")
+        logger.error("Garbage collection failed: %s", str(e))
         return {"success": False, "error": str(e)}

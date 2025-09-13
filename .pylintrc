@@ -1,0 +1,70 @@
+[MASTER]
+# Load pylint plugins
+load-plugins=pylint_django,pylint_django.checkers.db_transaction
+
+# Django settings module
+django-settings-module=apps.config.settings.base
+
+[MESSAGES CONTROL]
+# Disable messages
+disable=
+    C0111,  # missing-docstring
+    C0103,  # invalid-name
+    R0903,  # too-few-public-methods
+    R0913,  # too-many-arguments
+    W0212,  # protected-access
+    W0613,  # unused-argument
+    C0114,  # missing-module-docstring
+    C0115,  # missing-class-docstring
+    C0116,  # missing-function-docstring
+    E1101,  # no-member (for Django models)
+    W0223,  # abstract-method (for DRF serializers)
+    W0221,  # arguments-differ
+    W0237,  # arguments-renamed
+    import-outside-toplevel,  # Sometimes necessary
+    too-many-ancestors,  # Django views can have many ancestors
+    no-member,  # Django adds members dynamically
+
+[FORMAT]
+# Maximum number of characters on a single line.
+max-line-length=88
+
+# Good variable names which should always be accepted
+good-names=i,j,k,ex,Run,_,pk,id,db,e
+
+[DESIGN]
+# Maximum number of arguments for function / method
+max-args=10
+
+# Maximum number of locals for function / method body
+max-locals=20
+
+# Maximum number of statements in function / method body
+max-statements=60
+
+# Maximum number of parents for a class
+max-parents=10
+
+# Maximum number of attributes for a class
+max-attributes=10
+
+# Minimum number of public methods for a class
+min-public-methods=0
+
+# Maximum number of public methods for a class
+max-public-methods=20
+
+[VARIABLES]
+# Additional names that should be treated as builtins
+additional-builtins=_
+
+[TYPECHECK]
+# List of members which are set dynamically and missed by pylint
+generated-members=objects,DoesNotExist,_meta,id,pk,save,delete,filter,all,get,create,update,count,exists,aggregate,annotate,values,values_list,select_related,prefetch_related,order_by,distinct,first,last,earliest,latest,reverse,none,using,db_manager,exclude,only,defer,get_or_create,update_or_create,bulk_create,bulk_update,in_bulk,iterator,as_manager,from_queryset
+
+# Ignore Django-specific members
+ignored-classes=Meta,DoesNotExist,MultipleObjectsReturned
+
+[IMPORTS]
+# Allow wildcard imports from specific modules
+allow-wildcard-with-all=yes

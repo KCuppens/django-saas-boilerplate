@@ -1,3 +1,5 @@
+"""Serializers for the accounts application."""
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
@@ -12,9 +14,11 @@ User = get_user_model()
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
-    """Serializer for UserProfile"""
+    """Serializer for UserProfile."""
 
     class Meta:
+        """Meta configuration for UserProfileSerializer."""
+
         model = UserProfile
         fields = [
             "bio",
@@ -29,7 +33,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    """Serializer for User model"""
+    """Serializer for User model."""
 
     profile = UserProfileSerializer(read_only=True)
     full_name = serializers.CharField(source="get_full_name", read_only=True)
@@ -37,6 +41,8 @@ class UserSerializer(serializers.ModelSerializer):
     avatar_url = serializers.SerializerMethodField()
 
     class Meta:
+        """Meta configuration for UserSerializer."""
+
         model = User
         fields = [
             "id",
@@ -62,7 +68,7 @@ class UserSerializer(serializers.ModelSerializer):
         ]
 
     def get_avatar_url(self, obj):
-        """Get avatar URL"""
+        """Get avatar URL."""
         if obj.avatar:
             request = self.context.get("request")
             if request:
@@ -72,7 +78,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class UserRegistrationSerializer(serializers.Serializer):
-    """Serializer for user registration"""
+    """Serializer for user registration."""
 
     email = serializers.EmailField()
     name = serializers.CharField(max_length=150, required=False, allow_blank=True)
@@ -80,7 +86,7 @@ class UserRegistrationSerializer(serializers.Serializer):
     password2 = serializers.CharField(write_only=True)
 
     def validate_email(self, email):
-        """Validate email is not already registered"""
+        """Validate email is not already registered."""
         email = get_adapter().clean_email(email)
         if User.objects.filter(email__iexact=email).exists():
             raise serializers.ValidationError(
@@ -89,7 +95,7 @@ class UserRegistrationSerializer(serializers.Serializer):
         return email
 
     def validate(self, data):
-        """Validate passwords match and meet requirements"""
+        """Validate passwords match and meet requirements."""
         if data["password1"] != data["password2"]:
             raise serializers.ValidationError("The two password fields didn't match.")
 
@@ -110,7 +116,7 @@ class UserRegistrationSerializer(serializers.Serializer):
         return data
 
     def save(self, request):
-        """Create and return a new user"""
+        """Create and return a new user."""
         adapter = get_adapter()
         user = adapter.new_user(request)
         user.email = self.validated_data.get("email")
@@ -125,14 +131,14 @@ class UserRegistrationSerializer(serializers.Serializer):
 
 
 class PasswordChangeSerializer(serializers.Serializer):
-    """Serializer for password change"""
+    """Serializer for password change."""
 
     old_password = serializers.CharField(write_only=True)
     new_password1 = serializers.CharField(write_only=True)
     new_password2 = serializers.CharField(write_only=True)
 
     def validate_old_password(self, value):
-        """Validate old password is correct"""
+        """Validate old password is correct."""
         user = self.context["request"].user
         if not user.check_password(value):
             raise serializers.ValidationError(
@@ -141,7 +147,7 @@ class PasswordChangeSerializer(serializers.Serializer):
         return value
 
     def validate(self, data):
-        """Validate new passwords match and meet requirements"""
+        """Validate new passwords match and meet requirements."""
         if data["new_password1"] != data["new_password2"]:
             raise serializers.ValidationError("The two password fields didn't match.")
 
@@ -163,7 +169,7 @@ class PasswordChangeSerializer(serializers.Serializer):
         return data
 
     def save(self):
-        """Change user password"""
+        """Change user password."""
         user = self.context["request"].user
         password = self.validated_data["new_password1"]
         user.set_password(password)
@@ -172,20 +178,26 @@ class PasswordChangeSerializer(serializers.Serializer):
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):
-    """Serializer for updating user profile"""
+    """Serializer for updating user profile."""
 
     profile = UserProfileSerializer(required=False)
 
     class Meta:
+        """Meta configuration for UserUpdateSerializer."""
+
         model = User
         fields = ["id", "name", "avatar", "profile", "email", "updated_at"]
         read_only_fields = ["id", "updated_at"]
 
     def validate_email(self, email):
-        """Validate email is not already registered by another user"""
+        """Validate email is not already registered by another user."""
         if email:
             email = get_adapter().clean_email(email)
-            existing_user = User.objects.filter(email__iexact=email).exclude(pk=self.instance.pk).first()
+            existing_user = (
+                User.objects.filter(email__iexact=email)
+                .exclude(pk=self.instance.pk)
+                .first()
+            )
             if existing_user:
                 raise serializers.ValidationError(
                     "A user is already registered with this email address."
@@ -193,7 +205,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         return email
 
     def update(self, instance, validated_data):
-        """Update user and profile"""
+        """Update user and profile."""
         profile_data = validated_data.pop("profile", None)
 
         # Update user fields

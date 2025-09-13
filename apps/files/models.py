@@ -1,3 +1,5 @@
+"""File upload and management models for the Django SaaS application."""
+
 import uuid
 
 from django.contrib.auth import get_user_model
@@ -10,7 +12,7 @@ User = get_user_model()
 
 
 class FileUpload(TimestampMixin, UserTrackingMixin):
-    """File upload model with S3/MinIO storage"""
+    """File upload model with S3/MinIO storage."""
 
     # File identification
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -41,6 +43,8 @@ class FileUpload(TimestampMixin, UserTrackingMixin):
     download_count = models.PositiveIntegerField("Download count", default=0)
 
     class Meta:
+        """Meta configuration for FileUpload."""
+
         verbose_name = "File Upload"
         verbose_name_plural = "File Uploads"
         ordering = ["-created_at"]
@@ -51,18 +55,19 @@ class FileUpload(TimestampMixin, UserTrackingMixin):
         ]
 
     def __str__(self):
+        """Return string representation of the file upload."""
         return self.original_filename
 
     @property
     def file_size_human(self):
-        """Human readable file size"""
+        """Human readable file size."""
         from apps.core.utils import format_file_size
 
         return format_file_size(self.file_size)
 
     @property
     def is_expired(self):
-        """Check if file has expired"""
+        """Check if file has expired."""
         if not self.expires_at:
             return False
         from django.utils import timezone
@@ -71,16 +76,16 @@ class FileUpload(TimestampMixin, UserTrackingMixin):
 
     @property
     def is_image(self):
-        """Check if file is an image"""
+        """Check if file is an image."""
         return self.file_type == FileType.IMAGE
 
     @property
     def is_document(self):
-        """Check if file is a document"""
+        """Check if file is a document."""
         return self.file_type == FileType.DOCUMENT
 
     def can_access(self, user=None):
-        """Check if user can access this file"""
+        """Check if user can access this file."""
         # Public files are accessible to all
         if self.is_public and not self.is_expired:
             return True
@@ -100,18 +105,18 @@ class FileUpload(TimestampMixin, UserTrackingMixin):
         return False
 
     def increment_download_count(self):
-        """Increment download counter"""
+        """Increment download counter."""
         self.download_count += 1
         self.save(update_fields=["download_count"])
 
     def get_download_url(self, expires_in=3600):
-        """Get signed download URL"""
+        """Get signed download URL."""
         from .services import FileService
 
         return FileService.get_download_url(self, expires_in)
 
     def get_upload_url(self, expires_in=3600):
-        """Get signed upload URL"""
+        """Get signed upload URL."""
         from .services import FileService
 
         return FileService.get_upload_url(self.storage_path, expires_in)

@@ -1,3 +1,5 @@
+"""Email template preview and management views."""
+
 import json
 
 from django.conf import settings
@@ -14,11 +16,12 @@ from .services import EmailService
 
 @method_decorator(staff_member_required, name="dispatch")
 class EmailTemplateListView(TemplateView):
-    """List all email templates for development/admin"""
+    """List all email templates for development/admin."""
 
     template_name = "emails/template_list.html"
 
     def get_context_data(self, **kwargs):
+        """Get context data for template list view."""
         context = super().get_context_data(**kwargs)
         context["templates"] = EmailTemplate.objects.filter(is_active=True).order_by(
             "category", "name"
@@ -28,7 +31,7 @@ class EmailTemplateListView(TemplateView):
 
 @method_decorator(staff_member_required, name="dispatch")
 class EmailTemplatePreviewView(DetailView):
-    """Preview email template with sample data"""
+    """Preview email template with sample data."""
 
     model = EmailTemplate
     template_name = "emails/template_preview.html"
@@ -37,6 +40,7 @@ class EmailTemplatePreviewView(DetailView):
     context_object_name = "email_template"
 
     def get_context_data(self, **kwargs):
+        """Get context data for template preview."""
         context = super().get_context_data(**kwargs)
 
         # Sample context data for preview
@@ -73,7 +77,7 @@ class EmailTemplatePreviewView(DetailView):
 
 
 def email_preview_html(request, template_key):
-    """Return HTML preview of email template"""
+    """Return HTML preview of email template."""
     if not settings.DEBUG and not request.user.is_staff:
         return HttpResponse("Not allowed", status=403)
 
@@ -104,7 +108,7 @@ def email_preview_html(request, template_key):
 
 
 def email_preview_text(request, template_key):
-    """Return text preview of email template"""
+    """Return text preview of email template."""
     if not settings.DEBUG and not request.user.is_staff:
         return HttpResponse("Not allowed", status=403)
 
@@ -130,7 +134,7 @@ def email_preview_text(request, template_key):
 
 @csrf_exempt
 def send_test_email(request, template_key):
-    """Send test email (development only)"""
+    """Send test email (development only)."""
     if not settings.DEBUG or not request.user.is_staff:
         return JsonResponse({"error": "Not allowed"}, status=403)
 
@@ -169,11 +173,12 @@ def send_test_email(request, template_key):
 
 @method_decorator(staff_member_required, name="dispatch")
 class EmailLogListView(TemplateView):
-    """List recent email logs for monitoring"""
+    """List recent email logs for monitoring."""
 
     template_name = "emails/log_list.html"
 
     def get_context_data(self, **kwargs):
+        """Get context data for email log list."""
         context = super().get_context_data(**kwargs)
         context["email_logs"] = EmailMessageLog.objects.select_related(
             "template"
@@ -184,7 +189,7 @@ class EmailLogListView(TemplateView):
 # Webhook endpoints for email tracking (if using external email service)
 @csrf_exempt
 def email_webhook(request):
-    """Webhook endpoint for email delivery status updates"""
+    """Webhook endpoint for email delivery status updates."""
     if request.method != "POST":
         return JsonResponse({"error": "POST method required"}, status=405)
 

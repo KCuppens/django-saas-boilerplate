@@ -1,12 +1,15 @@
+"""File handling services for the Django SaaS boilerplate."""
+
 import hashlib
 import logging
 import os
 import uuid
-from typing import Any, Optional, Dict
+from typing import Any, Optional
 
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
+from django.urls import reverse
 
 from apps.core.enums import FileType
 
@@ -16,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 class FileService:
-    """Service for handling file operations"""
+    """Service for handling file operations."""
 
     # File type mappings
     FILE_TYPE_MAP = {
@@ -53,8 +56,7 @@ class FileService:
         is_public: bool = False,
         expires_at=None,
     ) -> FileUpload:
-        """Upload a file and create a FileUpload record"""
-
+        """Upload a file and create a FileUpload record."""
         # Generate unique filename
         file_extension = os.path.splitext(file.name)[1].lower()
         unique_filename = f"{uuid.uuid4().hex}{file_extension}"
@@ -90,21 +92,22 @@ class FileService:
             updated_by=user,
         )
 
-        logger.info(f"File uploaded: {file.name} -> {stored_path} by user {user.id}")
+        logger.info(
+            "File uploaded: %s -> %s by user %s", file.name, stored_path, user.id
+        )
 
         return file_upload
 
     @classmethod
     def get_download_url(cls, file_upload: FileUpload, expires_in: int = 3600) -> str:
-        """Get signed download URL for file"""
-
+        """Get signed download URL for file."""
         # For public files, return direct URL
         if file_upload.is_public and hasattr(default_storage, "url"):
             try:
                 return default_storage.url(file_upload.storage_path)
             except Exception as e:
                 logger.warning(
-                    f"Failed to generate direct URL for file {file_upload.id}: {e}"
+                    "Failed to generate direct URL for file %s: %s", file_upload.id, e
                 )
 
         # For private files or S3, generate signed URL
@@ -116,11 +119,9 @@ class FileService:
                     method="GET",
                 )
             except Exception as e:
-                logger.error(f"Failed to generate presigned URL: {str(e)}")
+                logger.error("Failed to generate presigned URL: %s", str(e))
 
         # Fallback to local file serving (development)
-        from django.urls import reverse
-
         return reverse("file_download", kwargs={"file_id": file_upload.id})
 
     @classmethod
@@ -130,9 +131,8 @@ class FileService:
         expires_in: int = 3600,
         content_type: Optional[str] = None,
         max_size: Optional[int] = None,
-    ) -> Dict[str, Any]:
-        """Get signed upload URL and required fields"""
-
+    ) -> dict[str, Any]:
+        """Get signed upload URL and required fields."""
         if hasattr(default_storage, "generate_presigned_post"):
             try:
                 conditions = []
@@ -145,17 +145,14 @@ class FileService:
                     storage_path, expires_in=expires_in, conditions=conditions
                 )
             except Exception as e:
-                logger.error(f"Failed to generate presigned upload URL: {str(e)}")
+                logger.error("Failed to generate presigned upload URL: %s", str(e))
 
         # Fallback for local development
-        from django.urls import reverse
-
         return {"url": reverse("file_upload"), "fields": {}}
 
     @classmethod
     def delete_file(cls, file_upload: FileUpload) -> bool:
-        """Delete file from storage and database"""
-
+        """Delete file from storage and database."""
         try:
             # Delete from storage
             if default_storage.exists(file_upload.storage_path):
@@ -164,17 +161,18 @@ class FileService:
             # Delete database record
             file_upload.delete()
 
-            logger.info(f"File deleted: {file_upload.storage_path}")
+            logger.info("File deleted: %s", file_upload.storage_path)
             return True
 
         except Exception as e:
-            logger.error(f"Failed to delete file {file_upload.storage_path}: {str(e)}")
+            logger.error(
+                "Failed to delete file %s: %s", file_upload.storage_path, str(e)
+            )
             return False
 
     @classmethod
     def validate_file(cls, file, max_size_mb: int = 10) -> dict[str, Any]:
-        """Validate uploaded file"""
-
+        """Validate uploaded file."""
         errors = []
         warnings = []
 
@@ -242,8 +240,7 @@ class FileService:
 
     @classmethod
     def cleanup_expired_files(cls) -> dict[str, int]:
-        """Clean up expired files"""
-
+        """Clean up expired files."""
         from django.utils import timezone
 
         expired_files = FileUpload.objects.filter(expires_at__lt=timezone.now())

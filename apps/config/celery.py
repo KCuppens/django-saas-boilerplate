@@ -1,3 +1,5 @@
+"""Celery configuration for the Django SaaS Boilerplate."""
+
 import os
 
 from celery import Celery
@@ -30,4 +32,5 @@ app.conf.beat_schedule = {
 
 @app.task(bind=True)
 def debug_task(self):
+    """Debug task to print request information."""
     print(f"Request: {self.request!r}")

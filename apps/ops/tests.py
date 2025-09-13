@@ -1,3 +1,5 @@
+"""Test cases for operations and monitoring functionality."""
+
 import json
 from datetime import datetime, timedelta
 from unittest.mock import Mock, mock_open, patch
@@ -23,14 +25,14 @@ User = get_user_model()
 
 
 class OpsViewsTestCase(TestCase):
-    """Test ops views"""
+    """Test ops views."""
 
     def setUp(self):
-        """Set up test data"""
+        """Set up test data."""
         self.factory = RequestFactory()
 
     def test_health_check_view(self):
-        """Test health check endpoint"""
+        """Test health check endpoint."""
         request = self.factory.get("/health/")
         response = health_check(request)
 
@@ -43,7 +45,7 @@ class OpsViewsTestCase(TestCase):
         self.assertEqual(data["service"], "django-saas-boilerplate")
 
     def test_liveness_check_view(self):
-        """Test liveness check endpoint"""
+        """Test liveness check endpoint."""
         request = self.factory.get("/alive/")
         response = liveness_check(request)
 
@@ -55,7 +57,7 @@ class OpsViewsTestCase(TestCase):
         self.assertIn("timestamp", data)
 
     def test_readiness_check_success(self):
-        """Test readiness check with successful checks"""
+        """Test readiness check with successful checks."""
         request = self.factory.get("/ready/")
 
         # Clear cache first to ensure clean test
@@ -71,7 +73,7 @@ class OpsViewsTestCase(TestCase):
 
     @patch("apps.ops.views.connection")
     def test_readiness_check_database_failure(self, mock_connection):
-        """Test readiness check with database failure"""
+        """Test readiness check with database failure."""
         mock_cursor = Mock()
         mock_cursor.execute.side_effect = Exception("Database error")
         mock_connection.cursor.return_value.__enter__.return_value = mock_cursor
@@ -86,7 +88,7 @@ class OpsViewsTestCase(TestCase):
 
     @patch("apps.ops.views.cache")
     def test_readiness_check_cache_failure(self, mock_cache):
-        """Test readiness check with cache failure"""
+        """Test readiness check with cache failure."""
         mock_cache.set.return_value = None
         mock_cache.get.return_value = None  # Cache failed
 
@@ -101,7 +103,7 @@ class OpsViewsTestCase(TestCase):
 
     @patch("apps.ops.views.subprocess.check_output")
     def test_version_info_with_git(self, mock_subprocess):
-        """Test version info endpoint with git information"""
+        """Test version info endpoint with git information."""
         mock_subprocess.side_effect = [
             b"abc123def456\n",  # git hash
             b"main\n",  # git branch
@@ -118,7 +120,7 @@ class OpsViewsTestCase(TestCase):
 
     @patch("apps.ops.views.subprocess.check_output")
     def test_version_info_git_failure(self, mock_subprocess):
-        """Test version info endpoint when git fails"""
+        """Test version info endpoint when git fails."""
         mock_subprocess.side_effect = Exception("Git not found")
 
         request = self.factory.get("/version/")
@@ -132,10 +134,10 @@ class OpsViewsTestCase(TestCase):
 
 
 class OpsMetricsTestCase(TestCase):
-    """Test metrics endpoints"""
+    """Test metrics endpoints."""
 
     def setUp(self):
-        """Set up test data"""
+        """Set up test data."""
         self.factory = RequestFactory()
         self.user = User.objects.create_user(
             email="test@example.com", name="Test User", password="testpass123"
@@ -169,7 +171,7 @@ class OpsMetricsTestCase(TestCase):
         )
 
     def test_prometheus_metrics_success(self):
-        """Test prometheus metrics endpoint with successful data collection"""
+        """Test prometheus metrics endpoint with successful data collection."""
         request = self.factory.get("/metrics/")
         response = prometheus_metrics(request)
 
@@ -198,7 +200,7 @@ class OpsMetricsTestCase(TestCase):
 
     @patch("apps.ops.metrics.User.objects.count")
     def test_prometheus_metrics_database_error(self, mock_count):
-        """Test prometheus metrics with database error"""
+        """Test prometheus metrics with database error."""
         mock_count.side_effect = Exception("Database error")
 
         request = self.factory.get("/metrics/")
@@ -212,7 +214,7 @@ class OpsMetricsTestCase(TestCase):
         self.assertIn("Error:", content)
 
     def test_health_metrics_all_healthy(self):
-        """Test health metrics with all systems healthy"""
+        """Test health metrics with all systems healthy."""
         request = self.factory.get("/health-metrics/")
         response = health_metrics(request)
 
@@ -226,7 +228,7 @@ class OpsMetricsTestCase(TestCase):
 
     @patch("apps.ops.metrics.connection")
     def test_health_metrics_database_unhealthy(self, mock_connection):
-        """Test health metrics with database failure"""
+        """Test health metrics with database failure."""
         mock_cursor = Mock()
         mock_cursor.execute.side_effect = Exception("Database error")
         mock_connection.cursor.return_value.__enter__.return_value = mock_cursor
@@ -242,7 +244,7 @@ class OpsMetricsTestCase(TestCase):
 
     @patch("apps.ops.metrics.cache")
     def test_health_metrics_cache_failure(self, mock_cache):
-        """Test health metrics with cache failure"""
+        """Test health metrics with cache failure."""
         mock_cache.set.return_value = None
         mock_cache.get.return_value = None
 
@@ -256,7 +258,7 @@ class OpsMetricsTestCase(TestCase):
 
     @patch("apps.ops.metrics.psutil")
     def test_prometheus_metrics_with_psutil(self, mock_psutil):
-        """Test prometheus metrics with system metrics"""
+        """Test prometheus metrics with system metrics."""
         # Mock psutil responses
         mock_memory = Mock()
         mock_memory.percent = 75.0
@@ -279,10 +281,10 @@ class OpsMetricsTestCase(TestCase):
 
 
 class OpsTasksTestCase(TestCase):
-    """Test ops tasks"""
+    """Test ops tasks."""
 
     def setUp(self):
-        """Set up test data"""
+        """Set up test data."""
         self.user = User.objects.create_user(
             email="test@example.com", name="Test User", password="testpass123"
         )
@@ -293,7 +295,7 @@ class OpsTasksTestCase(TestCase):
     def test_backup_database_postgresql(
         self, mock_makedirs, mock_subprocess, mock_settings
     ):
-        """Test database backup for PostgreSQL"""
+        """Test database backup for PostgreSQL."""
         # Mock settings
         mock_settings.BASE_DIR = "/app"
         mock_settings.DATABASES = {
@@ -324,7 +326,7 @@ class OpsTasksTestCase(TestCase):
     @patch("apps.ops.tasks.settings")
     @patch("apps.ops.tasks.subprocess.run")
     def test_backup_database_postgresql_failure(self, mock_subprocess, mock_settings):
-        """Test database backup failure for PostgreSQL"""
+        """Test database backup failure for PostgreSQL."""
         mock_settings.BASE_DIR = "/app"
         mock_settings.DATABASES = {
             "default": {
@@ -350,7 +352,7 @@ class OpsTasksTestCase(TestCase):
     @patch("apps.ops.tasks.call_command")
     @patch("builtins.open", new_callable=mock_open)
     def test_backup_database_sqlite(self, mock_file, mock_call_command, mock_settings):
-        """Test database backup for SQLite"""
+        """Test database backup for SQLite."""
         mock_settings.BASE_DIR = "/app"
         mock_settings.DATABASES = {
             "default": {"ENGINE": "django.db.backends.sqlite3", "NAME": "test.db"}
@@ -371,7 +373,7 @@ class OpsTasksTestCase(TestCase):
     def test_cleanup_old_backups(
         self, mock_exists, mock_remove, mock_stat, mock_glob, mock_settings
     ):
-        """Test cleanup of old backup files"""
+        """Test cleanup of old backup files."""
         mock_settings.BASE_DIR = "/app"
         mock_exists.return_value = True
 
@@ -392,7 +394,7 @@ class OpsTasksTestCase(TestCase):
     @patch("apps.ops.tasks.settings")
     @patch("apps.ops.tasks.os.path.exists")
     def test_cleanup_old_backups_no_directory(self, mock_exists, mock_settings):
-        """Test cleanup when backup directory doesn't exist"""
+        """Test cleanup when backup directory doesn't exist."""
         mock_settings.BASE_DIR = "/app"
         mock_exists.return_value = False
 
@@ -408,7 +410,7 @@ class OpsTasksTestCase(TestCase):
     def test_system_maintenance_success(
         self, mock_settings, mock_cache, mock_call_command
     ):
-        """Test successful system maintenance"""
+        """Test successful system maintenance."""
         mock_settings.DEBUG = False
 
         result = system_maintenance()
@@ -426,7 +428,7 @@ class OpsTasksTestCase(TestCase):
     @patch("apps.ops.tasks.call_command")
     @patch("apps.ops.tasks.settings")
     def test_system_maintenance_debug_mode(self, mock_settings, mock_call_command):
-        """Test system maintenance in debug mode"""
+        """Test system maintenance in debug mode."""
         mock_settings.DEBUG = True
 
         result = system_maintenance()
@@ -437,7 +439,7 @@ class OpsTasksTestCase(TestCase):
 
     @patch("apps.ops.tasks.call_command")
     def test_system_maintenance_command_failure(self, mock_call_command):
-        """Test system maintenance with command failure"""
+        """Test system maintenance with command failure."""
         mock_call_command.side_effect = Exception("Command failed")
 
         result = system_maintenance()
@@ -453,7 +455,7 @@ class OpsTasksTestCase(TestCase):
     def test_health_check_task_all_healthy(
         self, mock_settings, mock_connection, mock_cache, mock_disk
     ):
-        """Test health check task with all systems healthy"""
+        """Test health check task with all systems healthy."""
         mock_settings.BASE_DIR = "/app"
 
         # Mock database success
@@ -479,7 +481,7 @@ class OpsTasksTestCase(TestCase):
 
     @patch("apps.ops.tasks.connection")
     def test_health_check_task_database_failure(self, mock_connection):
-        """Test health check task with database failure"""
+        """Test health check task with database failure."""
         mock_cursor = Mock()
         mock_cursor.execute.side_effect = Exception("Database error")
         mock_connection.cursor.return_value.__enter__.return_value = mock_cursor
@@ -493,7 +495,7 @@ class OpsTasksTestCase(TestCase):
     @patch("apps.ops.tasks.shutil.disk_usage")
     @patch("apps.ops.tasks.settings")
     def test_health_check_task_low_disk_space(self, mock_settings, mock_disk):
-        """Test health check task with low disk space"""
+        """Test health check task with low disk space."""
         mock_settings.BASE_DIR = "/app"
 
         # Mock low disk space (500MB free)
@@ -509,7 +511,7 @@ class OpsTasksTestCase(TestCase):
 
     @patch("apps.ops.tasks.connection")
     def test_health_check_task_exception(self, mock_connection):
-        """Test health check task with unexpected exception"""
+        """Test health check task with unexpected exception."""
         mock_connection.cursor.side_effect = Exception("Unexpected error")
 
         result = health_check_task()

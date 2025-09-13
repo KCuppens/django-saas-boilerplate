@@ -1,3 +1,5 @@
+"""Base Django settings for the Django SaaS Boilerplate."""
+
 from pathlib import Path
 
 import environ

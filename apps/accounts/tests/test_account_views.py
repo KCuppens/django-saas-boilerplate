@@ -1,3 +1,5 @@
+"""Tests for account views."""
+
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
@@ -11,17 +13,17 @@ User = get_user_model()
 
 
 class UserViewSetTestCase(APITestCase):
-    """Test UserViewSet"""
+    """Test UserViewSet."""
 
     def setUp(self):
-        """Set up test data"""
+        """Set up test data."""
         self.client = APIClient()
         self.user = User.objects.create_user(
             email="test@example.com", name="Test User", password="testpass123"
         )
 
     def test_retrieve_user_profile_authenticated(self):
-        """Test retrieving current user profile"""
+        """Test retrieving current user profile."""
         self.client.force_authenticate(user=self.user)
         url = reverse("user-detail", kwargs={"pk": "me"})
 
@@ -32,7 +34,7 @@ class UserViewSetTestCase(APITestCase):
         self.assertEqual(response.data["name"], self.user.name)
 
     def test_retrieve_user_profile_unauthenticated(self):
-        """Test retrieving user profile without authentication"""
+        """Test retrieving user profile without authentication."""
         url = reverse("user-detail", kwargs={"pk": "me"})
 
         response = self.client.get(url)
@@ -40,7 +42,7 @@ class UserViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_update_user_profile(self):
-        """Test updating user profile"""
+        """Test updating user profile."""
         self.client.force_authenticate(user=self.user)
         url = reverse("user-detail", kwargs={"pk": "me"})
 
@@ -56,7 +58,7 @@ class UserViewSetTestCase(APITestCase):
         self.assertEqual(self.user.name, "Updated Name")
 
     def test_register_new_user(self):
-        """Test registering a new user"""
+        """Test registering a new user."""
         url = reverse("user-register")
 
         data = {
@@ -77,7 +79,7 @@ class UserViewSetTestCase(APITestCase):
         self.assertTrue(User.objects.filter(email="newuser@example.com").exists())
 
     def test_register_with_email_verification(self):
-        """Test registration when email verification is required"""
+        """Test registration when email verification is required."""
         url = reverse("user-register")
 
         data = {
@@ -95,7 +97,7 @@ class UserViewSetTestCase(APITestCase):
         self.assertIn("Please check your email", response.data["message"])
 
     def test_register_invalid_data(self):
-        """Test registration with invalid data"""
+        """Test registration with invalid data."""
         url = reverse("user-register")
 
         data = {
@@ -109,7 +111,7 @@ class UserViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_change_password(self):
-        """Test changing user password"""
+        """Test changing user password."""
         self.client.force_authenticate(user=self.user)
         url = reverse("user-change-password")
 
@@ -129,7 +131,7 @@ class UserViewSetTestCase(APITestCase):
         self.assertTrue(self.user.check_password("newtestpass123456"))
 
     def test_change_password_wrong_old_password(self):
-        """Test changing password with wrong old password"""
+        """Test changing password with wrong old password."""
         self.client.force_authenticate(user=self.user)
         url = reverse("user-change-password")
 
@@ -144,7 +146,7 @@ class UserViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_change_password_unauthenticated(self):
-        """Test changing password without authentication"""
+        """Test changing password without authentication."""
         url = reverse("user-change-password")
 
         data = {
@@ -158,7 +160,7 @@ class UserViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_ping_updates_last_seen(self):
-        """Test ping action updates last seen timestamp"""
+        """Test ping action updates last seen timestamp."""
         self.client.force_authenticate(user=self.user)
         url = reverse("user-ping")
 
@@ -175,7 +177,7 @@ class UserViewSetTestCase(APITestCase):
         self.assertNotEqual(self.user.last_seen, original_last_seen)
 
     def test_delete_account(self):
-        """Test deleting user account"""
+        """Test deleting user account."""
         self.client.force_authenticate(user=self.user)
         url = reverse("user-delete-account")
 
@@ -188,7 +190,7 @@ class UserViewSetTestCase(APITestCase):
         self.assertFalse(self.user.is_active)
 
     def test_delete_account_unauthenticated(self):
-        """Test deleting account without authentication"""
+        """Test deleting account without authentication."""
         url = reverse("user-delete-account")
 
         response = self.client.delete(url)
@@ -196,7 +198,7 @@ class UserViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_get_serializer_class_for_update(self):
-        """Test that update actions use UserUpdateSerializer"""
+        """Test that update actions use UserUpdateSerializer."""
         self.client.force_authenticate(user=self.user)
         url = reverse("user-detail", kwargs={"pk": "me"})
 
@@ -208,7 +210,7 @@ class UserViewSetTestCase(APITestCase):
         self.assertEqual(response.data["name"], "New Name")
 
     def test_get_object_returns_current_user(self):
-        """Test that get_object returns the current authenticated user"""
+        """Test that get_object returns the current authenticated user."""
         self.client.force_authenticate(user=self.user)
 
         # Any detail endpoint should return the current user regardless of pk
@@ -220,17 +222,17 @@ class UserViewSetTestCase(APITestCase):
 
 
 class ProfileUpdateViewTestCase(APITestCase):
-    """Test ProfileUpdateView"""
+    """Test ProfileUpdateView."""
 
     def setUp(self):
-        """Set up test data"""
+        """Set up test data."""
         self.client = APIClient()
         self.user = User.objects.create_user(
             email="test@example.com", name="Test User", password="testpass123"
         )
 
     def test_update_profile_authenticated(self):
-        """Test updating profile when authenticated"""
+        """Test updating profile when authenticated."""
         self.client.force_authenticate(user=self.user)
         url = reverse("api-profile-update")
 
@@ -243,7 +245,7 @@ class ProfileUpdateViewTestCase(APITestCase):
         self.assertEqual(response.data["email"], "updated@example.com")
 
     def test_update_profile_unauthenticated(self):
-        """Test updating profile without authentication"""
+        """Test updating profile without authentication."""
         url = reverse("api-profile-update")
 
         data = {"name": "Hacker Name"}
@@ -253,7 +255,7 @@ class ProfileUpdateViewTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_update_profile_partial_data(self):
-        """Test updating profile with partial data"""
+        """Test updating profile with partial data."""
         self.client.force_authenticate(user=self.user)
         url = reverse("api-profile-update")
 
@@ -268,7 +270,7 @@ class ProfileUpdateViewTestCase(APITestCase):
         )  # Should remain unchanged
 
     def test_update_profile_invalid_data(self):
-        """Test updating profile with invalid data"""
+        """Test updating profile with invalid data."""
         self.client.force_authenticate(user=self.user)
         url = reverse("api-profile-update")
 
@@ -280,17 +282,17 @@ class ProfileUpdateViewTestCase(APITestCase):
 
 
 class PasswordResetViewTestCase(APITestCase):
-    """Test PasswordResetView"""
+    """Test PasswordResetView."""
 
     def setUp(self):
-        """Set up test data"""
+        """Set up test data."""
         self.client = APIClient()
         self.user = User.objects.create_user(
             email="test@example.com", name="Test User", password="testpass123"
         )
 
     def test_password_reset_request_valid_email(self):
-        """Test password reset request with valid email"""
+        """Test password reset request with valid email."""
         url = reverse("api-password-reset")
 
         data = {"email": "test@example.com"}
@@ -301,7 +303,7 @@ class PasswordResetViewTestCase(APITestCase):
         self.assertIn("password reset link has been sent", response.data["message"])
 
     def test_password_reset_request_invalid_email(self):
-        """Test password reset request with non-existent email"""
+        """Test password reset request with non-existent email."""
         url = reverse("api-password-reset")
 
         data = {"email": "nonexistent@example.com"}
@@ -313,7 +315,7 @@ class PasswordResetViewTestCase(APITestCase):
         self.assertIn("password reset link has been sent", response.data["message"])
 
     def test_password_reset_request_no_email(self):
-        """Test password reset request without email"""
+        """Test password reset request without email."""
         url = reverse("api-password-reset")
 
         data = {}
@@ -324,7 +326,7 @@ class PasswordResetViewTestCase(APITestCase):
         self.assertEqual(response.data["error"], "Email is required.")
 
     def test_password_reset_request_empty_email(self):
-        """Test password reset request with empty email"""
+        """Test password reset request with empty email."""
         url = reverse("api-password-reset")
 
         data = {"email": ""}
@@ -336,10 +338,10 @@ class PasswordResetViewTestCase(APITestCase):
 
 
 class PasswordResetConfirmViewTestCase(APITestCase):
-    """Test PasswordResetConfirmView"""
+    """Test PasswordResetConfirmView."""
 
     def test_password_reset_confirm_valid_data(self):
-        """Test password reset confirmation with valid data"""
+        """Test password reset confirmation with valid data."""
         url = reverse("api-password-reset-confirm")
 
         data = {
@@ -356,7 +358,7 @@ class PasswordResetConfirmViewTestCase(APITestCase):
         )
 
     def test_password_reset_confirm_missing_token(self):
-        """Test password reset confirmation without token"""
+        """Test password reset confirmation without token."""
         url = reverse("api-password-reset-confirm")
 
         data = {
@@ -373,7 +375,7 @@ class PasswordResetConfirmViewTestCase(APITestCase):
         )
 
     def test_password_reset_confirm_missing_password(self):
-        """Test password reset confirmation without password"""
+        """Test password reset confirmation without password."""
         url = reverse("api-password-reset-confirm")
 
         data = {"token": "valid-token-123", "password_confirm": "newpassword123456"}
@@ -387,7 +389,7 @@ class PasswordResetConfirmViewTestCase(APITestCase):
         )
 
     def test_password_reset_confirm_password_mismatch(self):
-        """Test password reset confirmation with mismatched passwords"""
+        """Test password reset confirmation with mismatched passwords."""
         url = reverse("api-password-reset-confirm")
 
         data = {
@@ -402,7 +404,7 @@ class PasswordResetConfirmViewTestCase(APITestCase):
         self.assertEqual(response.data["error"], "Passwords do not match.")
 
     def test_password_reset_confirm_empty_fields(self):
-        """Test password reset confirmation with empty fields"""
+        """Test password reset confirmation with empty fields."""
         url = reverse("api-password-reset-confirm")
 
         data = {"token": "", "password": "", "password_confirm": ""}
@@ -417,10 +419,10 @@ class PasswordResetConfirmViewTestCase(APITestCase):
 
 
 class EmailVerificationViewTestCase(APITestCase):
-    """Test EmailVerificationView"""
+    """Test EmailVerificationView."""
 
     def test_email_verification_valid_token(self):
-        """Test email verification with valid token"""
+        """Test email verification with valid token."""
         url = reverse("api-verify-email")
 
         data = {"token": "valid-verification-token-123"}
@@ -433,7 +435,7 @@ class EmailVerificationViewTestCase(APITestCase):
         )
 
     def test_email_verification_missing_token(self):
-        """Test email verification without token"""
+        """Test email verification without token."""
         url = reverse("api-verify-email")
 
         data = {}
@@ -444,7 +446,7 @@ class EmailVerificationViewTestCase(APITestCase):
         self.assertEqual(response.data["error"], "Verification token is required.")
 
     def test_email_verification_empty_token(self):
-        """Test email verification with empty token"""
+        """Test email verification with empty token."""
         url = reverse("api-verify-email")
 
         data = {"token": ""}
@@ -456,10 +458,10 @@ class EmailVerificationViewTestCase(APITestCase):
 
 
 class AuthThrottleTestCase(TestCase):
-    """Test AuthThrottle configuration"""
+    """Test AuthThrottle configuration."""
 
     def test_auth_throttle_configuration(self):
-        """Test AuthThrottle has correct configuration"""
+        """Test AuthThrottle has correct configuration."""
         from apps.accounts.views import AuthThrottle
 
         throttle = AuthThrottle()

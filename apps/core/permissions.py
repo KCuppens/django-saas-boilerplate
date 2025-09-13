@@ -1,23 +1,28 @@
+"""Custom permission classes for the Django SaaS application."""
+
 from rest_framework import permissions
 
 
-class HasGroup(permissions.BasePermission):
-    """Permission class to check if user belongs to a specific group"""
+def HasGroup(group_name):
+    """Permission factory to check if user belongs to a specific group."""
 
-    def __init__(self, group_name):
-        self.group_name = group_name
+    class HasGroupPermission(permissions.BasePermission):  # type: ignore[misc]
+        """Permission class to check if user belongs to a specific group."""
+
+        def has_permission(self, request, view):
+            if not request.user or not request.user.is_authenticated:
+                return False
+
+            return request.user.groups.filter(name=group_name).exists()
+
+    return HasGroupPermission
+
+
+class IsAdminOrReadOnly(permissions.BasePermission):  # type: ignore[misc]
+    """Permission that allows admins to modify, others to read only."""
 
     def has_permission(self, request, view):
-        if not request.user or not request.user.is_authenticated:
-            return False
-
-        return request.user.groups.filter(name=self.group_name).exists()
-
-
-class IsAdminOrReadOnly(permissions.BasePermission):
-    """Permission that allows admins to modify, others to read only"""
-
-    def has_permission(self, request, view):
+        """Check if the user has permission to access the view.""" ""
         if not request.user or not request.user.is_authenticated:
             return False
 
@@ -29,10 +34,11 @@ class IsAdminOrReadOnly(permissions.BasePermission):
         return request.user.is_admin()
 
 
-class IsOwnerOrAdmin(permissions.BasePermission):
-    """Permission that allows owners or admins to access"""
+class IsOwnerOrAdmin(permissions.BasePermission):  # type: ignore[misc]
+    """Permission that allows owners or admins to access."""
 
     def has_object_permission(self, request, view, obj):
+        """Check if the user has permission to access the specific object.""" ""
         if not request.user or not request.user.is_authenticated:
             return False
 
@@ -52,36 +58,40 @@ class IsOwnerOrAdmin(permissions.BasePermission):
         return obj == request.user
 
 
-class IsManagerOrAdmin(permissions.BasePermission):
-    """Permission that allows managers or admins to access"""
+class IsManagerOrAdmin(permissions.BasePermission):  # type: ignore[misc]
+    """Permission that allows managers or admins to access."""
 
     def has_permission(self, request, view):
+        """Check if the user is a manager or admin."""
         if not request.user or not request.user.is_authenticated:
             return False
 
         return request.user.is_manager()
 
 
-class IsMemberOrAbove(permissions.BasePermission):
-    """Permission that allows members, managers, or admins to access"""
+class IsMemberOrAbove(permissions.BasePermission):  # type: ignore[misc]
+    """Permission that allows members, managers, or admins to access."""
 
     def has_permission(self, request, view):
+        """Check if the user is a member or above."""
         if not request.user or not request.user.is_authenticated:
             return False
 
         return request.user.is_member()
 
 
-class IsOwnerOrPublic(permissions.BasePermission):
-    """Permission that allows owners to modify, everyone to read public items"""
+class IsOwnerOrPublic(permissions.BasePermission):  # type: ignore[misc]
+    """Permission that allows owners to modify, everyone to read public items."""
 
     def has_permission(self, request, view):
+        """Check if the user has permission to access the view."""
         # All authenticated users can list and create
         if not request.user or not request.user.is_authenticated:
             return False
         return True
 
     def has_object_permission(self, request, view, obj):
+        """Check if the user has permission to access the specific object."""
         if not request.user or not request.user.is_authenticated:
             return False
 
@@ -94,8 +104,11 @@ class IsOwnerOrPublic(permissions.BasePermission):
             return True
 
         # For read operations, check if item is public
-        if request.method in permissions.SAFE_METHODS:
-            if hasattr(obj, "is_public") and obj.is_public:
-                return True
+        if (
+            request.method in permissions.SAFE_METHODS
+            and hasattr(obj, "is_public")
+            and obj.is_public
+        ):
+            return True
 
         return False

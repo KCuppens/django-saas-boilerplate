@@ -1,3 +1,5 @@
+"""Test cases for core application functionality."""
+
 import hashlib
 import uuid
 from datetime import timedelta
@@ -17,11 +19,7 @@ from .enums import (
     TaskStatus,
     UserRole,
 )
-from .permissions import (
-    HasGroup,
-    IsAdminOrReadOnly,
-    IsOwnerOrAdmin,
-)
+from .permissions import HasGroup, IsAdminOrReadOnly, IsOwnerOrAdmin
 from .utils import (
     create_slug,
     format_file_size,
@@ -43,60 +41,60 @@ User = get_user_model()
 
 
 class EnumsTestCase(TestCase):
-    """Test enum classes"""
+    """Test enum classes."""
 
     def test_user_role_choices(self):
-        """Test UserRole enum values"""
+        """Test UserRole enum values."""
         self.assertEqual(UserRole.ADMIN, "admin")
         self.assertEqual(UserRole.MANAGER, "manager")
         self.assertEqual(UserRole.MEMBER, "member")
         self.assertEqual(UserRole.READ_ONLY, "readonly")
 
     def test_email_status_choices(self):
-        """Test EmailStatus enum values"""
+        """Test EmailStatus enum values."""
         self.assertEqual(EmailStatus.PENDING, "pending")
         self.assertEqual(EmailStatus.SENT, "sent")
         self.assertEqual(EmailStatus.FAILED, "failed")
         self.assertEqual(EmailStatus.BOUNCED, "bounced")
 
     def test_file_type_choices(self):
-        """Test FileType enum values"""
+        """Test FileType enum values."""
         self.assertEqual(FileType.IMAGE, "image")
         self.assertEqual(FileType.DOCUMENT, "document")
         self.assertEqual(FileType.VIDEO, "video")
 
     def test_notification_type_choices(self):
-        """Test NotificationType enum values"""
+        """Test NotificationType enum values."""
         self.assertEqual(NotificationType.INFO, "info")
         self.assertEqual(NotificationType.SUCCESS, "success")
         self.assertEqual(NotificationType.WARNING, "warning")
         self.assertEqual(NotificationType.ERROR, "error")
 
     def test_priority_choices(self):
-        """Test Priority enum values"""
+        """Test Priority enum values."""
         self.assertEqual(Priority.LOW, "low")
         self.assertEqual(Priority.MEDIUM, "medium")
         self.assertEqual(Priority.HIGH, "high")
         self.assertEqual(Priority.URGENT, "urgent")
 
     def test_status_choices(self):
-        """Test Status enum values"""
+        """Test Status enum values."""
         self.assertEqual(Status.DRAFT, "draft")
         self.assertEqual(Status.ACTIVE, "active")
         self.assertEqual(Status.INACTIVE, "inactive")
 
     def test_task_status_choices(self):
-        """Test TaskStatus enum values"""
+        """Test TaskStatus enum values."""
         self.assertEqual(TaskStatus.PENDING, "pending")
         self.assertEqual(TaskStatus.IN_PROGRESS, "in_progress")
         self.assertEqual(TaskStatus.COMPLETED, "completed")
 
 
 class PermissionsTestCase(TestCase):
-    """Test permission classes"""
+    """Test permission classes."""
 
     def setUp(self):
-        """Set up test data"""
+        """Set up test data."""
         self.factory = RequestFactory()
         self.user = User.objects.create_user(
             email="test@example.com", name="Test User", password="testpass123"
@@ -106,27 +104,30 @@ class PermissionsTestCase(TestCase):
         )
 
     def test_has_group_permission_authenticated_user_in_group(self):
-        """Test HasGroup permission with user in group"""
+        """Test HasGroup permission with user in group."""
         group = Group.objects.create(name="test_group")
         self.user.groups.add(group)
 
-        permission = HasGroup("test_group")
+        permission_class = HasGroup("test_group")
+        permission = permission_class()
         request = Mock()
         request.user = self.user
 
         self.assertTrue(permission.has_permission(request, None))
 
     def test_has_group_permission_authenticated_user_not_in_group(self):
-        """Test HasGroup permission with user not in group"""
-        permission = HasGroup("test_group")
+        """Test HasGroup permission with user not in group."""
+        permission_class = HasGroup("test_group")
+        permission = permission_class()
         request = Mock()
         request.user = self.user
 
         self.assertFalse(permission.has_permission(request, None))
 
     def test_has_group_permission_unauthenticated_user(self):
-        """Test HasGroup permission with unauthenticated user"""
-        permission = HasGroup("test_group")
+        """Test HasGroup permission with unauthenticated user."""
+        permission_class = HasGroup("test_group")
+        permission = permission_class()
         request = Mock()
         request.user = Mock()
         request.user.is_authenticated = False
@@ -134,7 +135,7 @@ class PermissionsTestCase(TestCase):
         self.assertFalse(permission.has_permission(request, None))
 
     def test_is_admin_or_read_only_admin_write(self):
-        """Test IsAdminOrReadOnly permission for admin write access"""
+        """Test IsAdminOrReadOnly permission for admin write access."""
         permission = IsAdminOrReadOnly()
         request = Mock()
         request.user = self.admin_user
@@ -146,7 +147,7 @@ class PermissionsTestCase(TestCase):
         self.assertTrue(permission.has_permission(request, None))
 
     def test_is_admin_or_read_only_regular_user_read(self):
-        """Test IsAdminOrReadOnly permission for regular user read access"""
+        """Test IsAdminOrReadOnly permission for regular user read access."""
         permission = IsAdminOrReadOnly()
         request = Mock()
         request.user = self.user
@@ -155,7 +156,7 @@ class PermissionsTestCase(TestCase):
         self.assertTrue(permission.has_permission(request, None))
 
     def test_is_admin_or_read_only_regular_user_write(self):
-        """Test IsAdminOrReadOnly permission for regular user write access"""
+        """Test IsAdminOrReadOnly permission for regular user write access."""
         permission = IsAdminOrReadOnly()
         request = Mock()
         request.user = self.user
@@ -167,7 +168,7 @@ class PermissionsTestCase(TestCase):
         self.assertFalse(permission.has_permission(request, None))
 
     def test_is_owner_or_admin_owner_access(self):
-        """Test IsOwnerOrAdmin permission for owner access"""
+        """Test IsOwnerOrAdmin permission for owner access."""
         permission = IsOwnerOrAdmin()
         request = Mock()
         request.user = self.user
@@ -178,7 +179,7 @@ class PermissionsTestCase(TestCase):
         self.assertTrue(permission.has_object_permission(request, None, obj))
 
     def test_is_owner_or_admin_admin_access(self):
-        """Test IsOwnerOrAdmin permission for admin access"""
+        """Test IsOwnerOrAdmin permission for admin access."""
         permission = IsOwnerOrAdmin()
         request = Mock()
         request.user = self.admin_user
@@ -193,17 +194,17 @@ class PermissionsTestCase(TestCase):
 
 
 class UtilsTestCase(TestCase):
-    """Test utility functions"""
+    """Test utility functions."""
 
     def test_generate_uuid(self):
-        """Test UUID generation"""
+        """Test UUID generation."""
         generated_uuid = generate_uuid()
         self.assertIsInstance(generated_uuid, str)
         # Validate it's a valid UUID
         uuid.UUID(generated_uuid)
 
     def test_generate_short_uuid(self):
-        """Test short UUID generation"""
+        """Test short UUID generation."""
         short_uuid = generate_short_uuid()
         self.assertEqual(len(short_uuid), 8)
 
@@ -211,7 +212,7 @@ class UtilsTestCase(TestCase):
         self.assertEqual(len(custom_length), 12)
 
     def test_generate_secure_token(self):
-        """Test secure token generation"""
+        """Test secure token generation."""
         token = generate_secure_token()
         self.assertIsInstance(token, str)
         self.assertGreater(len(token), 30)
@@ -220,7 +221,7 @@ class UtilsTestCase(TestCase):
         self.assertIsInstance(custom_token, str)
 
     def test_generate_hash(self):
-        """Test hash generation"""
+        """Test hash generation."""
         data = "test data"
         hash_result = generate_hash(data)
 
@@ -230,11 +231,11 @@ class UtilsTestCase(TestCase):
 
         # Test different algorithm
         md5_hash = generate_hash(data, "md5")
-        expected_md5 = hashlib.md5(data.encode()).hexdigest()
+        expected_md5 = hashlib.md5(data.encode(), usedforsecurity=False).hexdigest()
         self.assertEqual(md5_hash, expected_md5)
 
     def test_create_slug(self):
-        """Test slug creation"""
+        """Test slug creation."""
         slug = create_slug("Hello World Test")
         self.assertEqual(slug, "hello-world-test")
 
@@ -244,7 +245,7 @@ class UtilsTestCase(TestCase):
         self.assertLessEqual(len(short_slug), 20)
 
     def test_safe_get_dict_value(self):
-        """Test safe dictionary value retrieval"""
+        """Test safe dictionary value retrieval."""
         test_dict = {"key1": "value1", "key2": None}
 
         self.assertEqual(safe_get_dict_value(test_dict, "key1"), "value1")
@@ -257,7 +258,7 @@ class UtilsTestCase(TestCase):
         self.assertEqual(safe_get_dict_value(None, "key", "default"), "default")
 
     def test_truncate_string(self):
-        """Test string truncation"""
+        """Test string truncation."""
         text = "This is a long text that needs to be truncated"
 
         truncated = truncate_string(text, 20)
@@ -269,40 +270,44 @@ class UtilsTestCase(TestCase):
         self.assertEqual(truncate_string(short_text, 20), "Short")
 
     def test_format_file_size(self):
-        """Test file size formatting"""
+        """Test file size formatting."""
         self.assertEqual(format_file_size(0), "0 B")
         self.assertEqual(format_file_size(1024), "1.0 KB")
         self.assertEqual(format_file_size(1048576), "1.0 MB")
         self.assertEqual(format_file_size(1073741824), "1.0 GB")
 
     def test_get_client_ip(self):
-        """Test client IP extraction"""
+        """Test client IP extraction."""
         request = Mock()
-        request.META = {"HTTP_X_FORWARDED_FOR": "192.168.1.1,10.0.0.1"}
+        request.META = {"REMOTE_ADDR": "192.168.1.2"}
+        request.headers = {"x-forwarded-for": "192.168.1.1,10.0.0.1"}
 
         ip = get_client_ip(request)
         self.assertEqual(ip, "192.168.1.1")
 
         # Test without X-Forwarded-For
+        request = Mock()
         request.META = {"REMOTE_ADDR": "192.168.1.2"}
+        request.headers = {}
         ip = get_client_ip(request)
         self.assertEqual(ip, "192.168.1.2")
 
     def test_get_user_agent(self):
-        """Test user agent extraction"""
+        """Test user agent extraction."""
         request = Mock()
-        request.META = {"HTTP_USER_AGENT": "Mozilla/5.0 Test Browser"}
+        request.headers = {"user-agent": "Mozilla/5.0 Test Browser"}
 
         user_agent = get_user_agent(request)
         self.assertEqual(user_agent, "Mozilla/5.0 Test Browser")
 
         # Test without user agent
-        request.META = {}
+        request = Mock()
+        request.headers = {}
         user_agent = get_user_agent(request)
         self.assertEqual(user_agent, "")
 
     def test_time_since_creation(self):
-        """Test time since creation formatting"""
+        """Test time since creation formatting."""
         now = timezone.now()
 
         # Test days
@@ -325,7 +330,7 @@ class UtilsTestCase(TestCase):
 
     @patch("apps.core.utils.send_mail")
     def test_send_notification_email_success(self, mock_send_mail):
-        """Test successful email sending"""
+        """Test successful email sending."""
         mock_send_mail.return_value = True
 
         result = send_notification_email(
@@ -337,7 +342,7 @@ class UtilsTestCase(TestCase):
 
     @patch("apps.core.utils.send_mail")
     def test_send_notification_email_failure(self, mock_send_mail):
-        """Test email sending failure"""
+        """Test email sending failure."""
         mock_send_mail.side_effect = Exception("Email failed")
 
         result = send_notification_email(
@@ -347,14 +352,14 @@ class UtilsTestCase(TestCase):
         self.assertFalse(result)
 
     def test_mask_email(self):
-        """Test email masking"""
+        """Test email masking."""
         self.assertEqual(mask_email("test@example.com"), "t**t@example.com")
         self.assertEqual(mask_email("ab@example.com"), "a*@example.com")
         self.assertEqual(mask_email("a@example.com"), "a@example.com")
         self.assertEqual(mask_email("invalid-email"), "invalid-email")
 
     def test_validate_json_structure(self):
-        """Test JSON structure validation"""
+        """Test JSON structure validation."""
         data = {"field1": "value1", "field2": "value2"}
         required_fields = ["field1", "field2", "field3"]
 

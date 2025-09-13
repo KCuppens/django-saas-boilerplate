@@ -1,3 +1,5 @@
+"""Health check and monitoring views for operations."""
+
 import logging
 
 from django.conf import settings
@@ -8,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 def health_check(request):
-    """Simple health check endpoint"""
+    """Return health check status."""
     return JsonResponse(
         {
             "status": "ok",
@@ -19,7 +21,7 @@ def health_check(request):
 
 
 def readiness_check(request):
-    """Readiness check for container orchestration"""
+    """Readiness check for container orchestration."""
     try:
         # Check database
         from django.db import connection
@@ -64,7 +66,7 @@ def readiness_check(request):
 
 
 def liveness_check(request):
-    """Liveness check for container orchestration"""
+    """Liveness check for container orchestration."""
     return JsonResponse(
         {
             "status": "alive",
@@ -74,7 +76,7 @@ def liveness_check(request):
 
 
 def version_info(request):
-    """Version and build information"""
+    """Version and build information."""
     version_data = {
         "version": "1.0.0",
         "build_time": timezone.now().isoformat(),
@@ -108,6 +110,6 @@ def version_info(request):
             }
         )
     except Exception as e:
-        logger.warning(f"Failed to get git info: {e}")
+        logger.warning("Failed to get git info: %s", e)
 
     return JsonResponse(version_data)

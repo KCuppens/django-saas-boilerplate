@@ -1,3 +1,5 @@
+"""Django admin configuration for email management."""
+
 from django.contrib import admin
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
@@ -7,7 +9,7 @@ from .models import EmailMessageLog, EmailTemplate
 
 @admin.register(EmailTemplate)
 class EmailTemplateAdmin(admin.ModelAdmin):
-    """Admin interface for EmailTemplate"""
+    """Admin interface for EmailTemplate."""
 
     list_display = [
         "key",
@@ -60,7 +62,7 @@ class EmailTemplateAdmin(admin.ModelAdmin):
     readonly_fields = ["created_by", "updated_by", "created_at", "updated_at"]
 
     def save_model(self, request, obj, form, change):
-        """Set user tracking fields"""
+        """Set user tracking fields."""
         if not change:  # Creating new object
             obj.created_by = request.user
         obj.updated_by = request.user
@@ -69,7 +71,7 @@ class EmailTemplateAdmin(admin.ModelAdmin):
 
 @admin.register(EmailMessageLog)
 class EmailMessageLogAdmin(admin.ModelAdmin):
-    """Admin interface for EmailMessageLog"""
+    """Admin interface for EmailMessageLog."""
 
     list_display = [
         "to_email",
@@ -139,16 +141,19 @@ class EmailMessageLogAdmin(admin.ModelAdmin):
         ),
     )
 
+    @admin.display(description="Subject")
     def subject_truncated(self, obj):
-        """Show truncated subject"""
+        """Show truncated subject."""
         if len(obj.subject) > 50:
             return f"{obj.subject[:47]}..."
         return obj.subject
 
-    subject_truncated.short_description = "Subject"
-
+    @admin.display(
+        description="Status",
+        ordering="status",
+    )
     def status_colored(self, obj):
-        """Show colored status"""
+        """Show colored status."""
         colors = {
             "pending": "#ffc107",  # Yellow
             "sent": "#28a745",  # Green
@@ -165,17 +170,14 @@ class EmailMessageLogAdmin(admin.ModelAdmin):
             obj.get_status_display(),
         )
 
-    status_colored.short_description = "Status"
-    status_colored.admin_order_field = "status"
-
     def has_add_permission(self, request):
-        """Disable adding email logs through admin"""
+        """Disable adding email logs through admin."""
         return False
 
     def has_change_permission(self, request, obj=None):
-        """Disable editing email logs through admin"""
+        """Disable editing email logs through admin."""
         return False
 
     def has_delete_permission(self, request, obj=None):
-        """Allow deletion for cleanup"""
+        """Allow deletion for cleanup."""
         return request.user.is_superuser

@@ -1,3 +1,5 @@
+"""Email template and logging models for the Django SaaS application."""
+
 import json
 
 from django.contrib.auth import get_user_model
@@ -12,7 +14,7 @@ User = get_user_model()
 
 
 class EmailTemplate(TimestampMixin, UserTrackingMixin):
-    """Email template model with database storage and caching"""
+    """Email template model with database storage and caching."""
 
     key = models.SlugField(
         "Template key",
@@ -46,21 +48,24 @@ class EmailTemplate(TimestampMixin, UserTrackingMixin):
     )
 
     class Meta:
+        """Meta configuration for EmailTemplate."""
+
         verbose_name = "Email Template"
         verbose_name_plural = "Email Templates"
         ordering = ["category", "name"]
         unique_together = [["key", "language"]]
 
     def __str__(self):
+        """Return string representation of the email template."""
         return f"{self.name} ({self.key})"
 
     @property
     def cache_key(self):
-        """Get cache key for this template"""
+        """Get cache key for this template."""
         return f"email_template:{self.key}:{self.language}"
 
     def save(self, *args, **kwargs):
-        """Save template and invalidate cache"""
+        """Save template and invalidate cache."""
         super().save(*args, **kwargs)
         # Clear cache for this template
         cache.delete(self.cache_key)
@@ -68,25 +73,25 @@ class EmailTemplate(TimestampMixin, UserTrackingMixin):
         cache.delete(f"email_templates:{self.key}")
 
     def render_subject(self, context_data=None):
-        """Render email subject with context data"""
+        """Render email subject with context data."""
         template = Template(self.subject)
         context = Context(context_data or {})
         return template.render(context)
 
     def render_html(self, context_data=None):
-        """Render HTML content with context data"""
+        """Render HTML content with context data."""
         template = Template(self.html_content)
         context = Context(context_data or {})
         return template.render(context)
 
     def render_text(self, context_data=None):
-        """Render text content with context data"""
+        """Render text content with context data."""
         template = Template(self.text_content)
         context = Context(context_data or {})
         return template.render(context)
 
     def render_all(self, context_data=None):
-        """Render all parts of the email"""
+        """Render all parts of the email."""
         return {
             "subject": self.render_subject(context_data),
             "html_content": self.render_html(context_data),
@@ -95,7 +100,7 @@ class EmailTemplate(TimestampMixin, UserTrackingMixin):
 
     @classmethod
     def get_template(cls, key, language="en"):
-        """Get template by key with caching"""
+        """Get template by key with caching."""
         cache_key = f"email_template:{key}:{language}"
         template = cache.get(cache_key)
 
@@ -113,7 +118,7 @@ class EmailTemplate(TimestampMixin, UserTrackingMixin):
 
 
 class EmailMessageLog(TimestampMixin):
-    """Log of sent email messages"""
+    """Log of sent email messages."""
 
     # Email details
     template = models.ForeignKey(
@@ -174,6 +179,8 @@ class EmailMessageLog(TimestampMixin):
     )
 
     class Meta:
+        """Meta configuration for EmailMessageLog."""
+
         verbose_name = "Email Message Log"
         verbose_name_plural = "Email Message Logs"
         ordering = ["-created_at"]
@@ -184,11 +191,12 @@ class EmailMessageLog(TimestampMixin):
         ]
 
     def __str__(self):
+        """Return string representation of the email message log."""
         return f"Email to {self.to_email} - {self.subject[:50]}"
 
     @property
     def cc_list(self):
-        """Get CC recipients as list"""
+        """Get CC recipients as list."""
         if not self.cc:
             return []
         try:
@@ -198,7 +206,7 @@ class EmailMessageLog(TimestampMixin):
 
     @cc_list.setter
     def cc_list(self, value):
-        """Set CC recipients from list"""
+        """Set CC recipients from list."""
         if isinstance(value, list):
             self.cc = json.dumps(value)
         else:
@@ -206,7 +214,7 @@ class EmailMessageLog(TimestampMixin):
 
     @property
     def bcc_list(self):
-        """Get BCC recipients as list"""
+        """Get BCC recipients as list."""
         if not self.bcc:
             return []
         try:
@@ -216,14 +224,14 @@ class EmailMessageLog(TimestampMixin):
 
     @bcc_list.setter
     def bcc_list(self, value):
-        """Set BCC recipients from list"""
+        """Set BCC recipients from list."""
         if isinstance(value, list):
             self.bcc = json.dumps(value)
         else:
             self.bcc = ""
 
     def mark_as_sent(self):
-        """Mark email as sent"""
+        """Mark email as sent."""
         from django.utils import timezone
 
         self.status = EmailStatus.SENT
@@ -231,13 +239,13 @@ class EmailMessageLog(TimestampMixin):
         self.save(update_fields=["status", "sent_at"])
 
     def mark_as_failed(self, error_message=""):
-        """Mark email as failed"""
+        """Mark email as failed."""
         self.status = EmailStatus.FAILED
         self.error_message = error_message
         self.save(update_fields=["status", "error_message"])
 
     def mark_as_delivered(self):
-        """Mark email as delivered"""
+        """Mark email as delivered."""
         from django.utils import timezone
 
         self.status = EmailStatus.DELIVERED
@@ -245,7 +253,7 @@ class EmailMessageLog(TimestampMixin):
         self.save(update_fields=["status", "delivered_at"])
 
     def mark_as_opened(self):
-        """Mark email as opened"""
+        """Mark email as opened."""
         from django.utils import timezone
 
         self.status = EmailStatus.OPENED
@@ -253,7 +261,7 @@ class EmailMessageLog(TimestampMixin):
         self.save(update_fields=["status", "opened_at"])
 
     def mark_as_clicked(self):
-        """Mark email as clicked"""
+        """Mark email as clicked."""
         from django.utils import timezone
 
         self.status = EmailStatus.CLICKED

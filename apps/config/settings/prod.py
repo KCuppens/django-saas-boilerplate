@@ -1,9 +1,12 @@
+"""Production Django settings."""
+
 import sentry_sdk
 from sentry_sdk.integrations.celery import CeleryIntegration
 from sentry_sdk.integrations.django import DjangoIntegration
 from sentry_sdk.integrations.redis import RedisIntegration
 
-from .base import *
+# pylint: disable=wildcard-import,unused-wildcard-import
+from .base import *  # noqa: F401,F403
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
@@ -122,9 +125,7 @@ RATELIMIT_USE_CACHE = "default"
 OTEL_EXPORTER_OTLP_ENDPOINT = env("OTEL_EXPORTER_OTLP_ENDPOINT", default=None)
 if OTEL_EXPORTER_OTLP_ENDPOINT:
     from opentelemetry import trace
-    from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
-        OTLPSpanExporter,
-    )
+    from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
     from opentelemetry.instrumentation.django import DjangoInstrumentor
     from opentelemetry.instrumentation.psycopg2 import Psycopg2Instrumentor
     from opentelemetry.instrumentation.redis import RedisInstrumentor

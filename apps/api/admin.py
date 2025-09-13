@@ -1,3 +1,5 @@
+"""Admin configuration for API app."""
+
 from django.contrib import admin
 
 from .models import Note
@@ -5,7 +7,7 @@ from .models import Note
 
 @admin.register(Note)
 class NoteAdmin(admin.ModelAdmin):
-    """Admin interface for Note model"""
+    """Admin interface for Note model."""
 
     list_display = [
         "title",
@@ -41,7 +43,7 @@ class NoteAdmin(admin.ModelAdmin):
     )
 
     def save_model(self, request, obj, form, change):
-        """Set user tracking fields"""
+        """Set user tracking fields."""
         if not change:  # Creating new object
             obj.created_by = request.user
         obj.updated_by = request.user

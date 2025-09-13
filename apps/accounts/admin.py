@@ -1,3 +1,5 @@
+"""Admin configuration for accounts app."""
+
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.translation import gettext_lazy as _
@@ -7,7 +9,7 @@ from .models import User, UserProfile
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
-    """Admin configuration for User model"""
+    """Admin configuration for User model."""
 
     fieldsets = (
         (None, {"fields": ("email", "password")}),
@@ -73,7 +75,7 @@ class UserAdmin(BaseUserAdmin):
 
 
 class UserProfileInline(admin.StackedInline):
-    """Inline admin for UserProfile"""
+    """Inline admin for UserProfile."""
 
     model = UserProfile
     can_delete = False
@@ -82,7 +84,7 @@ class UserProfileInline(admin.StackedInline):
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    """Admin configuration for UserProfile model"""
+    """Admin configuration for UserProfile model."""
 
     list_display = (
         "user",

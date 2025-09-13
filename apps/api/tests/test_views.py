@@ -1,3 +1,7 @@
+"""Tests for API views and endpoints."""
+
+from unittest.mock import patch
+
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 
@@ -10,9 +14,10 @@ User = get_user_model()
 
 
 class TestAPIKeyViewSet(APITestCase):
-    """Test APIKey ViewSet functionality"""
+    """Test APIKey ViewSet functionality."""
 
     def setUp(self):
+        """Set up test data for APIKey ViewSet tests."""
         self.user = User.objects.create_user(
             email="test@example.com", password="testpass123"
         )
@@ -22,19 +27,19 @@ class TestAPIKeyViewSet(APITestCase):
 
         self.api_key = APIKey.objects.create(
             name="Test API Key",
-            permissions="read",
+            permissions=["read"],
             user=self.user,
         )
 
         # Create an API key for the other user
         self.other_api_key = APIKey.objects.create(
             name="Other User's API Key",
-            permissions="write",
+            permissions=["read", "write"],
             user=self.other_user,
         )
 
     def test_list_api_keys(self):
-        """Test listing API keys for authenticated user"""
+        """Test listing API keys for authenticated user."""
         self.client.force_authenticate(user=self.user)
         url = reverse("apikey-list")
 
@@ -46,13 +51,13 @@ class TestAPIKeyViewSet(APITestCase):
         self.assertEqual(response.data["results"][0]["id"], self.api_key.id)
 
     def test_create_api_key(self):
-        """Test creating a new API key"""
+        """Test creating a new API key."""
         self.client.force_authenticate(user=self.user)
         url = reverse("apikey-list")
 
         data = {
             "name": "New API Key",
-            "permissions": "write",
+            "permissions": ["read", "write"],
             "is_active": True,
         }
 
@@ -60,7 +65,7 @@ class TestAPIKeyViewSet(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data["name"], "New API Key")
-        self.assertEqual(response.data["permissions"], "write")
+        self.assertEqual(response.data["permissions"], ["read", "write"])
         self.assertTrue(response.data["is_active"])
         self.assertIsNotNone(response.data["key"])
 
@@ -70,7 +75,7 @@ class TestAPIKeyViewSet(APITestCase):
         )
 
     def test_delete_api_key(self):
-        """Test deleting an API key"""
+        """Test deleting an API key."""
         self.client.force_authenticate(user=self.user)
         url = reverse("apikey-detail", kwargs={"pk": self.api_key.pk})
 
@@ -82,7 +87,7 @@ class TestAPIKeyViewSet(APITestCase):
         self.assertFalse(APIKey.objects.filter(id=self.api_key.id).exists())
 
     def test_retrieve_api_key(self):
-        """Test retrieving a specific API key"""
+        """Test retrieving a specific API key."""
         self.client.force_authenticate(user=self.user)
         url = reverse("apikey-detail", kwargs={"pk": self.api_key.pk})
 
@@ -93,13 +98,13 @@ class TestAPIKeyViewSet(APITestCase):
         self.assertEqual(response.data["name"], "Test API Key")
 
     def test_update_api_key(self):
-        """Test updating an API key"""
+        """Test updating an API key."""
         self.client.force_authenticate(user=self.user)
         url = reverse("apikey-detail", kwargs={"pk": self.api_key.pk})
 
         data = {
             "name": "Updated API Key",
-            "permissions": "admin",
+            "permissions": ["read", "write", "admin"],
             "is_active": False,
         }
 
@@ -107,11 +112,11 @@ class TestAPIKeyViewSet(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["name"], "Updated API Key")
-        self.assertEqual(response.data["permissions"], "admin")
+        self.assertEqual(response.data["permissions"], ["read", "write", "admin"])
         self.assertFalse(response.data["is_active"])
 
     def test_partial_update_api_key(self):
-        """Test partially updating an API key"""
+        """Test partially updating an API key."""
         self.client.force_authenticate(user=self.user)
         url = reverse("apikey-detail", kwargs={"pk": self.api_key.pk})
 
@@ -122,10 +127,10 @@ class TestAPIKeyViewSet(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["name"], "Partially Updated API Key")
         # Other fields should remain unchanged
-        self.assertEqual(response.data["permissions"], "read")
+        self.assertEqual(response.data["permissions"], ["read"])
 
     def test_cannot_access_other_users_api_keys(self):
-        """Test that users cannot access other users' API keys"""
+        """Test that users cannot access other users' API keys."""
         self.client.force_authenticate(user=self.user)
 
         # Try to retrieve other user's API key
@@ -138,7 +143,7 @@ class TestAPIKeyViewSet(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_unauthenticated_access_denied(self):
-        """Test that unauthenticated users cannot access API keys"""
+        """Test that unauthenticated users cannot access API keys."""
         url = reverse("apikey-list")
 
         # List API keys without authentication
@@ -157,7 +162,7 @@ class TestAPIKeyViewSet(APITestCase):
         )
 
     def test_list_only_active_keys(self):
-        """Test listing includes inactive keys (user should see all their keys)"""
+        """Test listing includes inactive keys (user should see all their keys)."""
         # Create an inactive API key
         inactive_key = APIKey.objects.create(
             name="Inactive API Key",
@@ -181,11 +186,14 @@ class TestAPIKeyViewSet(APITestCase):
 
 
 class TestHealthCheckView(APITestCase):
-    """Test Health Check View functionality"""
+    """Test Health Check View functionality."""
 
-    def test_health_check(self):
-        """Test basic health check endpoint"""
-        url = reverse("health-list")
+    @patch("apps.api.views.HealthCheckViewSet._check_cache")
+    def test_health_check(self, mock_cache):
+        """Test basic health check endpoint."""
+        mock_cache.return_value = True
+
+        url = reverse("healthcheck-list")
         response = self.client.get(url)
 
         # Health check can return 200 (healthy) or 503 (unhealthy)
@@ -196,9 +204,12 @@ class TestHealthCheckView(APITestCase):
         self.assertIn("status", response.data)
         self.assertIn(response.data["status"], ["healthy", "unhealthy"])
 
-    def test_health_check_response_format(self):
-        """Test health check response format"""
-        url = reverse("health-list")
+    @patch("apps.api.views.HealthCheckViewSet._check_cache")
+    def test_health_check_response_format(self, mock_cache):
+        """Test health check response format."""
+        mock_cache.return_value = True
+
+        url = reverse("healthcheck-list")
         response = self.client.get(url)
 
         # Health check can return 200 (healthy) or 503 (unhealthy)
@@ -217,10 +228,10 @@ class TestHealthCheckView(APITestCase):
 
 
 class TestSystemMetricsView(APITestCase):
-    """Test System Metrics View functionality"""
+    """Test System Metrics View functionality."""
 
     def setUp(self):
-        """Set up test user"""
+        """Set up test user."""
         self.user = User.objects.create_user(
             email="test@example.com", password="testpass123"
         )
@@ -228,10 +239,13 @@ class TestSystemMetricsView(APITestCase):
             email="staff@example.com", password="testpass123", is_staff=True
         )
 
-    def test_system_metrics(self):
-        """Test system metrics endpoint for non-staff user"""
+    @patch("apps.api.views.HealthCheckViewSet._check_cache")
+    def test_system_metrics(self, mock_cache):
+        """Test system metrics endpoint for non-staff user."""
+        mock_cache.return_value = True
+
         self.client.force_authenticate(user=self.user)
-        url = reverse("health-list")
+        url = reverse("healthcheck-list")
 
         response = self.client.get(url)
 
@@ -245,10 +259,13 @@ class TestSystemMetricsView(APITestCase):
         self.assertNotIn("memory_usage", response.data)
         self.assertNotIn("cpu_usage", response.data)
 
-    def test_system_metrics_authenticated(self):
-        """Test system metrics endpoint for staff user"""
+    @patch("apps.api.views.HealthCheckViewSet._check_cache")
+    def test_system_metrics_authenticated(self, mock_cache):
+        """Test system metrics endpoint for staff user."""
+        mock_cache.return_value = True
+
         self.client.force_authenticate(user=self.staff_user)
-        url = reverse("health-list")
+        url = reverse("healthcheck-list")
 
         response = self.client.get(url)
 
@@ -260,10 +277,13 @@ class TestSystemMetricsView(APITestCase):
         # Staff users should see system metrics (if psutil is available)
         self.assertIn("status", response.data)
 
-    def test_system_metrics_format(self):
-        """Test system metrics response format for staff user"""
+    @patch("apps.api.views.HealthCheckViewSet._check_cache")
+    def test_system_metrics_format(self, mock_cache):
+        """Test system metrics response format for staff user."""
+        mock_cache.return_value = True
+
         self.client.force_authenticate(user=self.staff_user)
-        url = reverse("health-list")
+        url = reverse("healthcheck-list")
 
         response = self.client.get(url)
 

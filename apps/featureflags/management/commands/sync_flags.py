@@ -1,3 +1,5 @@
+"""Django management command for synchronizing feature flags configuration."""
+
 from django.core.management.base import BaseCommand
 
 from waffle.models import Flag, Switch
@@ -6,11 +8,12 @@ from apps.featureflags.helpers import FeatureFlags
 
 
 class Command(BaseCommand):
-    """Management command to sync feature flags"""
+    """Management command to sync feature flags."""
 
     help = "Sync feature flags with default configuration"
 
     def add_arguments(self, parser):
+        """Add command arguments."""
         parser.add_argument(
             "--dry-run",
             action="store_true",
@@ -23,6 +26,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        """Handle the sync_flags command."""
         dry_run = options["dry_run"]
         force = options["force"]
 

@@ -1,4 +1,4 @@
-"""Global pytest configuration and fixtures"""
+"""Global pytest configuration and fixtures."""
 
 import os
 import sys
@@ -25,7 +25,7 @@ User = get_user_model()
 
 @pytest.fixture
 def user():
-    """Create a test user"""
+    """Create a test user."""
     return User.objects.create_user(
         email="test@example.com",
         password="testpass123",  # nosec B106
@@ -35,7 +35,7 @@ def user():
 
 @pytest.fixture
 def admin_user():
-    """Create an admin user"""
+    """Create an admin user."""
     user = User.objects.create_user(
         email="admin@example.com",
         password="adminpass123",  # nosec B106
@@ -53,7 +53,7 @@ def admin_user():
 
 @pytest.fixture
 def manager_user():
-    """Create a manager user"""
+    """Create a manager user."""
     user = User.objects.create_user(
         email="manager@example.com",
         password="managerpass123",  # nosec B106
@@ -69,7 +69,7 @@ def manager_user():
 
 @pytest.fixture
 def member_user():
-    """Create a member user"""
+    """Create a member user."""
     user = User.objects.create_user(
         email="member@example.com",
         password="memberpass123",  # nosec B106
@@ -85,13 +85,13 @@ def member_user():
 
 @pytest.fixture
 def api_client():
-    """Create an API client"""
+    """Create an API client."""
     return APIClient()
 
 
 @pytest.fixture
 def auth_client(user):
-    """Create an authenticated API client"""
+    """Create an authenticated API client."""
     client = APIClient()
     client.force_authenticate(user=user)
     return client
@@ -99,7 +99,7 @@ def auth_client(user):
 
 @pytest.fixture
 def admin_client(admin_user):
-    """Create an admin API client"""
+    """Create an admin API client."""
     client = APIClient()
     client.force_authenticate(user=admin_user)
     return client
@@ -107,20 +107,20 @@ def admin_client(admin_user):
 
 @pytest.fixture(autouse=True)
 def celery_eager(settings):
-    """Configure Celery to execute tasks synchronously for tests"""
+    """Configure Celery to execute tasks synchronously for tests."""
     settings.CELERY_TASK_ALWAYS_EAGER = True
     settings.CELERY_TASK_EAGER_PROPAGATES = True
 
 
 @pytest.fixture
 def mailpit(settings):
-    """Configure mailpit for email testing"""
+    """Configure mailpit for email testing."""
     settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 
 
 @pytest.fixture
 def groups():
-    """Create default user groups"""
+    """Create default user groups."""
     admin_group, _ = Group.objects.get_or_create(name="Admin")
     manager_group, _ = Group.objects.get_or_create(name="Manager")
     member_group, _ = Group.objects.get_or_create(name="Member")
@@ -136,7 +136,7 @@ def groups():
 
 @pytest.fixture
 def sample_file():
-    """Create a sample file for testing"""
+    """Create a sample file for testing."""
     from django.core.files.uploadedfile import SimpleUploadedFile
 
     return SimpleUploadedFile(
@@ -146,7 +146,7 @@ def sample_file():
 
 @pytest.fixture
 def sample_image():
-    """Create a sample image for testing"""
+    """Create a sample image for testing."""
     import io
 
     from django.core.files.uploadedfile import SimpleUploadedFile

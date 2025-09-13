@@ -1,9 +1,11 @@
+"""Management command to synchronize user groups and permissions."""
+
 from django.contrib.auth.models import Group, Permission
 from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
-    """Management command to sync user groups and their permissions"""
+    """Management command to sync user groups and their permissions."""
 
     help = "Sync user groups and their permissions"
 
@@ -91,6 +93,7 @@ class Command(BaseCommand):
     }
 
     def add_arguments(self, parser):
+        """Add command line arguments for the sync_groups command."""
         parser.add_argument(
             "--dry-run",
             action="store_true",
@@ -103,6 +106,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        """Execute the sync_groups command to create and update user groups."""
         dry_run = options["dry_run"]
         force = options["force"]
 

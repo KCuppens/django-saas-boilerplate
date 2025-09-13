@@ -1,3 +1,5 @@
+"""Custom validation functions and classes for form and model fields."""
+
 import re
 
 from django.core.exceptions import ValidationError
@@ -5,7 +7,7 @@ from django.utils.translation import gettext_lazy as _
 
 
 def validate_phone_number(value):
-    """Validate phone number format"""
+    """Validate phone number format."""
     phone_regex = re.compile(r"^\+?1?\d{9,15}$")
     if not phone_regex.match(value):
         raise ValidationError(
@@ -14,7 +16,7 @@ def validate_phone_number(value):
 
 
 def validate_no_special_chars(value):
-    """Validate that value contains no special characters"""
+    """Validate that value contains no special characters."""
     if not re.match(r"^[a-zA-Z0-9\s]*$", value):
         raise ValidationError(
             _("This field can only contain letters, numbers, and spaces.")
@@ -22,13 +24,13 @@ def validate_no_special_chars(value):
 
 
 def validate_alphanumeric(value):
-    """Validate that value contains only alphanumeric characters"""
+    """Validate that value contains only alphanumeric characters."""
     if not re.match(r"^[a-zA-Z0-9]*$", value):
         raise ValidationError(_("This field can only contain letters and numbers."))
 
 
 def validate_slug_format(value):
-    """Validate slug format (lowercase letters, numbers, hyphens)"""
+    """Validate slug format (lowercase letters, numbers, hyphens)."""
     if not re.match(r"^[a-z0-9-]*$", value):
         raise ValidationError(
             _("This field can only contain lowercase letters, numbers, and hyphens.")
@@ -36,7 +38,7 @@ def validate_slug_format(value):
 
 
 def validate_file_size(value, max_size_mb=5):
-    """Validate file size (in MB)"""
+    """Validate file size (in MB)."""
     max_size_bytes = max_size_mb * 1024 * 1024
     if value.size > max_size_bytes:
         raise ValidationError(
@@ -45,7 +47,7 @@ def validate_file_size(value, max_size_mb=5):
 
 
 def validate_image_dimensions(value, max_width=1920, max_height=1080):
-    """Validate image dimensions"""
+    """Validate image dimensions."""
     from PIL import Image
 
     try:
@@ -63,16 +65,18 @@ def validate_image_dimensions(value, max_width=1920, max_height=1080):
 
 
 class FileValidator:
-    """Flexible file validator class"""
+    """Flexible file validator class."""
 
     def __init__(
         self, max_size_mb=None, allowed_extensions=None, allowed_content_types=None
     ):
+        """Initialize the file validator with size and type constraints."""
         self.max_size_mb = max_size_mb
         self.allowed_extensions = allowed_extensions or []
         self.allowed_content_types = allowed_content_types or []
 
     def __call__(self, value):
+        """Validate the uploaded file."""
         # Check file size
         if self.max_size_mb:
             validate_file_size(value, self.max_size_mb)
@@ -90,10 +94,12 @@ class FileValidator:
                 )
 
         # Check content type
-        if self.allowed_content_types:
-            if value.content_type not in self.allowed_content_types:
-                raise ValidationError(
-                    _("File type not allowed. Allowed types: {types}").format(
-                        types=", ".join(self.allowed_content_types)
-                    )
+        if (
+            self.allowed_content_types
+            and value.content_type not in self.allowed_content_types
+        ):
+            raise ValidationError(
+                _("File type not allowed. Allowed types: {types}").format(
+                    types=", ".join(self.allowed_content_types)
                 )
+            )

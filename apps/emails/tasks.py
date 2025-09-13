@@ -1,4 +1,7 @@
+"""Celery tasks for email processing."""
+
 import logging
+from typing import Any, Optional
 
 from celery import shared_task
 
@@ -10,7 +13,7 @@ logger = logging.getLogger(__name__)
 @shared_task(name="apps.emails.tasks.send_email_task", bind=True)
 def send_email_task(self, email_log_id: int):
     """
-    Celery task to send email asynchronously
+    Send email asynchronously via Celery.
 
     Args:
         email_log_id: ID of EmailMessageLog to send
@@ -28,7 +31,7 @@ def send_email_task(self, email_log_id: int):
         success = EmailService._send_email_now(email_log)
 
         if success:
-            logger.info(f"Email task completed successfully for {email_log.to_email}")
+            logger.info("Email task completed successfully for %s", email_log.to_email)
             return {
                 "success": True,
                 "email_log_id": email_log_id,
@@ -36,7 +39,7 @@ def send_email_task(self, email_log_id: int):
                 "subject": email_log.subject,
             }
         else:
-            logger.error(f"Email task failed for {email_log.to_email}")
+            logger.error("Email task failed for %s", email_log.to_email)
             return {
                 "success": False,
                 "email_log_id": email_log_id,
@@ -71,7 +74,7 @@ def send_email_task(self, email_log_id: int):
 @shared_task(name="apps.emails.tasks.cleanup_old_email_logs")
 def cleanup_old_email_logs(days_to_keep: int = 30):
     """
-    Celery task to clean up old email logs
+    Clean up old email logs via Celery.
 
     Args:
         days_to_keep: Number of days to keep email logs (default: 30)
@@ -91,7 +94,7 @@ def cleanup_old_email_logs(days_to_keep: int = 30):
             created_at__lt=cutoff_date
         ).delete()
 
-        logger.info(f"Cleaned up {deleted_count} old email logs")
+        logger.info("Cleaned up %d old email logs", deleted_count)
 
         return {
             "success": True,
@@ -108,10 +111,10 @@ def cleanup_old_email_logs(days_to_keep: int = 30):
 
 @shared_task(name="apps.emails.tasks.send_bulk_email_task")
 def send_bulk_email_task(
-    template_key: str, recipient_emails: list, context: dict = None
+    template_key: str, recipient_emails: list, context: Optional[dict[str, Any]] = None
 ):
     """
-    Celery task to send bulk emails
+    Send bulk emails via Celery.
 
     Args:
         template_key: Email template key
@@ -122,8 +125,8 @@ def send_bulk_email_task(
         dict: Task result with bulk send details
     """
     try:
-        from .services import EmailService
         from .models import EmailTemplate
+        from .services import EmailService
 
         # Validate template exists before processing any emails
         try:
@@ -149,7 +152,7 @@ def send_bulk_email_task(
             except Exception as e:
                 failed_count += 1
                 failed_emails.append({"email": email, "error": str(e)})
-                logger.error(f"Failed to send bulk email to {email}: {str(e)}")
+                logger.error("Failed to send bulk email to %s: %s", email, str(e))
 
         logger.info(
             f"Bulk email task completed: {sent_count} sent, {failed_count} failed"
@@ -178,7 +181,7 @@ def send_bulk_email_task(
 @shared_task(name="apps.emails.tasks.retry_failed_emails")
 def retry_failed_emails(max_retries: int = 3):
     """
-    Celery task to retry failed emails
+    Retry failed emails via Celery.
 
     Args:
         max_retries: Maximum number of retry attempts
@@ -212,18 +215,16 @@ def retry_failed_emails(max_retries: int = 3):
                 email_log.save(update_fields=["status", "error_message"])
 
                 # Retry sending
-                task = send_email_task.delay(email_log.id)  # type: ignore
+                task = send_email_task.delay(email_log.pk)  # Use pk instead of id
                 email_log.celery_task_id = task.id
                 email_log.save(update_fields=["celery_task_id"])
 
                 retried_count += 1
 
             except Exception as e:
-                logger.error(
-                    f"Failed to retry email {email_log.id}: {str(e)}"  # type: ignore
-                )
+                logger.error("Failed to retry email %s: %s", email_log.pk, str(e))
 
-        logger.info(f"Retried {retried_count} failed emails")
+        logger.info("Retried %d failed emails", retried_count)
 
         return {
             "success": True,

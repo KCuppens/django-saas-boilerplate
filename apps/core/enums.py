@@ -1,8 +1,10 @@
+"""Core enumeration classes for the Django SaaS application."""
+
 from django.db import models
 
 
 class UserRole(models.TextChoices):
-    """User role choices"""
+    """User role choices."""
 
     ADMIN = "admin", "Admin"
     MANAGER = "manager", "Manager"
@@ -11,7 +13,7 @@ class UserRole(models.TextChoices):
 
 
 class EmailStatus(models.TextChoices):
-    """Email status choices"""
+    """Email status choices."""
 
     PENDING = "pending", "Pending"
     SENT = "sent", "Sent"
@@ -23,7 +25,7 @@ class EmailStatus(models.TextChoices):
 
 
 class FileType(models.TextChoices):
-    """File type choices"""
+    """File type choices."""
 
     IMAGE = "image", "Image"
     DOCUMENT = "document", "Document"
@@ -34,7 +36,7 @@ class FileType(models.TextChoices):
 
 
 class NotificationType(models.TextChoices):
-    """Notification type choices"""
+    """Notification type choices."""
 
     INFO = "info", "Info"
     SUCCESS = "success", "Success"
@@ -43,7 +45,7 @@ class NotificationType(models.TextChoices):
 
 
 class Priority(models.TextChoices):
-    """Priority choices"""
+    """Priority choices."""
 
     LOW = "low", "Low"
     MEDIUM = "medium", "Medium"
@@ -52,7 +54,7 @@ class Priority(models.TextChoices):
 
 
 class Status(models.TextChoices):
-    """Generic status choices"""
+    """Generic status choices."""
 
     DRAFT = "draft", "Draft"
     ACTIVE = "active", "Active"
@@ -62,7 +64,7 @@ class Status(models.TextChoices):
 
 
 class TaskStatus(models.TextChoices):
-    """Task status choices"""
+    """Task status choices."""
 
     PENDING = "pending", "Pending"
     IN_PROGRESS = "in_progress", "In Progress"

@@ -1,3 +1,5 @@
+"""Django admin configuration for file management."""
+
 from django.contrib import admin
 
 from .models import FileUpload
@@ -5,7 +7,7 @@ from .models import FileUpload
 
 @admin.register(FileUpload)
 class FileUploadAdmin(admin.ModelAdmin):
-    """Admin interface for FileUpload"""
+    """Admin interface for FileUpload."""
 
     list_display = [
         "original_filename",
@@ -87,8 +89,7 @@ class FileUploadAdmin(admin.ModelAdmin):
         ),
     )
 
+    @admin.display(description="File Size")
     def file_size_human(self, obj):
-        """Display human-readable file size"""
+        """Display human-readable file size."""
         return obj.file_size_human
-
-    file_size_human.short_description = "File Size"

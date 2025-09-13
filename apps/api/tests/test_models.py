@@ -1,3 +1,5 @@
+"""Tests for API models."""
+
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 
@@ -11,15 +13,16 @@ User = get_user_model()
 
 
 class NoteModelTest(APITestCase):
-    """Test Note model functionality"""
+    """Test Note model functionality."""
 
     def setUp(self):
+        """Set up test data for Note model tests."""
         self.user = User.objects.create_user(
             email="test@example.com", password="testpass123"
         )
 
     def test_create_note(self):
-        """Test note creation"""
+        """Test note creation."""
         note = Note.objects.create(
             title="Test Note",
             content="This is a test note",
@@ -32,22 +35,22 @@ class NoteModelTest(APITestCase):
         self.assertFalse(note.is_public)
 
     def test_note_string_representation(self):
-        """Test note string representation"""
+        """Test note string representation."""
         note = Note(title="Test Note")
         self.assertEqual(str(note), "Test Note")
 
     def test_tag_list_property(self):
-        """Test tag_list property"""
+        """Test tag_list property."""
         note = Note(tags="tag1, tag2, tag3")
         self.assertEqual(note.tag_list, ["tag1", "tag2", "tag3"])
 
     def test_empty_tag_list_property(self):
-        """Test tag_list property with empty tags"""
+        """Test tag_list property with empty tags."""
         note = Note(tags="")
         self.assertEqual(note.tag_list, [])
 
     def test_note_serializer(self):
-        """Test NoteSerializer functionality"""
+        """Test NoteSerializer functionality."""
         note = Note.objects.create(
             title="Test Note",
             content="Test content",
@@ -61,9 +64,10 @@ class NoteModelTest(APITestCase):
 
 
 class NoteAPITest(APITestCase):
-    """Test Note API endpoints"""
+    """Test Note API endpoints."""
 
     def setUp(self):
+        """Set up test data for Note API tests."""
         self.user = User.objects.create_user(
             email="test@example.com", password="testpass123"
         )
@@ -75,7 +79,7 @@ class NoteAPITest(APITestCase):
         )
 
     def test_list_notes_authenticated(self):
-        """Test listing notes for authenticated user"""
+        """Test listing notes for authenticated user."""
         self.client.force_authenticate(user=self.user)
         url = reverse("note-list")
 
@@ -85,7 +89,7 @@ class NoteAPITest(APITestCase):
         self.assertEqual(len(response.data["results"]), 1)
 
     def test_create_note(self):
-        """Test creating a new note"""
+        """Test creating a new note."""
         self.client.force_authenticate(user=self.user)
         url = reverse("note-list")
         data = {
@@ -100,7 +104,7 @@ class NoteAPITest(APITestCase):
         self.assertTrue(Note.objects.filter(title="New Note").exists())
 
     def test_list_notes_unauthenticated(self):
-        """Test listing notes for unauthenticated user"""
+        """Test listing notes for unauthenticated user."""
         url = reverse("note-list")
 
         response = self.client.get(url)
@@ -113,11 +117,11 @@ class NoteAPITest(APITestCase):
 
 
 class HealthCheckAPITest(APITestCase):
-    """Test Health Check API endpoints"""
+    """Test Health Check API endpoints."""
 
     def test_health_check(self):
-        """Test health check endpoint"""
-        url = reverse("health-list")
+        """Test health check endpoint."""
+        url = reverse("healthcheck-list")
 
         response = self.client.get(url)
 
@@ -133,10 +137,10 @@ class HealthCheckAPITest(APITestCase):
         )
 
     def test_health_check_with_auth(self):
-        """Test health check endpoint with authentication"""
+        """Test health check endpoint with authentication."""
         user = User.objects.create_user(email="health@example.com", password="test123")
         self.client.force_authenticate(user=user)
-        url = reverse("health-list")
+        url = reverse("healthcheck-list")
 
         response = self.client.get(url)
 
@@ -148,15 +152,16 @@ class HealthCheckAPITest(APITestCase):
 
 
 class NoteModelExtendedTests(APITestCase):
-    """Extended tests for Note model"""
+    """Extended tests for Note model."""
 
     def setUp(self):
+        """Set up test data for extended Note model tests."""
         self.user = User.objects.create_user(
             email="note@example.com", password="notepass123"
         )
 
     def test_note_defaults(self):
-        """Test note default values"""
+        """Test note default values."""
         note = Note.objects.create(
             title="Default Test",
             content="Test content",
@@ -167,7 +172,7 @@ class NoteModelExtendedTests(APITestCase):
         self.assertEqual(note.tags, "")
 
     def test_note_tag_list_setter(self):
-        """Test note tag_list setter"""
+        """Test note tag_list setter."""
         note = Note.objects.create(
             title="Tag Test",
             content="Test content",
@@ -180,7 +185,7 @@ class NoteModelExtendedTests(APITestCase):
         self.assertEqual(note.tags, "python, django, testing")
 
     def test_note_tag_list_edge_cases(self):
-        """Test note tag_list with edge cases"""
+        """Test note tag_list with edge cases."""
         note = Note.objects.create(
             title="Edge Test",
             content="Test content",
@@ -193,13 +198,18 @@ class NoteModelExtendedTests(APITestCase):
         self.assertEqual(note.tag_list, expected_tags)
 
     def test_note_ordering(self):
-        """Test note default ordering"""
+        """Test note default ordering."""
+        from time import sleep
+
         note1 = Note.objects.create(
             title="First Note",
             content="First content",
             created_by=self.user,
             updated_by=self.user,
         )
+
+        # Ensure different timestamps
+        sleep(0.01)
 
         note2 = Note.objects.create(
             title="Second Note",
@@ -214,15 +224,16 @@ class NoteModelExtendedTests(APITestCase):
         self.assertEqual(notes[1], note1)
 
     def test_note_verbose_names(self):
-        """Test note model verbose names"""
+        """Test note model verbose names."""
         self.assertEqual(Note._meta.verbose_name, "Note")
         self.assertEqual(Note._meta.verbose_name_plural, "Notes")
 
 
 class NoteSerializerExtendedTests(APITestCase):
-    """Extended serializer tests"""
+    """Extended serializer tests."""
 
     def setUp(self):
+        """Set up test data for extended serializer tests."""
         self.user = User.objects.create_user(
             email="serializer@example.com", password="serpass123"
         )
@@ -235,7 +246,7 @@ class NoteSerializerExtendedTests(APITestCase):
         )
 
     def test_note_serializer_all_fields(self):
-        """Test NoteSerializer includes all expected fields"""
+        """Test NoteSerializer includes all expected fields."""
         serializer = NoteSerializer(instance=self.note)
         data = serializer.data
 
@@ -256,7 +267,7 @@ class NoteSerializerExtendedTests(APITestCase):
             self.assertIn(field, data)
 
     def test_note_serializer_read_only_fields(self):
-        """Test NoteSerializer read-only fields"""
+        """Test NoteSerializer read-only fields."""
         serializer = NoteSerializer()
 
         # These should be read-only
@@ -273,9 +284,10 @@ class NoteSerializerExtendedTests(APITestCase):
 
 
 class NoteAPIExtendedTests(APITestCase):
-    """Extended API tests for comprehensive coverage"""
+    """Extended API tests for comprehensive coverage."""
 
     def setUp(self):
+        """Set up test data for extended API tests."""
         self.user1 = User.objects.create_user(
             email="user1@example.com", password="pass123"
         )
@@ -300,7 +312,7 @@ class NoteAPIExtendedTests(APITestCase):
         )
 
     def test_note_list_filtering(self):
-        """Test note list filtering"""
+        """Test note list filtering."""
         self.client.force_authenticate(user=self.user2)
         url = reverse("note-list")
 
@@ -309,7 +321,7 @@ class NoteAPIExtendedTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_note_permissions(self):
-        """Test note permission restrictions"""
+        """Test note permission restrictions."""
         self.client.force_authenticate(user=self.user2)
 
         # User2 should not be able to edit user1's private note
@@ -322,7 +334,7 @@ class NoteAPIExtendedTests(APITestCase):
         )
 
     def test_note_create_sets_user(self):
-        """Test note creation sets created_by and updated_by"""
+        """Test note creation sets created_by and updated_by."""
         self.client.force_authenticate(user=self.user1)
         url = reverse("note-list")
 
@@ -335,7 +347,7 @@ class NoteAPIExtendedTests(APITestCase):
             self.assertEqual(note.updated_by, self.user1)
 
     def test_note_update_changes_updated_by(self):
-        """Test note update changes updated_by"""
+        """Test note update changes updated_by."""
         self.client.force_authenticate(user=self.user1)
         url = reverse("note-detail", args=[self.private_note.pk])
 
@@ -346,30 +358,31 @@ class NoteAPIExtendedTests(APITestCase):
 
 
 class TestAPIKey(APITestCase):
-    """Test APIKey model functionality"""
+    """Test APIKey model functionality."""
 
     def setUp(self):
+        """Set up test data for APIKey tests."""
         self.user = User.objects.create_user(
             email="test@example.com", password="testpass123"
         )
 
     def test_api_key_creation(self):
-        """Test API key creation"""
+        """Test API key creation."""
         api_key = APIKey.objects.create(
             name="Test API Key",
-            permissions="read",
+            permissions=["read"],
             user=self.user,
         )
 
         self.assertEqual(api_key.name, "Test API Key")
-        self.assertEqual(api_key.permissions, "read")
+        self.assertEqual(api_key.permissions, ["read"])
         self.assertTrue(api_key.is_active)
         self.assertEqual(api_key.user, self.user)
         self.assertIsNotNone(api_key.key)
         self.assertEqual(len(api_key.key), 64)  # token_urlsafe(48) generates 64 chars
 
     def test_api_key_str(self):
-        """Test API key string representation"""
+        """Test API key string representation."""
         api_key = APIKey.objects.create(
             name="Test API Key",
             user=self.user,
@@ -379,11 +392,11 @@ class TestAPIKey(APITestCase):
         self.assertEqual(str(api_key), expected_str)
 
     def test_api_key_permissions(self):
-        """Test API key permission checking"""
+        """Test API key permission checking."""
         # Test read permissions
         read_key = APIKey.objects.create(
             name="Read Key",
-            permissions="read",
+            permissions=["read"],
             user=self.user,
         )
         self.assertTrue(read_key.has_permission("read"))
@@ -393,7 +406,7 @@ class TestAPIKey(APITestCase):
         # Test write permissions
         write_key = APIKey.objects.create(
             name="Write Key",
-            permissions="write",
+            permissions=["read", "write"],
             user=self.user,
         )
         self.assertTrue(write_key.has_permission("read"))
@@ -403,7 +416,7 @@ class TestAPIKey(APITestCase):
         # Test admin permissions
         admin_key = APIKey.objects.create(
             name="Admin Key",
-            permissions="admin",
+            permissions=["read", "write", "admin"],
             user=self.user,
         )
         self.assertTrue(admin_key.has_permission("read"))
@@ -411,11 +424,11 @@ class TestAPIKey(APITestCase):
         self.assertTrue(admin_key.has_permission("admin"))
 
     def test_api_key_is_active(self):
-        """Test API key active status"""
+        """Test API key active status."""
         # Test active key
         active_key = APIKey.objects.create(
             name="Active Key",
-            permissions="read",
+            permissions=["read"],
             is_active=True,
             user=self.user,
         )
@@ -424,14 +437,14 @@ class TestAPIKey(APITestCase):
         # Test inactive key
         inactive_key = APIKey.objects.create(
             name="Inactive Key",
-            permissions="read",
+            permissions=["read"],
             is_active=False,
             user=self.user,
         )
         self.assertFalse(inactive_key.has_permission("read"))
 
     def test_api_key_generation(self):
-        """Test API key is generated automatically"""
+        """Test API key is generated automatically."""
         api_key = APIKey.objects.create(
             name="Auto Generated Key",
             user=self.user,

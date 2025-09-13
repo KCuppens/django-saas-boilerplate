@@ -1,3 +1,5 @@
+"""Core utility functions for the Django SaaS boilerplate."""
+
 import hashlib
 import secrets
 import uuid
@@ -10,29 +12,32 @@ from django.utils.text import slugify
 
 
 def generate_uuid():
-    """Generate a UUID4 string"""
+    """Generate a UUID4 string."""
     return str(uuid.uuid4())
 
 
 def generate_short_uuid(length=8):
-    """Generate a short UUID-like string"""
+    """Generate a short UUID-like string."""
     return str(uuid.uuid4()).replace("-", "")[:length]
 
 
 def generate_secure_token(length=32):
-    """Generate a cryptographically secure random token"""
+    """Generate a cryptographically secure random token."""
     return secrets.token_urlsafe(length)
 
 
 def generate_hash(data: str, algorithm="sha256"):
-    """Generate hash of data using specified algorithm"""
+    """Generate hash of data using specified algorithm."""
+    if algorithm == "md5":
+        # For MD5, explicitly set usedforsecurity=False since it's not for security
+        return hashlib.md5(data.encode(), usedforsecurity=False).hexdigest()
     hash_func = getattr(hashlib, algorithm)
     return hash_func(data.encode()).hexdigest()
 
 
 def create_slug(text: str, max_length: int = 50) -> str:
-    """Create a URL-friendly slug from text"""
-    slug = slugify(text)
+    """Create a URL-friendly slug from text."""
+    slug = str(slugify(text))  # Convert SafeText to str
     if len(slug) > max_length:
         slug = slug[:max_length].rstrip("-")
     return slug
@@ -41,7 +46,7 @@ def create_slug(text: str, max_length: int = 50) -> str:
 def safe_get_dict_value(
     dictionary: dict[str, Any], key: str, default: Any = None
 ) -> Any:
-    """Safely get value from dictionary with default"""
+    """Safely get value from dictionary with default."""
     try:
         return dictionary.get(key, default)
     except (KeyError, AttributeError):
@@ -49,14 +54,14 @@ def safe_get_dict_value(
 
 
 def truncate_string(text: str, max_length: int = 100, suffix: str = "...") -> str:
-    """Truncate string to specified length with suffix"""
+    """Truncate string to specified length with suffix."""
     if len(text) <= max_length:
         return text
     return text[: max_length - len(suffix)] + suffix
 
 
 def format_file_size(size_bytes: int) -> str:
-    """Format file size in bytes to human readable format"""
+    """Format file size in bytes to human readable format."""
     if size_bytes == 0:
         return "0 B"
 
@@ -71,8 +76,8 @@ def format_file_size(size_bytes: int) -> str:
 
 
 def get_client_ip(request) -> str:
-    """Get client IP address from request"""
-    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+    """Get client IP address from request."""
+    x_forwarded_for = request.headers.get("x-forwarded-for")
     if x_forwarded_for:
         ip = x_forwarded_for.split(",")[0]
     else:
@@ -81,12 +86,12 @@ def get_client_ip(request) -> str:
 
 
 def get_user_agent(request) -> str:
-    """Get user agent from request"""
-    return request.META.get("HTTP_USER_AGENT", "")
+    """Get user agent from request."""
+    return request.headers.get("user-agent", "")
 
 
 def time_since_creation(created_at) -> str:
-    """Get human-readable time since creation"""
+    """Get human-readable time since creation."""
     now = timezone.now()
     diff = now - created_at
 
@@ -109,7 +114,7 @@ def send_notification_email(
     from_email: Optional[str] = None,
     fail_silently: bool = False,
 ) -> bool:
-    """Send notification email"""
+    """Send notification email."""
     try:
         send_mail(
             subject=subject,
@@ -126,7 +131,7 @@ def send_notification_email(
 
 
 def mask_email(email: str) -> str:
-    """Mask email address for privacy"""
+    """Mask email address for privacy."""
     if "@" not in email:
         return email
 
@@ -142,7 +147,7 @@ def mask_email(email: str) -> str:
 def validate_json_structure(
     data: dict[str, Any], required_fields: list
 ) -> dict[str, Any]:
-    """Validate JSON data has required fields"""
+    """Validate JSON data has required fields."""
     errors = {}
     for field in required_fields:
         if field not in data:
