@@ -377,7 +377,7 @@ class PrometheusMetricsTestCase(TestCase):
 
     def test_prometheus_metrics_no_data_scenario(self):
         """Test metrics when there is no data in the database."""
-        # Clear all test data
+        # Clear all test data - only from actual database models, not test models
         Note.objects.all().delete()
         EmailMessageLog.objects.all().delete()
         FileUpload.objects.all().delete()

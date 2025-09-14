@@ -67,10 +67,12 @@ class PasswordResetTestCase(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    @patch("apps.accounts.views.EmailService.send_email")
-    def test_password_reset_email_service_error(self, mock_send_email):
+    @patch("django.core.mail.send_mail")
+    @patch("apps.emails.services.send_password_reset_email")
+    def test_password_reset_email_service_error(self, mock_password_reset_email, mock_send_mail):
         """Test password reset when email service fails."""
-        mock_send_email.side_effect = Exception("Email service down")
+        mock_password_reset_email.side_effect = Exception("Email service down")
+        mock_send_mail.side_effect = Exception("Fallback email service down")
 
         url = reverse("api-password-reset")
         data = {"email": self.user.email}
@@ -93,6 +95,7 @@ class PasswordResetTestCase(APITestCase):
         url = reverse("api-password-reset-confirm")
         data = {
             "token": token,
+            "uid": str(self.user.pk),  # Add the user ID
             "password": "newpassword123",
             "password_confirm": "newpassword123",
         }
@@ -127,6 +130,7 @@ class PasswordResetTestCase(APITestCase):
         url = reverse("api-password-reset-confirm")
         data = {
             "token": token,
+            "uid": str(self.user.pk),  # Add the user ID
             "password": "newpassword123",
             "password_confirm": "newpassword123",
         }
@@ -161,7 +165,7 @@ class EmailVerificationTestCase(APITestCase):
         # Check that verification email was sent
         self.assertEqual(len(mail.outbox), 1)
         email = mail.outbox[0]
-        self.assertIn("Verify your email", email.subject)
+        self.assertIn("Confirm", email.subject)  # allauth uses "Confirm" not "Verify"
         self.assertIn(self.user.email, email.to)
 
     def test_email_verification_request_already_verified(self):

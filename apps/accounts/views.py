@@ -1,8 +1,16 @@
 """Views for the accounts application."""
 
+import re
+from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.auth.tokens import default_token_generator
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
+from django.utils.http import urlsafe_base64_decode
+from django.utils.encoding import force_str
 
 from allauth.account import app_settings as allauth_settings
+from allauth.account.models import EmailAddress, EmailConfirmation
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import permissions, status
 from rest_framework.decorators import action
@@ -12,6 +20,7 @@ from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 
+from apps.emails.services import EmailService, send_password_reset_email
 from .serializers import (
     PasswordChangeSerializer,
     UserRegistrationSerializer,
@@ -277,19 +286,70 @@ class PasswordResetView(GenericViewSet):
     def post(self, request):
         """Request password reset."""
         email = request.data.get("email")
-        if email:
-            # In a real implementation, you'd send a password reset email
-            # For now, just return a success message
+        
+        if not email:
             return Response(
-                {
-                    "message": (
-                        "If an account with that email exists, "
-                        "a password reset link has been sent."
-                    )
-                }
+                {"error": "Email is required."}, status=status.HTTP_400_BAD_REQUEST
             )
+            
+        # Validate email format
+        try:
+            validate_email(email)
+        except ValidationError:
+            return Response(
+                {"error": "Invalid email format."}, status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            # Check if user exists
+            user = User.objects.get(email=email)
+            
+            # Generate password reset token
+            token = default_token_generator.make_token(user)
+            
+            # Create password reset link (this would normally be a frontend URL)
+            frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
+            reset_link = f"{frontend_url}/reset-password?token={token}&uid={user.pk}"
+            
+            # Send password reset email
+            try:
+                send_password_reset_email(
+                    user=user,
+                    reset_link=reset_link,
+                    context={"token": token}
+                )
+            except Exception as template_error:
+                # Try fallback to simple email if template doesn't exist
+                try:
+                    from django.core.mail import send_mail
+                    send_mail(
+                        subject="Reset your password",
+                        message=f"Please reset your password using this link: {reset_link}",
+                        from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@example.com'),
+                        recipient_list=[user.email],
+                        fail_silently=False,
+                    )
+                except Exception as fallback_error:
+                    # If both fail, return error
+                    raise Exception("Email service unavailable")
+            
+        except User.DoesNotExist:
+            # Don't reveal if user exists or not for security
+            pass
+        except Exception as e:
+            return Response(
+                {"error": "Failed to send password reset email."}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+        # Always return success for security (don't reveal if user exists)
         return Response(
-            {"error": "Email is required."}, status=status.HTTP_400_BAD_REQUEST
+            {
+                "message": (
+                    "If an account with that email exists, "
+                    "a password reset link has been sent."
+                )
+            }
         )
 
 
@@ -319,6 +379,7 @@ class PasswordResetConfirmView(GenericViewSet):
         token = request.data.get("token")
         password = request.data.get("password")
         password_confirm = request.data.get("password_confirm")
+        uid = request.data.get("uid")  # User ID from the reset link
 
         if not all([token, password, password_confirm]):
             return Response(
@@ -330,10 +391,53 @@ class PasswordResetConfirmView(GenericViewSet):
             return Response(
                 {"error": "Passwords do not match."}, status=status.HTTP_400_BAD_REQUEST
             )
-
-        # In a real implementation, you'd validate the token and reset the password
-        # For now, just return a success message
-        return Response({"message": "Password has been reset successfully."})
+        
+        try:
+            # Decode user ID if provided as base64
+            if uid:
+                try:
+                    if isinstance(uid, str) and not uid.isdigit():
+                        user_id = force_str(urlsafe_base64_decode(uid))
+                    else:
+                        user_id = uid
+                except Exception:
+                    return Response(
+                        {"error": "Invalid reset token."}, 
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            else:
+                # If no uid provided, try to extract from token or return error
+                return Response(
+                    {"error": "Invalid reset token."}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Get user
+            user = User.objects.get(pk=user_id)
+            
+            # Validate token
+            if not default_token_generator.check_token(user, token):
+                return Response(
+                    {"error": "Invalid or expired reset token."}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Reset password
+            user.set_password(password)
+            user.save()
+            
+            return Response({"message": "Password has been reset successfully."})
+            
+        except User.DoesNotExist:
+            return Response(
+                {"error": "Invalid reset token."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            return Response(
+                {"error": "Failed to reset password."}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class EmailVerificationView(GenericViewSet):
@@ -351,15 +455,100 @@ class EmailVerificationView(GenericViewSet):
         },
     )
     def post(self, request):
-        """Verify email address."""
+        """Verify email address or request verification email."""
         token = request.data.get("token")
-
+        
+        # If no token provided, this is a request for verification email
         if not token:
+            if not request.user.is_authenticated:
+                return Response(
+                    {"error": "Authentication required to request email verification."},
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
+            
+            try:
+                # Check if email is already verified
+                email_address = EmailAddress.objects.get(
+                    user=request.user, 
+                    email=request.user.email,
+                    primary=True
+                )
+                
+                if email_address.verified:
+                    return Response(
+                        {"error": "Email is already verified."},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                
+                # Send verification email
+                email_address.send_confirmation(request=request)
+                
+                return Response(
+                    {"message": "Verification email sent successfully."}
+                )
+                
+            except EmailAddress.DoesNotExist:
+                # Create email address if it doesn't exist
+                email_address = EmailAddress.objects.create(
+                    user=request.user,
+                    email=request.user.email,
+                    verified=False,
+                    primary=True
+                )
+                email_address.send_confirmation(request=request)
+                
+                return Response(
+                    {"message": "Verification email sent successfully."}
+                )
+            except Exception as e:
+                return Response(
+                    {"error": "Failed to send verification email."},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+        
+        # If token provided, this is email verification confirmation
+        try:
+            # Get email confirmation by key
+            confirmation = EmailConfirmation.objects.get(key=token)
+            
+            # Check if confirmation is expired
+            try:
+                is_expired = confirmation.key_expired()
+            except Exception:
+                # If key_expired fails, assume not expired and continue
+                is_expired = False
+                
+            if is_expired:
+                return Response(
+                    {"error": "Verification token has expired."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Confirm the email
+            email_address = confirmation.email_address
+            email_address.verified = True
+            email_address.primary = True
+            email_address.save()
+            
+            # Delete the confirmation after use
+            confirmation.delete()
+            
             return Response(
-                {"error": "Verification token is required."},
-                status=status.HTTP_400_BAD_REQUEST,
+                {"message": "Email has been verified successfully."}
             )
-
-        # In a real implementation, you'd validate the token and mark email as verified
-        # For now, just return a success message
-        return Response({"message": "Email has been verified successfully."})
+            
+        except EmailConfirmation.DoesNotExist:
+            return Response(
+                {"error": "Invalid verification token."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            # Log the error for debugging
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Email verification error: {str(e)}")
+            
+            return Response(
+                {"error": "Failed to verify email."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

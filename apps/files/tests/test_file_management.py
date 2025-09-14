@@ -474,6 +474,8 @@ class FileServiceTestCase(TestCase):
         """Test getting download URL for public file with exception."""
         # Mock storage.url to raise an exception
         mock_storage.url.side_effect = Exception("Storage error")
+        # Mock generate_presigned_url to also raise an exception
+        mock_storage.generate_presigned_url.side_effect = Exception("S3 error")
 
         file_upload = FileUpload.objects.create(
             original_filename="public.pdf",
@@ -487,9 +489,9 @@ class FileServiceTestCase(TestCase):
             updated_by=self.user,
         )
 
-        # Mock hasattr to return True for url method
+        # Mock hasattr to return True for both methods
         with patch("builtins.hasattr", return_value=True):
-            # Should fallback to presigned URL or local serving
+            # Should fallback to local serving after both methods fail
             download_url = FileService.get_download_url(file_upload)
 
             # Should return the fallback URL (reverse for local serving)
@@ -723,7 +725,7 @@ class FileUploadAPITestCase(APITestCase):
         response = self.client.post(url, data, format="multipart")
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("errors", response.data)
+        self.assertIn("file", response.data)
 
     def test_retrieve_file_owner(self):
         """Test retrieving file as owner."""

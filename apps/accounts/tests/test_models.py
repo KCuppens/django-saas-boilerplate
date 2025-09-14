@@ -47,10 +47,8 @@ class AccountsTestCase(APITestCase):
 
     def test_user_profile_str(self):
         """Test user profile string representation."""
-        # Create profile manually since it's not auto-created
-        from apps.accounts.models import UserProfile
-
-        profile, _ = UserProfile.objects.get_or_create(user=self.user)
+        # Profile is auto-created by signal
+        profile = self.user.profile
         expected = f"{self.user.email} Profile"
         self.assertEqual(str(profile), expected)
 
@@ -64,8 +62,8 @@ class AccountsTestCase(APITestCase):
 
     def test_user_profile_serializer(self):
         """Test UserProfileSerializer functionality."""
-        # Create profile first
-        profile, _ = UserProfile.objects.get_or_create(user=self.user)
+        # Profile is auto-created by signal
+        profile = self.user.profile
         serializer = UserProfileSerializer(instance=profile)
         data = serializer.data
         self.assertIsInstance(data, dict)
@@ -142,7 +140,8 @@ class AccountsTestCase(APITestCase):
         """Test UserProfile model fields."""
         from apps.accounts.models import UserProfile
 
-        profile = UserProfile.objects.create(user=self.user)
+        # Get the auto-created profile from the signal
+        profile = self.user.profile
 
         # Test default values
         self.assertEqual(profile.bio, "")

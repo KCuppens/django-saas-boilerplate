@@ -18,7 +18,10 @@ class LastSeenMiddleware(MiddlewareMixin):
                     and (now - request.user.last_seen).seconds > 300
                 ):
                     request.user.update_last_seen()
-            except Exception:
+            except Exception as e:
                 # Handle cases where user or profile might not exist or have issues
-                pass
+                # Log the error for debugging purposes
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.debug(f"Failed to update user last_seen: {e}")
         return None

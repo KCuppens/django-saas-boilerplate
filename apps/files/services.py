@@ -148,7 +148,7 @@ class FileService:
                 logger.error("Failed to generate presigned upload URL: %s", str(e))
 
         # Fallback for local development
-        return {"url": reverse("file_upload"), "fields": {}}
+        return {"url": reverse("file-list"), "fields": {}}
 
     @classmethod
     def delete_file(cls, file_upload: FileUpload) -> bool:

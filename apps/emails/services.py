@@ -136,7 +136,11 @@ class EmailService:
         """Send email immediately (synchronous)."""
         try:
             # Prepare recipients
-            to_emails = [email_log.to_email]
+            # Handle comma-separated recipients in to_email field
+            if ", " in email_log.to_email:
+                to_emails = [email.strip() for email in email_log.to_email.split(",")]
+            else:
+                to_emails = [email_log.to_email]
             cc_emails = email_log.cc_list
             bcc_emails = email_log.bcc_list
 

@@ -16,6 +16,16 @@ app.config_from_object("django.conf:settings", namespace="CELERY")
 # Load task modules from all registered Django apps.
 app.autodiscover_tasks()
 
+# Configure for test environment
+if os.environ.get("DJANGO_SETTINGS_MODULE") == "apps.config.settings.test":
+    app.conf.update(
+        task_always_eager=True,
+        task_eager_propagates=True,
+        broker_url="memory://",
+        result_backend="cache+memory://",
+        cache_backend="memory",
+    )
+
 # Celery Beat Schedule
 app.conf.beat_schedule = {
     "cleanup-expired-sessions": {

@@ -57,7 +57,7 @@ class EmailTemplate(TimestampMixin, UserTrackingMixin):
 
     def __str__(self):
         """Return string representation of the email template."""
-        return f"{self.name} ({self.key})"
+        return f"{self.name} ({self.language})"
 
     @property
     def cache_key(self):
@@ -165,6 +165,7 @@ class EmailMessageLog(TimestampMixin):
 
     # Delivery tracking
     sent_at = models.DateTimeField("Sent at", null=True, blank=True)
+    failed_at = models.DateTimeField("Failed at", null=True, blank=True)
     delivered_at = models.DateTimeField("Delivered at", null=True, blank=True)
     opened_at = models.DateTimeField("Opened at", null=True, blank=True)
     clicked_at = models.DateTimeField("Clicked at", null=True, blank=True)
@@ -192,7 +193,7 @@ class EmailMessageLog(TimestampMixin):
 
     def __str__(self):
         """Return string representation of the email message log."""
-        return f"Email to {self.to_email} - {self.subject[:50]}"
+        return f"{self.to_email} - {self.subject[:50]}"
 
     @property
     def cc_list(self):
@@ -240,9 +241,12 @@ class EmailMessageLog(TimestampMixin):
 
     def mark_as_failed(self, error_message=""):
         """Mark email as failed."""
+        from django.utils import timezone
+
         self.status = EmailStatus.FAILED
         self.error_message = error_message
-        self.save(update_fields=["status", "error_message"])
+        self.failed_at = timezone.now()
+        self.save(update_fields=["status", "error_message", "failed_at"])
 
     def mark_as_delivered(self):
         """Mark email as delivered."""

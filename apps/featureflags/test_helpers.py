@@ -24,7 +24,7 @@ class FeatureFlagsTest(TestCase):
     def setUp(self):
         """Set up test data."""
         self.user = User.objects.create_user(
-            email="test@example.com", password="testpass123"
+            email="test@example.com", password="testpass123"  # nosec B106
         )
         self.request_factory = RequestFactory()
         self.request = self.request_factory.get("/")
@@ -263,7 +263,7 @@ class ConvenienceFunctionsTest(TestCase):
     def setUp(self):
         """Set up test data."""
         self.user = User.objects.create_user(
-            email="test@example.com", password="testpass123"
+            email="test@example.com", password="testpass123"  # nosec B106
         )
         self.request_factory = RequestFactory()
         self.request = self.request_factory.get("/")
@@ -301,7 +301,7 @@ class RequireFeatureFlagDecoratorTest(TestCase):
     def setUp(self):
         """Set up test data."""
         self.user = User.objects.create_user(
-            email="test@example.com", password="testpass123"
+            email="test@example.com", password="testpass123"  # nosec B106
         )
         self.request_factory = RequestFactory()
         self.request = self.request_factory.get("/")
@@ -403,7 +403,7 @@ class FeatureFlagIntegrationTest(TestCase):
     def setUp(self):
         """Set up test data."""
         self.user = User.objects.create_user(
-            email="test@example.com", password="testpass123"
+            email="test@example.com", password="testpass123"  # nosec B106
         )
         self.request_factory = RequestFactory()
         self.request = self.request_factory.get("/")
@@ -485,7 +485,7 @@ class FeatureFlagErrorHandlingTest(TestCase):
     def setUp(self):
         """Set up test data."""
         self.user = User.objects.create_user(
-            email="test@example.com", password="testpass123"
+            email="test@example.com", password="testpass123"  # nosec B106
         )
         self.request_factory = RequestFactory()
         self.request = self.request_factory.get("/")
@@ -566,7 +566,7 @@ class FeatureFlagCachingTest(TestCase):
     def setUp(self):
         """Set up test data."""
         self.user = User.objects.create_user(
-            email="test@example.com", password="testpass123"
+            email="test@example.com", password="testpass123"  # nosec B106
         )
         self.request_factory = RequestFactory()
         self.request = self.request_factory.get("/")
@@ -605,3 +605,95 @@ class FeatureFlagCachingTest(TestCase):
         # Subsequent check should be True (may require cache clearing in real usage)
         result2 = FeatureFlags.is_enabled("DYNAMIC_TEST", self.request, self.user)
         self.assertTrue(result2)
+
+    def test_switch_changes_reflected_in_checks(self):
+        """Test that switch changes are reflected in subsequent checks."""
+        # Create a switch that's initially active
+        switch = Switch.objects.create(name="DYNAMIC_SWITCH_TEST", active=True)
+
+        # Initial check should be True
+        result1 = FeatureFlags.is_switch_active("DYNAMIC_SWITCH_TEST")
+        self.assertTrue(result1)
+
+        # Disable the switch
+        switch.active = False
+        switch.save()
+
+        # Subsequent check should be False (may require cache clearing in real usage)
+        result2 = FeatureFlags.is_switch_active("DYNAMIC_SWITCH_TEST")
+        self.assertFalse(result2)
+
+    def test_multiple_rapid_flag_changes(self):
+        """Test rapid flag changes to expose caching issues."""
+        # Create a flag that's initially disabled
+        flag = Flag.objects.create(name="RAPID_TEST", everyone=False)
+
+        # Rapid toggle test
+        for i in range(5):
+            expected_state = i % 2 == 1  # True for odd iterations
+            flag.everyone = expected_state
+            flag.save()
+
+            result = FeatureFlags.is_enabled("RAPID_TEST", self.request, self.user)
+            self.assertEqual(
+                result,
+                expected_state,
+                f"Iteration {i}: Expected {expected_state}, got {result}",
+            )
+
+    def test_concurrent_flag_access_with_changes(self):
+        """Test flag access while making changes (simulates real-world scenario)."""
+        # Create a flag
+        flag = Flag.objects.create(name="CONCURRENT_TEST", everyone=False)
+
+        # Check multiple times before change
+        results_before = []
+        for _ in range(3):
+            results_before.append(
+                FeatureFlags.is_enabled("CONCURRENT_TEST", self.request, self.user)
+            )
+
+        # All should be False
+        self.assertTrue(all(not r for r in results_before))
+
+        # Change flag
+        flag.everyone = True
+        flag.save()
+
+        # Check multiple times after change
+        results_after = []
+        for _ in range(3):
+            results_after.append(
+                FeatureFlags.is_enabled("CONCURRENT_TEST", self.request, self.user)
+            )
+
+        # All should be True
+        self.assertTrue(
+            all(results_after),
+            f"After change results should all be True, got: {results_after}",
+        )
+
+    def test_cross_flag_cache_interference(self):
+        """Test that caching one flag doesn't interfere with others."""
+        # Create multiple flags
+        flag1 = Flag.objects.create(name="CACHE_TEST_1", everyone=True)
+        flag2 = Flag.objects.create(name="CACHE_TEST_2", everyone=False)
+
+        # Check both flags
+        result1_initial = FeatureFlags.is_enabled("CACHE_TEST_1", self.request, self.user)
+        result2_initial = FeatureFlags.is_enabled("CACHE_TEST_2", self.request, self.user)
+
+        self.assertTrue(result1_initial)
+        self.assertFalse(result2_initial)
+
+        # Change only flag2
+        flag2.everyone = True
+        flag2.save()
+
+        # Check both flags again
+        result1_after = FeatureFlags.is_enabled("CACHE_TEST_1", self.request, self.user)
+        result2_after = FeatureFlags.is_enabled("CACHE_TEST_2", self.request, self.user)
+
+        # Flag1 should remain True, Flag2 should now be True
+        self.assertTrue(result1_after)
+        self.assertTrue(result2_after)

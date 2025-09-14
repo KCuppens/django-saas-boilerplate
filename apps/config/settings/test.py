@@ -52,9 +52,12 @@ PASSWORD_HASHERS = [
 # Email backend for tests
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 
-# Celery settings for tests
+# Celery settings for tests - use in-memory broker and disable task routing
 CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_EAGER_PROPAGATES = True
+CELERY_BROKER_URL = "memory://"
+CELERY_RESULT_BACKEND = "cache+memory://"
+CELERY_CACHE_BACKEND = "memory"
 
 # Disable logging during tests
 LOGGING_CONFIG = None
@@ -93,3 +96,13 @@ TESTING = True
 WAFFLE_FLAG_DEFAULT = False
 WAFFLE_SWITCH_DEFAULT = False
 WAFFLE_SAMPLE_DEFAULT = False
+
+# Additional waffle settings for better test reliability
+WAFFLE_MAX_AGE = 0  # Disable caching entirely for tests
+WAFFLE_CACHE_PREFIX = "waffle-test:"  # Use test-specific cache prefix
+WAFFLE_CREATE_MISSING_FLAGS = False  # Don't auto-create missing flags
+WAFFLE_CREATE_MISSING_SWITCHES = False  # Don't auto-create missing switches
+WAFFLE_CREATE_MISSING_SAMPLES = False  # Don't auto-create missing samples
+
+# Override waffle's cache settings to use dummy cache for tests
+WAFFLE_CACHE = "default"  # Use the dummy cache defined above

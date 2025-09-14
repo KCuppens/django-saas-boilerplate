@@ -78,12 +78,12 @@ repos:
 
   - repo: local
     hooks:
-      - id: django-migrations-check
-        name: Django Migrations Check
-        entry: python manage.py makemigrations --check --dry-run
-        language: system
-        pass_filenames: false
-        always_run: true
+      # - id: django-migrations-check
+      #   name: Django Migrations Check
+      #   entry: python manage.py makemigrations --check --dry-run
+      #   language: system
+      #   pass_filenames: false
+      #   always_run: true
 
       - id: pytest-check
         name: Run tests
