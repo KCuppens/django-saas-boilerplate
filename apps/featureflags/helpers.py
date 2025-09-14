@@ -3,7 +3,6 @@
 from typing import TYPE_CHECKING, Optional
 
 from django.contrib.auth import get_user_model
-from django.core.cache import cache
 
 from waffle import flag_is_active, sample_is_active, switch_is_active
 from waffle.models import Flag, Sample, Switch
@@ -309,17 +308,21 @@ def require_feature_flag(flag_name: str):
     def decorator(func_or_class):
         if isinstance(func_or_class, type):
             # Decorating a class (ViewSet)
-            original_dispatch = func_or_class.dispatch
+            # Create a new class that inherits from the original
+            class FeatureFlaggedClass(func_or_class):
+                def dispatch(self, request, *args, **kwargs):
+                    if not is_feature_enabled(flag_name, request):
+                        from django.http import Http404
 
-            def dispatch(self, request, *args, **kwargs):
-                if not is_feature_enabled(flag_name, request):
-                    from django.http import Http404
+                        raise Http404("Feature not available")
+                    return super().dispatch(request, *args, **kwargs)
 
-                    raise Http404("Feature not available")
-                return original_dispatch(self, request, *args, **kwargs)
+            # Preserve the original class name and module
+            FeatureFlaggedClass.__name__ = func_or_class.__name__
+            FeatureFlaggedClass.__module__ = func_or_class.__module__
+            FeatureFlaggedClass.__qualname__ = func_or_class.__qualname__
 
-            func_or_class.dispatch = dispatch
-            return func_or_class
+            return FeatureFlaggedClass
         else:
             # Decorating a function
             def wrapper(*args, **kwargs):

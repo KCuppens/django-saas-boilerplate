@@ -69,7 +69,9 @@ class PasswordResetTestCase(APITestCase):
 
     @patch("django.core.mail.send_mail")
     @patch("apps.emails.services.send_password_reset_email")
-    def test_password_reset_email_service_error(self, mock_password_reset_email, mock_send_mail):
+    def test_password_reset_email_service_error(
+        self, mock_password_reset_email, mock_send_mail
+    ):
         """Test password reset when email service fails."""
         mock_password_reset_email.side_effect = Exception("Email service down")
         mock_send_mail.side_effect = Exception("Fallback email service down")

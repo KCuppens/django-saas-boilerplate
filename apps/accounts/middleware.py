@@ -22,6 +22,7 @@ class LastSeenMiddleware(MiddlewareMixin):
                 # Handle cases where user or profile might not exist or have issues
                 # Log the error for debugging purposes
                 import logging
+
                 logger = logging.getLogger(__name__)
                 logger.debug(f"Failed to update user last_seen: {e}")
         return None

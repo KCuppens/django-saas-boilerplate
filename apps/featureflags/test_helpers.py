@@ -676,12 +676,16 @@ class FeatureFlagCachingTest(TestCase):
     def test_cross_flag_cache_interference(self):
         """Test that caching one flag doesn't interfere with others."""
         # Create multiple flags
-        flag1 = Flag.objects.create(name="CACHE_TEST_1", everyone=True)
+        Flag.objects.create(name="CACHE_TEST_1", everyone=True)
         flag2 = Flag.objects.create(name="CACHE_TEST_2", everyone=False)
 
         # Check both flags
-        result1_initial = FeatureFlags.is_enabled("CACHE_TEST_1", self.request, self.user)
-        result2_initial = FeatureFlags.is_enabled("CACHE_TEST_2", self.request, self.user)
+        result1_initial = FeatureFlags.is_enabled(
+            "CACHE_TEST_1", self.request, self.user
+        )
+        result2_initial = FeatureFlags.is_enabled(
+            "CACHE_TEST_2", self.request, self.user
+        )
 
         self.assertTrue(result1_initial)
         self.assertFalse(result2_initial)

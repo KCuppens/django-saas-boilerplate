@@ -12,9 +12,6 @@ from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 
-from apps.core.permissions import IsOwnerOrAdmin, IsOwnerOrPublic
-from apps.featureflags.helpers import require_feature_flag
-
 from .models import FileUpload
 from .serializers import (
     FileUploadCreateSerializer,
@@ -26,7 +23,7 @@ from .services import FileService
 logger = logging.getLogger(__name__)
 
 
-class FileAccessPermission(permissions.BasePermission):
+class FileAccessPermission(permissions.BasePermission):  # type: ignore[misc]
     """Custom permission class for file access considering expiration."""
 
     def has_permission(self, request, view):
@@ -45,7 +42,6 @@ class FileAccessPermission(permissions.BasePermission):
         return obj.can_access(request.user)
 
 
-@require_feature_flag("FILES")
 @extend_schema_view(
     list=extend_schema(
         summary="List files",
@@ -77,18 +73,28 @@ class FileUploadViewSet(viewsets.ModelViewSet):
     permission_classes = [FileAccessPermission]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
+    def dispatch(self, request, *args, **kwargs):
+        """Check feature flag before dispatching request."""
+        from apps.featureflags.helpers import is_feature_enabled
+
+        if not is_feature_enabled("FILES", request):
+            raise Http404("Feature not available")
+        return super().dispatch(request, *args, **kwargs)
+
     def get_queryset(self):
         """Get files based on user permissions."""
         queryset = FileUpload.objects.select_related("created_by", "updated_by")
 
-        # For download_url action, include all files and let the action handle access control
-        # This allows proper 403 responses for that specific action
+        # For download_url action, include all files and let the action
+        # handle access control. This allows proper 403 responses.
         if self.action == "download_url":
             pass  # Include all files
         else:
-            # For other actions, filter to only show accessible files (returns 404 for security)
+            # For other actions, filter to only show accessible files
+            # (returns 404 for security)
             if not self.request.user.is_admin():
                 from django.db.models import Q
+
                 queryset = queryset.filter(
                     Q(created_by=self.request.user) | Q(is_public=True)
                 )
@@ -119,6 +125,7 @@ class FileUploadViewSet(viewsets.ModelViewSet):
         validation = FileService.validate_file(file)
         if not validation["valid"]:
             from rest_framework.exceptions import ValidationError
+
             raise ValidationError({"file": validation["errors"]})
 
         # Upload file

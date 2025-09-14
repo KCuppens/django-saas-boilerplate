@@ -28,13 +28,12 @@ def backup_database():
         db_config = settings.DATABASES["default"]
 
         # Special handling for test environment (in-memory databases)
-        if (db_config.get("NAME") == ":memory:" or 
-            getattr(settings, "TESTING", False)):
+        if db_config.get("NAME") == ":memory:" or getattr(settings, "TESTING", False):
             # For test environment, create a dummy backup file
             with open(backup_path, "w") as f:
-                f.write("# Test backup file created at {}\n".format(timestamp))
+                f.write(f"# Test backup file created at {timestamp}\n")
                 f.write("# This is a dummy backup for testing purposes\n")
-            
+
             logger.info("Test database backup created successfully: %s", backup_path)
             return {
                 "success": True,

@@ -2,6 +2,7 @@
 
 from django.contrib.auth import get_user_model
 from django.test import RequestFactory, TestCase
+
 from waffle.models import Flag, Sample, Switch
 from waffle.testutils import override_flag, override_sample, override_switch
 
@@ -99,13 +100,15 @@ class WaffleTestUtilsIntegrationTest(TestCase):
 
     def test_nested_overrides(self):
         """Test nested waffle overrides."""
-        with override_flag("FLAG_A", active=True):
-            with override_flag("FLAG_B", active=False):
-                result_a = FeatureFlags.is_enabled("FLAG_A", self.request, self.user)
-                result_b = FeatureFlags.is_enabled("FLAG_B", self.request, self.user)
+        with (
+            override_flag("FLAG_A", active=True),
+            override_flag("FLAG_B", active=False),
+        ):
+            result_a = FeatureFlags.is_enabled("FLAG_A", self.request, self.user)
+            result_b = FeatureFlags.is_enabled("FLAG_B", self.request, self.user)
 
-                self.assertTrue(result_a)
-                self.assertFalse(result_b)
+            self.assertTrue(result_a)
+            self.assertFalse(result_b)
 
         # Both flags should be back to original state
         self.assertFalse(FeatureFlags.is_enabled("FLAG_A", self.request, self.user))
@@ -227,7 +230,9 @@ class CacheManagementTest(TestCase):
         switch1 = Switch.objects.create(name="DB_SWITCH_1", active=False)
 
         # Initial states
-        self.assertFalse(FeatureFlags.is_enabled("DB_CHANGE_1", self.request, self.user))
+        self.assertFalse(
+            FeatureFlags.is_enabled("DB_CHANGE_1", self.request, self.user)
+        )
         self.assertTrue(FeatureFlags.is_enabled("DB_CHANGE_2", self.request, self.user))
         self.assertFalse(FeatureFlags.is_switch_active("DB_SWITCH_1"))
 
@@ -244,7 +249,9 @@ class CacheManagementTest(TestCase):
 
         # Check updated states
         self.assertTrue(FeatureFlags.is_enabled("DB_CHANGE_1", self.request, self.user))
-        self.assertFalse(FeatureFlags.is_enabled("DB_CHANGE_2", self.request, self.user))
+        self.assertFalse(
+            FeatureFlags.is_enabled("DB_CHANGE_2", self.request, self.user)
+        )
         self.assertTrue(FeatureFlags.is_switch_active("DB_SWITCH_1"))
 
 
@@ -271,7 +278,9 @@ class CacheReliabilityTest(TestCase):
                 FeatureFlags.is_enabled("CONSISTENCY_TEST", self.request, self.user)
             )
 
-        self.assertTrue(all(not r for r in results), "All initial results should be False")
+        self.assertTrue(
+            all(not r for r in results), "All initial results should be False"
+        )
 
         # Change flag and clear cache
         flag.everyone = True
@@ -289,12 +298,16 @@ class CacheReliabilityTest(TestCase):
 
     def test_cache_isolation_between_flags(self):
         """Test that cache clearing for one flag doesn't affect others."""
-        flag1 = Flag.objects.create(name="ISOLATION_1", everyone=True)
+        Flag.objects.create(name="ISOLATION_1", everyone=True)
         flag2 = Flag.objects.create(name="ISOLATION_2", everyone=False)
 
         # Initial states
-        result1_initial = FeatureFlags.is_enabled("ISOLATION_1", self.request, self.user)
-        result2_initial = FeatureFlags.is_enabled("ISOLATION_2", self.request, self.user)
+        result1_initial = FeatureFlags.is_enabled(
+            "ISOLATION_1", self.request, self.user
+        )
+        result2_initial = FeatureFlags.is_enabled(
+            "ISOLATION_2", self.request, self.user
+        )
         self.assertTrue(result1_initial)
         self.assertFalse(result2_initial)
 
@@ -317,9 +330,13 @@ class CacheReliabilityTest(TestCase):
         flag = Flag.objects.create(name="REFRESH_CONSISTENCY_TEST", everyone=False)
 
         # Regular check
-        result1 = FeatureFlags.is_enabled("REFRESH_CONSISTENCY_TEST", self.request, self.user)
+        result1 = FeatureFlags.is_enabled(
+            "REFRESH_CONSISTENCY_TEST", self.request, self.user
+        )
         # Fresh check
-        result2 = is_feature_enabled_fresh("REFRESH_CONSISTENCY_TEST", self.request, self.user)
+        result2 = is_feature_enabled_fresh(
+            "REFRESH_CONSISTENCY_TEST", self.request, self.user
+        )
 
         # Both should be False initially
         self.assertFalse(result1)
@@ -329,10 +346,12 @@ class CacheReliabilityTest(TestCase):
         flag.everyone = True
         flag.save()
 
-        # Regular check might be cached
-        result3 = FeatureFlags.is_enabled("REFRESH_CONSISTENCY_TEST", self.request, self.user)
+        # Regular check might be cached (we don't use the result intentionally)
+        FeatureFlags.is_enabled("REFRESH_CONSISTENCY_TEST", self.request, self.user)
         # Fresh check should always be current
-        result4 = is_feature_enabled_fresh("REFRESH_CONSISTENCY_TEST", self.request, self.user)
+        result4 = is_feature_enabled_fresh(
+            "REFRESH_CONSISTENCY_TEST", self.request, self.user
+        )
 
         # Fresh check should definitely be True
         self.assertTrue(result4, "Fresh check should always return current value")
