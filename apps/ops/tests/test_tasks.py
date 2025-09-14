@@ -759,9 +759,10 @@ class TaskIntegrationTest(TestCase):
     @patch("apps.ops.tasks.datetime")
     def test_tasks_use_consistent_timestamp_format(self, mock_datetime):
         """Test that all tasks use consistent timestamp formats."""
-        test_time = datetime.datetime(2024, 12, 1, 12, 30, 45)
+        test_time = Mock()
+        test_time.strftime.return_value = "20241201_123045"
+        test_time.isoformat.return_value = "2024-12-01T12:30:45"
         mock_datetime.datetime.now.return_value = test_time
-        mock_datetime.datetime.now().strftime.return_value = "20241201_123045"
 
         # Test backup_database timestamp format
         with (
@@ -790,7 +791,20 @@ class TaskIntegrationTest(TestCase):
             result = system_maintenance()
             self.assertEqual(result["timestamp"], test_time.isoformat())
 
-    def test_backup_and_cleanup_integration(self):
+    @patch("apps.ops.tasks.subprocess.run")
+    @override_settings(
+        DATABASES={
+            "default": {
+                "ENGINE": "django.db.backends.postgresql",
+                "NAME": "test_db",
+                "USER": "test_user",
+                "PASSWORD": "test_pass",
+                "HOST": "localhost",
+                "PORT": 5432,
+            }
+        }
+    )
+    def test_backup_and_cleanup_integration(self, mock_run):
         """Test that backup creation and cleanup work together."""
         # This is a conceptual integration test
         # In practice, you would create actual temp files and test the full flow
@@ -798,10 +812,16 @@ class TaskIntegrationTest(TestCase):
         with (
             patch("apps.ops.tasks.datetime") as mock_datetime,
             patch("apps.ops.tasks.os.makedirs"),
-            patch("apps.ops.tasks.call_command"),
-            patch("builtins.open", mock_open()),
         ):
-            mock_datetime.datetime.now().strftime.return_value = "20241201_120000"
+            mock_time = Mock()
+            mock_time.strftime.return_value = "20241201_120000"
+            mock_datetime.datetime.now.return_value = mock_time
+
+            # Mock successful subprocess run for PostgreSQL backup
+            mock_result = Mock()
+            mock_result.returncode = 0
+            mock_run.return_value = mock_result
+
             backup_result = backup_database()
             self.assertTrue(backup_result["success"])
 
@@ -827,7 +847,9 @@ class TaskIntegrationTest(TestCase):
             patch("apps.ops.tasks.call_command"),
             patch("builtins.open", mock_open()),
         ):
-            mock_datetime.datetime.now().strftime.return_value = "20241201_120000"
+            mock_time = Mock()
+            mock_time.strftime.return_value = "20241201_120000"
+            mock_datetime.datetime.now.return_value = mock_time
 
             backup_database()
             mock_logger.info.assert_called()
