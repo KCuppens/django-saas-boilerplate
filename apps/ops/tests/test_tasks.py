@@ -761,6 +761,7 @@ class TaskIntegrationTest(TestCase):
         """Test that all tasks use consistent timestamp formats."""
         test_time = datetime.datetime(2024, 12, 1, 12, 30, 45)
         mock_datetime.datetime.now.return_value = test_time
+        mock_datetime.datetime.now().strftime.return_value = "20241201_123045"
 
         # Test backup_database timestamp format
         with (
@@ -795,12 +796,12 @@ class TaskIntegrationTest(TestCase):
         # In practice, you would create actual temp files and test the full flow
 
         with (
-            patch("apps.ops.tasks.datetime"),
+            patch("apps.ops.tasks.datetime") as mock_datetime,
             patch("apps.ops.tasks.os.makedirs"),
             patch("apps.ops.tasks.call_command"),
             patch("builtins.open", mock_open()),
         ):
-
+            mock_datetime.datetime.now().strftime.return_value = "20241201_120000"
             backup_result = backup_database()
             self.assertTrue(backup_result["success"])
 
@@ -821,11 +822,12 @@ class TaskIntegrationTest(TestCase):
         """Test that tasks log appropriately."""
         # Test successful backup logging
         with (
-            patch("apps.ops.tasks.datetime"),
+            patch("apps.ops.tasks.datetime") as mock_datetime,
             patch("apps.ops.tasks.os.makedirs"),
             patch("apps.ops.tasks.call_command"),
             patch("builtins.open", mock_open()),
         ):
+            mock_datetime.datetime.now().strftime.return_value = "20241201_120000"
 
             backup_database()
             mock_logger.info.assert_called()
