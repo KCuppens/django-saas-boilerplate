@@ -765,13 +765,28 @@ class TaskIntegrationTest(TestCase):
         mock_datetime.datetime.now.return_value = test_time
 
         # Test backup_database timestamp format
-        with (
-            patch("apps.ops.tasks.os.makedirs"),
-            patch("apps.ops.tasks.call_command"),
-            patch("builtins.open", mock_open()),
-        ):
-            result = backup_database()
-            self.assertEqual(result["timestamp"], "20241201_123045")
+        # Check if we're using PostgreSQL or in-memory SQLite
+        db_config = settings.DATABASES["default"]
+        if db_config["ENGINE"] == "django.db.backends.postgresql":
+            # For PostgreSQL, mock subprocess
+            with (
+                patch("apps.ops.tasks.os.makedirs"),
+                patch("apps.ops.tasks.subprocess.run") as mock_run,
+            ):
+                mock_result = Mock()
+                mock_result.returncode = 0
+                mock_run.return_value = mock_result
+                result = backup_database()
+                self.assertEqual(result["timestamp"], "20241201_123045")
+        else:
+            # For SQLite or in-memory databases
+            with (
+                patch("apps.ops.tasks.os.makedirs"),
+                patch("apps.ops.tasks.call_command"),
+                patch("builtins.open", mock_open()),
+            ):
+                result = backup_database()
+                self.assertEqual(result["timestamp"], "20241201_123045")
 
         # Test health_check_task timestamp format
         with (
@@ -841,18 +856,36 @@ class TaskIntegrationTest(TestCase):
     def test_tasks_logging_behavior(self, mock_logger):
         """Test that tasks log appropriately."""
         # Test successful backup logging
-        with (
-            patch("apps.ops.tasks.datetime") as mock_datetime,
-            patch("apps.ops.tasks.os.makedirs"),
-            patch("apps.ops.tasks.call_command"),
-            patch("builtins.open", mock_open()),
-        ):
-            mock_time = Mock()
-            mock_time.strftime.return_value = "20241201_120000"
-            mock_datetime.datetime.now.return_value = mock_time
+        mock_time = Mock()
+        mock_time.strftime.return_value = "20241201_120000"
 
-            backup_database()
-            mock_logger.info.assert_called()
+        db_config = settings.DATABASES["default"]
+        if db_config["ENGINE"] == "django.db.backends.postgresql":
+            # For PostgreSQL, mock subprocess
+            with (
+                patch("apps.ops.tasks.datetime") as mock_datetime,
+                patch("apps.ops.tasks.os.makedirs"),
+                patch("apps.ops.tasks.subprocess.run") as mock_run,
+            ):
+                mock_datetime.datetime.now.return_value = mock_time
+                mock_result = Mock()
+                mock_result.returncode = 0
+                mock_run.return_value = mock_result
+
+                backup_database()
+                mock_logger.info.assert_called()
+        else:
+            # For SQLite or in-memory databases
+            with (
+                patch("apps.ops.tasks.datetime") as mock_datetime,
+                patch("apps.ops.tasks.os.makedirs"),
+                patch("apps.ops.tasks.call_command"),
+                patch("builtins.open", mock_open()),
+            ):
+                mock_datetime.datetime.now.return_value = mock_time
+
+                backup_database()
+                mock_logger.info.assert_called()
 
         # Test error logging
         with patch("apps.ops.tasks.datetime") as mock_dt:
