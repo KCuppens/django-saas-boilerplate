@@ -461,14 +461,16 @@ class EmailVerificationView(GenericViewSet):
         """Verify email address or request verification email."""
         token = request.data.get("token")
 
-        # If no token provided, this is a request for verification email
-        if not token:
+        # If no token provided, this could be a request for verification email (if authenticated)
+        # or invalid request (if not authenticated)
+        if not token or token.strip() == "":
             if not request.user.is_authenticated:
                 return Response(
-                    {"error": "Authentication required to request email verification."},
-                    status=status.HTTP_401_UNAUTHORIZED,
+                    {"error": "Verification token is required."},
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
 
+            # Authenticated user requesting verification email
             try:
                 # Check if email is already verified
                 email_address = EmailAddress.objects.get(

@@ -57,7 +57,7 @@ class EmailTemplate(TimestampMixin, UserTrackingMixin):
 
     def __str__(self):
         """Return string representation of the email template."""
-        return f"{self.name} ({self.language})"
+        return f"{self.name} ({self.key})"
 
     @property
     def cache_key(self):
@@ -193,7 +193,7 @@ class EmailMessageLog(TimestampMixin):
 
     def __str__(self):
         """Return string representation of the email message log."""
-        return f"{self.to_email} - {self.subject[:50]}"
+        return f"Email to {self.to_email} - {self.subject[:50]}"
 
     @property
     def cc_list(self):

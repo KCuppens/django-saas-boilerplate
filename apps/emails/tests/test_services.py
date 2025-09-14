@@ -178,19 +178,22 @@ class EmailServiceTestCase(TestCase):
     def test_send_template_email(self):
         """Test sending email using template."""
         # Create a test template
-        EmailTemplate.objects.create(
-            key="test_template",
-            name="Test Template",
-            subject="Welcome {{user.name}}!",
-            text_content="Hello {{user.name}}, welcome to our platform!",
-            html_content="<h1>Hello {{user.name}}</h1><p>Welcome to our platform!</p>",
-            is_active=True,
+        EmailTemplate.objects.get_or_create(
+            key="welcome_template",
+            defaults={
+                "name": "Welcome Template",
+                "subject": "Welcome {{user.name}}!",
+                "text_content": "Hello {{user.name}}, welcome to our platform!",
+                "html_content": "<h1>Hello {{user.name}}</h1><p>Welcome to our platform!</p>",
+                "is_active": True,
+            }
         )
 
         result = EmailService.send_template_email(
-            template_key="test_template",
+            template_key="welcome_template",
             to_email=self.user.email,
             context={"user": self.user},
+            async_send=False,
         )
 
         self.assertIsInstance(result, EmailMessageLog)

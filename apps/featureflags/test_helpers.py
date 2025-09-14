@@ -10,6 +10,9 @@ from waffle.models import Flag, Sample, Switch
 
 from apps.featureflags.helpers import (
     FeatureFlags,
+    clear_all_feature_caches,
+    clear_feature_cache,
+    clear_switch_cache,
     get_feature_context,
     is_feature_enabled,
     require_feature_flag,
@@ -431,6 +434,7 @@ class FeatureFlagIntegrationTest(TestCase):
         """Test is_enabled with flag enabled for everyone."""
         self.flag.everyone = True
         self.flag.save()
+        clear_feature_cache("TEST_FLAG")
 
         result = FeatureFlags.is_enabled("TEST_FLAG", self.request, self.user)
 
@@ -445,6 +449,7 @@ class FeatureFlagIntegrationTest(TestCase):
 
     def test_is_switch_active_with_active_switch(self):
         """Test is_switch_active with active switch."""
+        clear_switch_cache("TEST_SWITCH")
         result = FeatureFlags.is_switch_active("TEST_SWITCH")
 
         self.assertTrue(result)
@@ -601,6 +606,7 @@ class FeatureFlagCachingTest(TestCase):
         # Enable the flag
         flag.everyone = True
         flag.save()
+        clear_feature_cache("DYNAMIC_TEST")
 
         # Subsequent check should be True (may require cache clearing in real usage)
         result2 = FeatureFlags.is_enabled("DYNAMIC_TEST", self.request, self.user)
@@ -618,6 +624,7 @@ class FeatureFlagCachingTest(TestCase):
         # Disable the switch
         switch.active = False
         switch.save()
+        clear_switch_cache("DYNAMIC_SWITCH_TEST")
 
         # Subsequent check should be False (may require cache clearing in real usage)
         result2 = FeatureFlags.is_switch_active("DYNAMIC_SWITCH_TEST")
@@ -633,6 +640,7 @@ class FeatureFlagCachingTest(TestCase):
             expected_state = i % 2 == 1  # True for odd iterations
             flag.everyone = expected_state
             flag.save()
+            clear_feature_cache("RAPID_TEST")
 
             result = FeatureFlags.is_enabled("RAPID_TEST", self.request, self.user)
             self.assertEqual(
@@ -659,6 +667,7 @@ class FeatureFlagCachingTest(TestCase):
         # Change flag
         flag.everyone = True
         flag.save()
+        clear_feature_cache("CONCURRENT_TEST")
 
         # Check multiple times after change
         results_after = []
@@ -693,6 +702,7 @@ class FeatureFlagCachingTest(TestCase):
         # Change only flag2
         flag2.everyone = True
         flag2.save()
+        clear_feature_cache("CACHE_TEST_2")
 
         # Check both flags again
         result1_after = FeatureFlags.is_enabled("CACHE_TEST_1", self.request, self.user)

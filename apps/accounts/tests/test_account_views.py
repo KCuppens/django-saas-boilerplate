@@ -3,9 +3,13 @@
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.tokens import default_token_generator
 from django.test import TestCase
 from django.urls import reverse
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
 
+from allauth.account.models import EmailAddress, EmailConfirmation
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
@@ -344,8 +348,18 @@ class PasswordResetConfirmViewTestCase(APITestCase):
         """Test password reset confirmation with valid data."""
         url = reverse("api-password-reset-confirm")
 
+        # Create a test user
+        user = User.objects.create_user(
+            email="reset@example.com", name="Reset User", password="oldpass123"
+        )
+
+        # Generate a real Django password reset token
+        token = default_token_generator.make_token(user)
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+
         data = {
-            "token": "valid-token-123",
+            "token": token,
+            "uid": uid,
             "password": "newpassword123456",
             "password_confirm": "newpassword123456",
         }
@@ -356,6 +370,10 @@ class PasswordResetConfirmViewTestCase(APITestCase):
         self.assertEqual(
             response.data["message"], "Password has been reset successfully."
         )
+
+        # Verify that the password was actually changed
+        user.refresh_from_db()
+        self.assertTrue(user.check_password("newpassword123456"))
 
     def test_password_reset_confirm_missing_token(self):
         """Test password reset confirmation without token."""
@@ -378,7 +396,14 @@ class PasswordResetConfirmViewTestCase(APITestCase):
         """Test password reset confirmation without password."""
         url = reverse("api-password-reset-confirm")
 
-        data = {"token": "valid-token-123", "password_confirm": "newpassword123456"}
+        # Create a test user and generate a real token
+        user = User.objects.create_user(
+            email="reset@example.com", name="Reset User", password="oldpass123"
+        )
+        token = default_token_generator.make_token(user)
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+
+        data = {"token": token, "uid": uid, "password_confirm": "newpassword123456"}
 
         response = self.client.post(url, data, format="json")
 
@@ -392,8 +417,16 @@ class PasswordResetConfirmViewTestCase(APITestCase):
         """Test password reset confirmation with mismatched passwords."""
         url = reverse("api-password-reset-confirm")
 
+        # Create a test user and generate a real token
+        user = User.objects.create_user(
+            email="reset@example.com", name="Reset User", password="oldpass123"
+        )
+        token = default_token_generator.make_token(user)
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+
         data = {
-            "token": "valid-token-123",
+            "token": token,
+            "uid": uid,
             "password": "newpassword123456",
             "password_confirm": "differentpassword123456",
         }
@@ -421,11 +454,25 @@ class PasswordResetConfirmViewTestCase(APITestCase):
 class EmailVerificationViewTestCase(APITestCase):
     """Test EmailVerificationView."""
 
+    def setUp(self):
+        """Set up test data."""
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            email="test@example.com", password="testpass123", name="Test User"
+        )
+        self.email_address = EmailAddress.objects.create(
+            user=self.user, email=self.user.email, verified=False, primary=True
+        )
+
     def test_email_verification_valid_token(self):
         """Test email verification with valid token."""
-        url = reverse("api-verify-email")
+        # Create a valid EmailConfirmation
+        confirmation = EmailConfirmation.objects.create(
+            email_address=self.email_address, key="test-confirmation-key"
+        )
 
-        data = {"token": "valid-verification-token-123"}
+        url = reverse("api-verify-email")
+        data = {"token": confirmation.key}
 
         response = self.client.post(url, data, format="json")
 
@@ -433,6 +480,10 @@ class EmailVerificationViewTestCase(APITestCase):
         self.assertEqual(
             response.data["message"], "Email has been verified successfully."
         )
+
+        # Check that email is now verified
+        self.email_address.refresh_from_db()
+        self.assertTrue(self.email_address.verified)
 
     def test_email_verification_missing_token(self):
         """Test email verification without token."""
