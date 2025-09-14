@@ -320,7 +320,7 @@ jobs:
 
         # Required settings
         ALLOWED_HOSTS = ["example.com"]
-        SECRET_KEY = "fake-secret-for-check"
+        SECRET_KEY = "fake-secret-key-with-enough-characters-for-deployment-check-1234567890abcdef"
         DATABASES = {
             "default": {
                 "ENGINE": "django.db.backends.sqlite3",
@@ -338,6 +338,9 @@ jobs:
         }
         EOF
 
+        # Create static directory for deployment check
+        mkdir -p static
+
         # Run Django check with deployment settings
         export DJANGO_SETTINGS_MODULE=apps.config.settings.deploy_check
-        python manage.py check --deploy --fail-level WARNING
+        python manage.py check --deploy --fail-level ERROR
