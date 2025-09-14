@@ -10,7 +10,6 @@ from waffle.models import Flag, Sample, Switch
 
 from apps.featureflags.helpers import (
     FeatureFlags,
-    clear_all_feature_caches,
     clear_feature_cache,
     clear_switch_cache,
     get_feature_context,
@@ -458,6 +457,7 @@ class FeatureFlagIntegrationTest(TestCase):
         """Test is_switch_active with inactive switch."""
         self.switch.active = False
         self.switch.save()
+        clear_switch_cache("TEST_SWITCH")
 
         result = FeatureFlags.is_switch_active("TEST_SWITCH")
 

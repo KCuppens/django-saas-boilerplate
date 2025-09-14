@@ -461,8 +461,8 @@ class EmailVerificationView(GenericViewSet):
         """Verify email address or request verification email."""
         token = request.data.get("token")
 
-        # If no token provided, this could be a request for verification email (if authenticated)
-        # or invalid request (if not authenticated)
+        # If no token provided, this could be a request for verification email
+        # (if authenticated) or invalid request (if not authenticated)
         if not token or token.strip() == "":
             if not request.user.is_authenticated:
                 return Response(

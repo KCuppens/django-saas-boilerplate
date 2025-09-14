@@ -7,8 +7,8 @@ from django.contrib.auth.tokens import default_token_generator
 from django.core import mail
 from django.test import TestCase, override_settings
 from django.urls import reverse
-from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 
 from allauth.account.models import EmailAddress, EmailConfirmation
 from rest_framework import status
@@ -222,7 +222,9 @@ class PasswordResetViewTestCase(APITestCase):
 
         # Create a test user for password reset
         reset_user = User.objects.create_user(
-            email="resettest2@example.com", name="Reset Test User 2", password="oldpass123"
+            email="resettest2@example.com",
+            name="Reset Test User 2",
+            password="oldpass123",
         )
 
         # Generate a real Django password reset token
@@ -246,7 +248,9 @@ class PasswordResetViewTestCase(APITestCase):
 
         # Create a test user for password reset
         reset_user = User.objects.create_user(
-            email="resettest3@example.com", name="Reset Test User 3", password="oldpass123"
+            email="resettest3@example.com",
+            name="Reset Test User 3",
+            password="oldpass123",
         )
 
         # Generate a real Django password reset token

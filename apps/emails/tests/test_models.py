@@ -29,7 +29,7 @@ class EmailModelTests(TestCase):
             language="en",
         )
         # Check if the string representation works as expected
-        expected_str = f"{template.name} ({template.language})"
+        expected_str = f"{template.name} ({template.key})"
         self.assertEqual(str(template), expected_str)
         self.assertEqual(template.key, "welcome")
 
@@ -69,7 +69,7 @@ class EmailModelTests(TestCase):
         )
 
         # Check the string representation works
-        expected_str = f"{log.to_email} - {log.subject}"
+        expected_str = f"Email to {log.to_email} - {log.subject}"
         self.assertEqual(str(log), expected_str)
         self.assertEqual(log.status, EmailStatus.PENDING)
 

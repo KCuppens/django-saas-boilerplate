@@ -384,8 +384,10 @@ class PrometheusMetricsTestCase(TestCase):
 
         # Use mock to simulate empty User queryset instead of deleting users
         # This avoids cascade issues with test models that have foreign keys to User
-        with patch.object(User.objects, 'count', return_value=0), \
-             patch.object(User.objects, 'filter') as mock_filter:
+        with (
+            patch.object(User.objects, "count", return_value=0),
+            patch.object(User.objects, "filter") as mock_filter,
+        ):
             mock_filter.return_value.count.return_value = 0
 
             response = prometheus_metrics(self.request)

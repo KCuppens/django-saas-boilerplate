@@ -184,9 +184,11 @@ class EmailServiceTestCase(TestCase):
                 "name": "Welcome Template",
                 "subject": "Welcome {{user.name}}!",
                 "text_content": "Hello {{user.name}}, welcome to our platform!",
-                "html_content": "<h1>Hello {{user.name}}</h1><p>Welcome to our platform!</p>",
+                "html_content": (
+                    "<h1>Hello {{user.name}}</h1><p>Welcome to our platform!</p>"
+                ),
                 "is_active": True,
-            }
+            },
         )
 
         result = EmailService.send_template_email(

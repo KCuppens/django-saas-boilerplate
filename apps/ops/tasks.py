@@ -34,7 +34,9 @@ def backup_database():
                 f.write(f"# Test backup file created at {timestamp}\n")
                 f.write("# This is a dummy backup for testing purposes\n")
 
-            logger.info("In-memory database backup created successfully: %s", backup_path)
+            logger.info(
+                "In-memory database backup created successfully: %s", backup_path
+            )
             return {
                 "success": True,
                 "backup_file": backup_filename,
