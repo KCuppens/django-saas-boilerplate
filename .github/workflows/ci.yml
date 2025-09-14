@@ -264,20 +264,20 @@ jobs:
 
     - name: Start services with Docker Compose
       run: |
-        docker-compose -f compose/docker-compose.yml up -d postgres redis
+        docker compose -f compose/docker-compose.yml up -d postgres redis
         sleep 10
 
     - name: Run integration tests
       run: |
         # Test database connection
-        docker-compose -f compose/docker-compose.yml exec -T postgres pg_isready -U django -d django_saas
+        docker compose -f compose/docker-compose.yml exec -T postgres pg_isready -U django -d django_saas
 
         # Test Redis connection
-        docker-compose -f compose/docker-compose.yml exec -T redis redis-cli ping
+        docker compose -f compose/docker-compose.yml exec -T redis redis-cli ping
 
     - name: Cleanup
       if: always()
-      run: docker-compose -f compose/docker-compose.yml down -v
+      run: docker compose -f compose/docker-compose.yml down -v
 
   deployment-check:
     name: Deployment Check
@@ -304,4 +304,8 @@ jobs:
         export SECRET_KEY=fake-secret-for-check
         export DATABASE_URL=sqlite:///fake.db
         export ALLOWED_HOSTS=example.com
-        python manage.py check --deploy
+        export DEFAULT_FROM_EMAIL=noreply@example.com
+        export USE_S3=False
+        export SENTRY_DSN=""
+        export REDIS_URL=redis://localhost:6379/0
+        python manage.py check --deploy --fail-level WARNING
